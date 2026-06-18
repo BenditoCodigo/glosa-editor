@@ -58,9 +58,14 @@ export const useFoldersStore = defineStore('folders', () => {
   async function toggleFavorite(id: string) {
     const folder = folders.value.find((f) => f.id === id)
     if (!folder) return
-    folder.isFavorite = !folder.isFavorite
-    folder.updatedAt = new Date().toISOString()
-    await storage.saveFolder(folder)
+    const updated: Folder = {
+      ...folder,
+      isFavorite: !folder.isFavorite,
+      updatedAt: new Date().toISOString(),
+    }
+    await storage.saveFolder(updated)
+    const index = folders.value.findIndex((f) => f.id === id)
+    if (index !== -1) folders.value[index] = updated
   }
 
   async function removeFolder(id: string) {

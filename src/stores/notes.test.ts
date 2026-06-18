@@ -91,6 +91,10 @@ describe('Notes Store', () => {
   it('updateNote persists changes and updates store', async () => {
     const store = useNotesStore()
     const original = await store.createNote(null)
+    const originalUpdatedAt = original.updatedAt
+
+    // Small delay to ensure different timestamp
+    await new Promise((r) => setTimeout(r, 5))
 
     const updated: Note = {
       ...original,
@@ -109,7 +113,7 @@ describe('Notes Store', () => {
     expect(fromDb!.title).toBe('Updated Title')
     expect(fromDb!.content).toBe('New content')
     // updatedAt should be newer
-    expect(fromDb!.updatedAt).not.toBe(original.updatedAt)
+    expect(fromDb!.updatedAt).not.toBe(originalUpdatedAt)
   })
 
   it('updateNote updates activeNote if it matches', async () => {

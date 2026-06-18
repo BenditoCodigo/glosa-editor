@@ -53,19 +53,27 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   async function updateNote(note: Note) {
-    note.updatedAt = new Date().toISOString()
-    await storage.saveNote(note)
-    const index = notes.value.findIndex((n) => n.id === note.id)
-    if (index !== -1) notes.value[index] = { ...note }
-    if (activeNote.value?.id === note.id) activeNote.value = { ...note }
+    const updated: Note = {
+      ...note,
+      updatedAt: new Date().toISOString(),
+    }
+    await storage.saveNote(updated)
+    const index = notes.value.findIndex((n) => n.id === updated.id)
+    if (index !== -1) notes.value[index] = updated
+    if (activeNote.value?.id === updated.id) activeNote.value = updated
   }
 
   async function toggleFavorite(id: string) {
     const note = notes.value.find((n) => n.id === id)
     if (!note) return
-    note.isFavorite = !note.isFavorite
-    note.updatedAt = new Date().toISOString()
-    await storage.saveNote(note)
+    const updated: Note = {
+      ...note,
+      isFavorite: !note.isFavorite,
+      updatedAt: new Date().toISOString(),
+    }
+    await storage.saveNote(updated)
+    const index = notes.value.findIndex((n) => n.id === id)
+    if (index !== -1) notes.value[index] = updated
   }
 
   async function removeNote(id: string) {
