@@ -1,56 +1,69 @@
 import { db } from './db'
 import type { Note } from '@/types/note'
 import type { Folder } from '@/types/folder'
+import type { StorageAdapter } from './adapters/types'
+import { IndexedDBAdapter } from './adapters/indexeddb'
+
+let activeAdapter: StorageAdapter = new IndexedDBAdapter()
+
+export function getAdapter(): StorageAdapter {
+  return activeAdapter
+}
+
+export function setAdapter(adapter: StorageAdapter): void {
+  if (!adapter) throw new Error('Invalid adapter')
+  activeAdapter = adapter
+}
 
 // --- Notes ---
 
 export async function getAllNotes(): Promise<Note[]> {
-  return db.notes.toArray()
-}
-
-export async function getNotesByFolder(folderId: string | null): Promise<Note[]> {
-  const all = await db.notes.toArray()
-  return all.filter((n) => n.folder === folderId)
+  return activeAdapter.getAllNotes()
 }
 
 export async function getNoteById(id: string): Promise<Note | undefined> {
-  return db.notes.get(id)
+  return activeAdapter.getNoteById(id)
+}
+
+export async function getNotesByFolder(folderId: string | null): Promise<Note[]> {
+  return activeAdapter.getNotesByFolder(folderId)
 }
 
 export async function saveNote(note: Note): Promise<void> {
-  await db.notes.put(note)
+  return activeAdapter.saveNote(note)
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  await db.notes.delete(id)
+  return activeAdapter.deleteNote(id)
 }
 
 // --- Folders ---
 
 export async function getAllFolders(): Promise<Folder[]> {
-  return db.folders.toArray()
-}
-
-export async function getFoldersByParent(parentId: string | null): Promise<Folder[]> {
-  const all = await db.folders.toArray()
-  return all.filter((f) => f.parentFolder === parentId)
+  return activeAdapter.getAllFolders()
 }
 
 export async function getFolderById(id: string): Promise<Folder | undefined> {
-  return db.folders.get(id)
+  return activeAdapter.getFolderById(id)
+}
+
+export async function getFoldersByParent(parentId: string | null): Promise<Folder[]> {
+  return activeAdapter.getFoldersByParent(parentId)
 }
 
 export async function saveFolder(folder: Folder): Promise<void> {
-  await db.folders.put(folder)
+  return activeAdapter.saveFolder(folder)
 }
 
 export async function deleteFolder(id: string): Promise<void> {
-  await db.folders.delete(id)
+  return activeAdapter.deleteFolder(id)
 }
 
 // --- Seed data (for POC) ---
 
 export async function seedIfEmpty(): Promise<void> {
+  if (!(activeAdapter instanceof IndexedDBAdapter)) return
+
   const noteCount = await db.notes.count()
   if (noteCount > 0) return
 
