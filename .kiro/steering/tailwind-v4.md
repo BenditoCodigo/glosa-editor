@@ -239,15 +239,51 @@ Tailwind v4 usa `oklch` internamente. Seguir esta convención:
 
 ## Responsive Design
 
+### Enfoque: Desktop-first, pero responsivo en todos los breakpoints
+
+La app está diseñada para uso en escritorio, pero la UI debe adaptarse
+correctamente a tablets y pantallas más pequeñas. No es mobile-first ni PWA,
+pero sí completamente responsiva.
+
 ### Breakpoints por defecto (no modificar a menos que sea necesario)
 
 - `sm:` → 640px
-- `md:` → 768px
-- `lg:` → 1024px
-- `xl:` → 1280px
-- `2xl:` → 1536px
+- `md:` → 768px (tablet portrait / ventana pequeña)
+- `lg:` → 1024px (tablet landscape / desktop mínimo)
+- `xl:` → 1280px (desktop estándar)
+- `2xl:` → 1536px (desktop amplio)
+
+### Estrategia: Desktop-down con overrides responsivos
+
+Dado que el diseño base es desktop, escribir estilos para pantalla grande
+primero y usar breakpoints para ajustar hacia abajo. En Tailwind v4 los
+breakpoints son min-width, así que el patrón es:
+
+```html
+<!-- Base = móvil, luego escalar hacia arriba -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+```
+
+Para este proyecto, pensar siempre en 3 estados:
+1. **Compact** (< 768px): sidebar oculto, layout single-column, toolbar simplificada
+2. **Medium** (768px - 1024px): sidebar overlay, grid 2 columnas
+3. **Full** (> 1024px): sidebar empujando contenido, grid 3-4 columnas
+
+### Comportamiento responsivo por componente
+
+| Componente | Compact (< md) | Medium (md-lg) | Full (> lg) |
+|-----------|----------------|----------------|-------------|
+| Sidebar | Oculto (overlay si se abre) | Overlay | Push (al lado del contenido) |
+| Explorador grid | 1 columna (lista) | 2 columnas | 3-4 columnas |
+| Editor | Full width, toolbar compacta | Full width | Full width con margen |
+| Toolbar | Iconos sin texto, menú hamburguesa | Iconos + texto parcial | Todo visible |
+| Breadcrumbs | Truncados (solo último + ...) | Últimos 3 niveles | Ruta completa |
+| Modales | Full screen | Centrados 80% width | Centrados max-width |
 
 ### Container Queries (nuevo en v4)
+
+Usar container queries para componentes que viven dentro de paneles
+redimensionables (ej. sidebar abierto/cerrado cambia el espacio disponible):
 
 ```html
 <div class="@container">
@@ -257,7 +293,39 @@ Tailwind v4 usa `oklch` internamente. Seguir esta convención:
 </div>
 ```
 
-Útil para componentes del editor que deben adaptarse a su propio espacio.
+### Reglas de implementación responsiva
+
+1. **Todo componente debe verse correcto desde 768px hasta 2560px** como mínimo
+2. **Sidebar siempre colapsable** — en compact se convierte en overlay/drawer
+3. **Touch targets mínimo 44x44px** en breakpoints donde se pueda usar touch
+4. **No scroll horizontal** bajo ninguna circunstancia
+5. **Texto legible sin zoom** — mínimo 14px para cuerpo, 12px para metadata
+6. **Glass performance en responsive**: en `< md`, reducir blur a la mitad y prohibir apilamiento (ver steering Liquid Glass)
+7. **Imágenes/media responsivos** — usar `object-fit`, `aspect-ratio`, y tamaños relativos
+8. **Testear con sidebar abierto y cerrado** — el contenido debe fluir en ambos estados
+
+### Patrón de layout responsivo principal
+
+```html
+<div class="flex h-dvh">
+  <!-- Sidebar: oculto < lg, visible >= lg -->
+  <aside class="hidden lg:flex w-64 shrink-0">...</aside>
+
+  <!-- Contenido principal: siempre ocupa el resto -->
+  <main class="flex-1 min-w-0 overflow-y-auto">
+    <!-- Toolbar -->
+    <!-- Content -->
+    <!-- Breadcrumbs -->
+  </main>
+</div>
+```
+
+### Unidades preferidas
+
+- **Layout/spacing**: `rem` (via clases Tailwind: `p-4`, `gap-6`, etc.)
+- **Altura viewport**: `dvh` (dynamic viewport height, respeta barra de navegación móvil)
+- **Ancho máximo de contenido**: `max-w-prose` o `max-w-4xl` para el editor
+- **Nunca pixeles hardcodeados** para dimensiones de layout
 
 ---
 
