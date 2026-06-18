@@ -42,3 +42,6 @@ __screenshots__/
 src-tauri/target/
 src-tauri/gen/
 src-tauri/Cargo.lock
+
+# Kiro
+.kiro/specs/
