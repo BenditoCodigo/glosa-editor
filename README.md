@@ -1,48 +1,208 @@
-# .
+# 📓 Libreta Abierta
 
-This template should help get you started developing with Vue 3 in Vite.
+**Tu cuaderno personal, privado y autogestionado.**
 
-## Recommended IDE Setup
+Libreta Abierta es una plataforma de notas en formato markdown con una interfaz moderna y fluida. Funciona como alternativa privada a herramientas como Notion o AppFlowy — sin telemetría, sin tracking, sin explotar tus datos.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+Tus notas son tuyas. En tu infraestructura. Bajo tu control.
 
-## Recommended Browser Setup
+---
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## ¿Por qué existe?
 
-## Type Support for `.vue` Imports in TS
+Las plataformas comerciales de productividad:
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+- Almacenan tu información en sus servidores sin garantías reales de privacidad
+- Utilizan datos de usuarios para entrenar modelos de IA sin consentimiento explícito
+- Cobran suscripciones por funcionalidad que un perfil técnico puede sostener por cuenta propia
+- Pueden desaparecer, cambiar términos, o bloquear el acceso a tu contenido
 
-## Customize configuration
+Libreta Abierta existe para quienes tienen la capacidad técnica de mantener sus propias herramientas y eligen hacerlo por principio.
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+---
 
-## Project Setup
+## Características
 
-```sh
+- ✍️ Editor rico en markdown (Tiptap) con formateo, tablas, listas de tareas, imágenes y bloques de código con syntax highlighting
+- 📁 Organización por carpetas con navegación tipo Google Drive
+- 🏷️ Sistema de tags navegables
+- ⭐ Favoritos con acceso rápido
+- 🌙 Tema claro y oscuro (Liquid Glass design system)
+- 🏠 Vista de inicio con actividad reciente y nota destacada
+- 💾 Autosave con persistencia local (IndexedDB)
+- 📝 Formato portable: archivos markdown con frontmatter YAML — legibles por cualquier editor
+- 🔒 Zero datos enviados a terceros. Nunca.
+
+---
+
+## Stack técnico
+
+| Capa | Tecnología |
+|------|-----------|
+| Framework | Vue 3.5+ (Composition API, `<script setup>`) |
+| Bundler | Vite 8 |
+| Estado | Pinia |
+| Router | Vue Router 4 |
+| Editor | Tiptap + extensiones (tablas, tasks, code highlight, imágenes) |
+| Estilos | Tailwind CSS 4 (CSS-first, sin config JS) |
+| Almacenamiento | IndexedDB (Dexie.js) — migrable a S3/NAS |
+| Testing | Vitest + happy-dom + fake-indexeddb |
+| Lenguaje | TypeScript (strict mode) |
+
+---
+
+## Inicio rápido
+
+```bash
+# Clonar el repositorio
+git clone https://gitlab.com/bendito-codigo/libreta-abierta-frontend.git
+cd libreta-abierta-frontend
+
+# Instalar dependencias
 npm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
+# Ejecutar en desarrollo
 npm run dev
-```
 
-### Type-Check, Compile and Minify for Production
-
-```sh
+# Build de producción
 npm run build
-```
 
-### Lint with [ESLint](https://eslint.org/)
+# Ejecutar pruebas
+npm run test
 
-```sh
+# Lint
 npm run lint
 ```
+
+> Requiere Node.js 22+ y npm 10+
+
+---
+
+## Estructura del proyecto
+
+```
+src/
+├── assets/styles/        # Tailwind + design tokens + utilidades glass
+├── components/
+│   ├── ui/               # Componentes base reutilizables (Button, Icon, Modal...)
+│   ├── editor/           # Componentes del editor Tiptap
+│   ├── explorer/         # Componentes del explorador de archivos
+│   └── layout/           # Layout (Toolbar, Sidebar, Breadcrumbs)
+├── composables/          # Lógica reutilizable
+├── router/               # Definición de rutas
+├── services/             # Capa de storage y actividad (IndexedDB)
+├── stores/               # Pinia stores (notas, carpetas, UI)
+├── types/                # Interfaces TypeScript
+└── views/                # Vistas/páginas
+```
+
+---
+
+## Formato de notas
+
+Cada nota es un archivo markdown válido con frontmatter YAML:
+
+```markdown
+---
+id: abc123
+title: Mi primera nota
+createdAt: 2026-06-17T10:00:00Z
+updatedAt: 2026-06-17T10:30:00Z
+tags: [idea, proyecto]
+folder: ideas
+isFavorite: false
+emoji: 📝
+---
+
+# Mi primera nota
+
+Contenido libre en markdown...
+```
+
+Este formato es el contrato entre frontend, backend y storage. No se transforma al migrar — se copia tal cual.
+
+---
+
+## Arquitectura
+
+Libreta Abierta está diseñada para funcionar **sin backend**. El frontend es completamente autónomo — persiste tus notas en el navegador (IndexedDB) y no necesita ningún servidor para operar.
+
+El backend y el almacenamiento en la nube son **opcionales**. Si los quieres, puedes clonar el repo del backend oficial o construir el tuyo propio — la API es simple (CRUD de archivos markdown).
+
+```
+┌─────────────────────────────────────────┐
+│          Frontend (este repo)            │
+│     Vue 3 + Vite + Tailwind + Tiptap    │
+│     ✅ Funciona solo, sin backend        │
+├─────────────────────────────────────────┤
+│     Backend (opcional, repo aparte)      │
+│     Python (FastAPI) dockerizado         │
+│     Clónalo o construye el tuyo         │
+├─────────────────────────────────────────┤
+│        Storage (tú decides)             │
+│     IndexedDB / Filesystem / S3 / NAS   │
+├─────────────────────────────────────────┤
+│        AI (opcional, próximamente)       │
+│     Ollama — modelos locales            │
+└─────────────────────────────────────────┘
+```
+
+**¿Quieres solo tomar notas?** Clona este repo, corre `npm run dev`, listo. Sin Docker, sin API keys, sin configuración.
+
+**¿Quieres sync entre dispositivos o backup en la nube?** Conecta un backend. El frontend detecta si hay un API disponible y la usa; si no, trabaja en modo local.
+
+---
+
+## Modelo de uso
+
+Libreta Abierta sigue el modelo de [Bitwarden](https://bitwarden.com/): código abierto completo, sin features castrados.
+
+**Self-hosted (gratuito):** La app completa en tu infraestructura. Sin cuenta, sin servidor central, sin limitaciones.
+
+**Servicio managed (próximamente):** Para quienes prefieren no gestionar infra — cuenta en la plataforma, storage cifrado en S3, sync entre dispositivos. Mismo software, alguien más se encarga del hosting.
+
+---
+
+## Principios
+
+1. **Privacidad primero** — Ningún dato sale de tu máquina sin tu consentimiento
+2. **Portabilidad** — Tus notas son archivos markdown estándar, legibles por cualquier editor
+3. **Simplicidad** — Resolver el problema actual, no sobreingenierar
+4. **Independencia** — Mínimas dependencias externas, sin servicios cloud obligatorios
+5. **Interfaz en español** — Impulsando el open source latino
+
+---
+
+## Estado actual
+
+🟡 **En desarrollo activo — Fase POC**
+
+El proyecto está funcional localmente con:
+- Editor completo con formateo rico
+- Navegación por carpetas y tags
+- Persistencia en IndexedDB
+- Sistema de diseño Liquid Glass (light/dark)
+- Activity tracking para home personalizado
+
+Próximos pasos:
+- [ ] Integración con backend Python
+- [ ] Storage en S3
+- [ ] Cifrado end-to-end
+- [ ] PWA / offline
+- [ ] Integración con Ollama
+
+---
+
+## Contribuciones
+
+Por ahora este es un proyecto personal de [Bendito Código](https://benditocodigo.com). No está abierto a contribuciones externas en esta etapa, pero el código es público para que cualquier interesado pueda auditarlo, deployarlo y adaptarlo a sus necesidades.
+
+---
+
+## Licencia
+
+Por definir. Será una licencia permisiva (MIT o similar).
+
+---
+
+**Hecho con 🌿 por [Bendito Código](https://benditocodigo.com)**
