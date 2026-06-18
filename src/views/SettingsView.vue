@@ -186,7 +186,7 @@ async function confirmDeleteAll() {
                 "
                 :class="[
                   storageProvider === option.id
-                    ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                    ? 'border-primary bg-primary/5 dark:bg-primary/20 dark:border-primary-fixed-dim'
                     : 'border-outline-variant/30 hover:border-outline-variant/60',
                   !option.available && 'opacity-50 cursor-not-allowed',
                 ]"
@@ -196,11 +196,11 @@ async function confirmDeleteAll() {
                 <div class="flex items-center gap-2">
                   <div
                     class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center"
-                    :class="storageProvider === option.id ? 'border-primary' : 'border-outline-variant'"
+                    :class="storageProvider === option.id ? 'border-primary dark:border-primary-fixed-dim' : 'border-outline-variant'"
                   >
                     <div
                       v-if="storageProvider === option.id"
-                      class="w-1.5 h-1.5 rounded-full bg-primary"
+                      class="w-1.5 h-1.5 rounded-full bg-primary dark:bg-primary-fixed-dim"
                     />
                   </div>
                   <span class="text-sm font-medium text-on-surface">{{ option.label }}</span>
@@ -237,7 +237,7 @@ async function confirmDeleteAll() {
                   border transition-all duration-200
                 "
                 :class="theme === option.id
-                  ? 'border-primary bg-primary/10 text-primary dark:bg-primary/15'
+                  ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim dark:border-primary-fixed-dim'
                   : 'border-outline-variant/30 text-secondary hover:border-outline-variant/60 hover:text-on-surface'
                 "
                 @click="handleThemeChange(option.id)"
@@ -298,7 +298,7 @@ async function confirmDeleteAll() {
                     border transition-all duration-200
                   "
                   :class="editor.autosaveInterval === interval.value
-                    ? 'border-primary bg-primary/10 text-primary'
+                    ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim dark:border-primary-fixed-dim'
                     : 'border-outline-variant/30 text-secondary hover:border-outline-variant/60'
                   "
                   @click="settingsStore.updateEditor({ autosaveInterval: interval.value })"
