@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZenFlow | Vista Explorador</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+    }
+    .filled-icon {
+      font-variation-settings: 'FILL' 1;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .drag-shadow {
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Liquid Glass Utilities */
+    .glass-1 {
+      background: var(--glass-bg-light, rgba(255, 255, 255, 0.4));
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+    .dark .glass-1 {
+      background: var(--glass-bg-dark, rgba(15, 15, 15, 0.5));
+    }
+    
+    .glass-2 {
+      background: var(--glass-bg-light, rgba(255, 255, 255, 0.6));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border-light, rgba(255, 255, 255, 0.6));
+      box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.8), 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+    }
+    .dark .glass-2 {
+      background: var(--glass-bg-dark, rgba(30, 30, 30, 0.6));
+      border: 1px solid var(--glass-border-dark, rgba(255, 255, 255, 0.1));
+      box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .glass-input {
+      background: var(--glass-input-bg, rgba(0, 0, 0, 0.05));
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+    
+    /* Fluid Gradient Background */
+    .bg-fluid-gradient {
+      background: linear-gradient(135deg, #f3f4f3 0%, #e1e3e2 50%, #d2e8d8 100%);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+    .dark .bg-fluid-gradient {
+      background: linear-gradient(135deg, #191c1c 0%, #2e3131 50%, #0f1f17 100%);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-surface-variant": "#434844",
+                "outline": "#737874",
+                "surface": "#f9f9f8",
+                "inverse-primary": "#b8cbbf",
+                "glass-border-light": "rgba(255, 255, 255, 0.6)",
+                "on-secondary-fixed": "#0d1f16",
+                "primary-fixed-dim": "#b8cbbf",
+                "primary": "#4f6056",
+                "secondary": "#506357",
+                "on-primary-container": "#f5fff7",
+                "inverse-on-surface": "#f0f1f0",
+                "on-primary-fixed-variant": "#3a4a41",
+                "on-tertiary-container": "#f5fff9",
+                "on-tertiary-fixed-variant": "#3f4944",
+                "on-primary": "#ffffff",
+                "on-surface": "#191c1c",
+                "on-error": "#ffffff",
+                "on-secondary": "#ffffff",
+                "error-container": "#ffdad6",
+                "surface-dim": "#d9dad9",
+                "inverse-surface": "#2e3131",
+                "primary-container": "#67796e",
+                "surface-container-high": "#e7e8e7",
+                "surface-container-lowest": "#ffffff",
+                "on-secondary-container": "#56695c",
+                "background": "#f9f9f8",
+                "glass-bg-light": "rgba(255, 255, 255, 0.4)",
+                "on-tertiary-fixed": "#151d1a",
+                "outline-variant": "#c3c8c3",
+                "secondary-fixed-dim": "#b7ccbd",
+                "secondary-container": "#d2e8d8",
+                "surface-bright": "#f9f9f8",
+                "secondary-fixed": "#d2e8d8",
+                "surface-container-low": "#f3f4f3",
+                "tertiary": "#545e59",
+                "on-tertiary": "#ffffff",
+                "tertiary-container": "#6d7772",
+                "error": "#ba1a1a",
+                "surface-container-highest": "#e1e3e2",
+                "on-error-container": "#93000a",
+                "tertiary-fixed-dim": "#bfc9c3",
+                "glass-input-bg": "rgba(0, 0, 0, 0.05)",
+                "glass-bg-dark": "rgba(15, 15, 15, 0.5)",
+                "on-background": "#191c1c",
+                "surface-variant": "#e1e3e2",
+                "on-secondary-fixed-variant": "#384b40",
+                "surface-tint": "#516258",
+                "surface-container": "#edeeed",
+                "on-primary-fixed": "#0f1f17",
+                "primary-fixed": "#d4e7da",
+                "tertiary-fixed": "#dbe5df",
+                "glass-border-dark": "rgba(255, 255, 255, 0.1)"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "2xl": "1.5rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "max-width": "1280px",
+                "sidebar-width": "260px",
+                "gutter": "24px",
+                "unit": "4px",
+                "margin-desktop": "48px",
+                "margin-mobile": "16px"
+        },
+        "fontFamily": {
+                "label-sm": [
+                        "Inter"
+                ],
+                "headline-sm": [
+                        "Space Grotesk"
+                ],
+                "headline-lg-mobile": [
+                        "Space Grotesk"
+                ],
+                "body-sm": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Space Grotesk"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Space Grotesk"
+                ],
+                "body-lg": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "1",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-sm": [
+                        "24px",
+                        {
+                                "lineHeight": "1.3",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "1.4",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.5",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "1",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "1.6",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+</head>
+<body class="bg-fluid-gradient text-on-background font-body-md text-body-md selection:bg-primary-fixed selection:text-on-primary-fixed overflow-hidden flex h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="flex flex-col h-full border-r border-white/20 glass-1 w-sidebar-width shrink-0 z-20">
+<div class="p-gutter pb-8 flex flex-col gap-6">
+<!-- Brand & Profile -->
+<div class="flex items-center gap-3 px-1">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex items-center justify-center border border-white/40">
+<img class="w-full h-full object-cover" data-alt="A soft-focus portrait of a thoughtful writer in a minimalist home office with warm, natural sunlight filtering through linen curtains. The overall aesthetic is clean, sage green, and airy, reflecting a professional yet creative persona. High-quality photography with shallow depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNl90t-BOmLu5JPpB9XPf4Slqsmvtv24RkOXKRhLBtQ7S2UthdzEysvp_x5uAkdZfjzKPRsaUikAxRbaBqAny0IVIMKN6yPHy_EOAWGYW7yTAq4WwI4pZG7bNLsPPUfPR8Uqeh7KhfC--xwL_FL7fG5nj1No9qVTqpc9hcGSUwXoa7_hLy4mBwrU8vF360h3YnFRC0ye_bvvI0uSThbMyhf-bI0wYtV-XjWO9HT9IXrRO-x5vLNu1GRDXGreF705N0iW_EAPb4P2xf"/>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-primary dark:text-primary-fixed-dim text-lg leading-tight">Notes</span>
+<span class="font-label-sm text-label-sm text-secondary">Deep Work Space</span>
+</div>
+</div>
+<!-- CTA -->
+<button class="flex items-center justify-center gap-2 bg-primary/90 backdrop-blur-md border border-white/20 shadow-sm text-on-primary py-3 rounded-2xl font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Note</span>
+</button>
+</div>
+<!-- Navigation List -->
+<nav class="flex-1 px-4 space-y-1">
+<!-- "All Notes" is active by logic -->
+<a class="flex items-center gap-3 px-4 py-2 text-primary dark:text-primary-fixed-dim font-bold bg-white/20 dark:bg-black/10 rounded-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-md">All Notes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-body-sm">Recent</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="star">star</span>
+<span class="font-body-sm">Favorites</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="folder">folder</span>
+<span class="font-body-sm">Folders</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="archive">archive</span>
+<span class="font-body-sm">Archive</span>
+</a>
+</nav>
+<!-- Footer Tabs -->
+<div class="p-4 border-t border-white/20 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-sm">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-sm">Help</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col relative overflow-hidden bg-transparent">
+<!-- TopAppBar (Shared Component) -->
+<header class="flex justify-between items-center px-margin-desktop w-full border-b border-white/20 h-16 glass-1 shrink-0 z-10">
+<div class="flex items-center gap-8">
+<h1 class="font-headline-md text-headline-md text-on-surface dark:text-on-surface">ZenFlow</h1>
+<div class="hidden md:flex gap-6">
+<a class="font-label-md text-label-md text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors" href="#">Drafts</a>
+<a class="font-label-md text-label-md text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors" href="#">Shared</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
+<input class="glass-input rounded-full pl-10 pr-4 py-1.5 text-body-sm focus:outline-none focus:ring-1 focus:ring-primary/30 w-48 md:w-64 transition-all" placeholder="Search notes..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:bg-white/20 rounded-full transition-all active:translate-y-px">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</button>
+<button class="p-2 text-secondary hover:bg-white/20 rounded-full transition-all active:translate-y-px">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<button class="bg-primary/90 backdrop-blur-sm border border-white/20 text-on-primary px-5 py-1.5 rounded-full font-label-md text-label-md hover:opacity-90 active:translate-y-px shadow-sm transition-all ml-2">
+          Save
+        </button>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-margin-desktop relative z-0">
+<div class="max-w-[1200px] mx-auto">
+<!-- Folders Section -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-label-sm font-label-sm text-secondary uppercase tracking-widest text-[11px]">Folders</h2>
+<div class="h-[1px] flex-1 bg-white/30 mx-4"></div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Folder Item: Targeted by Drag -->
+<div class="group relative glass-2 p-5 rounded-2xl hover:bg-white/50 transition-all cursor-pointer border-l-4 border-l-primary bg-primary/5">
+<div class="flex items-start justify-between mb-3">
+<span class="material-symbols-outlined text-primary text-[32px]">folder</span>
+<span class="font-label-sm text-label-sm text-secondary opacity-0 group-hover:opacity-100 transition-opacity">12 items</span>
+</div>
+<h3 class="font-headline-sm text-on-surface text-xl">Digital Philosophy</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Updated 2h ago</p>
+</div>
+<!-- Standard Folder -->
+<div class="group glass-2 p-5 rounded-2xl hover:bg-white/50 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-3">
+<span class="material-symbols-outlined text-secondary text-[32px]">folder</span>
+<span class="font-label-sm text-label-sm text-secondary opacity-0 group-hover:opacity-100 transition-opacity">8 items</span>
+</div>
+<h3 class="font-headline-sm text-on-surface text-xl">Project Aurora</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Updated Oct 12</p>
+</div>
+<!-- Standard Folder -->
+<div class="group glass-2 p-5 rounded-2xl hover:bg-white/50 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-3">
+<span class="material-symbols-outlined text-secondary text-[32px]">folder</span>
+<span class="font-label-sm text-label-sm text-secondary opacity-0 group-hover:opacity-100 transition-opacity">24 items</span>
+</div>
+<h3 class="font-headline-sm text-on-surface text-xl">Personal Journal</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Updated Oct 09</p>
+</div>
+<!-- Standard Folder -->
+<div class="group glass-2 p-5 rounded-2xl hover:bg-white/50 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-3">
+<span class="material-symbols-outlined text-secondary text-[32px]">folder</span>
+<span class="font-label-sm text-label-sm text-secondary opacity-0 group-hover:opacity-100 transition-opacity">5 items</span>
+</div>
+<h3 class="font-headline-sm text-on-surface text-xl">Reading List</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Updated Sep 30</p>
+</div>
+</div>
+</section>
+<!-- Loose Notes Section -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-label-sm font-label-sm text-secondary uppercase tracking-widest text-[11px]">Loose Notes</h2>
+<div class="h-[1px] flex-1 bg-white/30 mx-4"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Note Item: Being Dragged -->
+<div class="opacity-60 scale-[0.98] rotate-[-1deg] glass-2 p-6 rounded-2xl drag-shadow cursor-grabbing flex flex-col gap-3 relative overflow-hidden border-primary/30">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary">description</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">drag_indicator</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-on-surface text-lg">The Ethics of Attention</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Oct 14, 2023</p>
+</div>
+<p class="font-body-sm text-body-sm text-secondary line-clamp-2 italic">Reflecting on how modern interface design deliberately fragments our cognitive flow...</p>
+<div class="flex items-center justify-between mt-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary">Draft</span>
+</div>
+<span class="material-symbols-outlined filled-icon text-primary/40 text-[20px]">star</span>
+</div>
+<!-- Dragging visual cue -->
+<div class="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+</div>
+<!-- Note Item 2 -->
+<div class="group glass-2 p-6 rounded-2xl hover:bg-white/50 transition-all cursor-pointer flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">description</span>
+<span class="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity text-[18px]">more_horiz</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-on-surface text-lg">Minimalist UI Patterns</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Oct 12, 2023</p>
+</div>
+<p class="font-body-sm text-body-sm text-secondary line-clamp-2">Exploring the use of negative space and typography as the primary structural elements...</p>
+<div class="flex items-center justify-between mt-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary">Design</span>
+</div>
+<span class="material-symbols-outlined text-secondary/30 group-hover:text-primary/40 transition-colors text-[20px]">star</span>
+</div>
+</div>
+<!-- Note Item 3 (Favorited) -->
+<div class="group glass-2 p-6 rounded-2xl hover:bg-white/50 transition-all cursor-pointer flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">description</span>
+<span class="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity text-[18px]">more_horiz</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-on-surface text-lg">Weekly Retrospective</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Oct 10, 2023</p>
+</div>
+<p class="font-body-sm text-body-sm text-secondary line-clamp-2">Productivity was high, but deep focus sessions were interrupted by unnecessary notifications...</p>
+<div class="flex items-center justify-between mt-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary">Personal</span>
+</div>
+<span class="material-symbols-outlined filled-icon text-primary text-[20px]">star</span>
+</div>
+</div>
+<!-- Note Item 4 -->
+<div class="group glass-2 p-6 rounded-2xl hover:bg-white/50 transition-all cursor-pointer flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">description</span>
+<span class="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity text-[18px]">more_horiz</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-on-surface text-lg">System Architecture v2</h3>
+<p class="font-label-sm text-label-sm text-secondary mt-1">Oct 05, 2023</p>
+</div>
+<p class="font-body-sm text-body-sm text-secondary line-clamp-2">Moving towards a decoupled API structure to ensure future scalability and performance...</p>
+<div class="flex items-center justify-between mt-4">
+<div class="flex gap-1">
+<span class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary">Tech</span>
+</div>
+<span class="material-symbols-outlined text-secondary/30 group-hover:text-primary/40 transition-colors text-[20px]">star</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Interactive Logic for visual flair -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hover interaction for folder tree subtle highlights
+      const folders = document.querySelectorAll('.group');
+      folders.forEach(folder => {
+        folder.addEventListener('mouseenter', () => {
+          folder.style.transform = 'translateY(-2px)';
+        });
+        folder.addEventListener('mouseleave', () => {
+          folder.style.transform = 'translateY(0px)';
+        });
+      });
+    });
+  </script>
+</body></html>

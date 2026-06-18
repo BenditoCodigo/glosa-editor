@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZenFlow | Focus Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .note-card-transition {
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s ease;
+        }
+
+        .glass-header {
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .glass-level-1 {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border-radius: 1rem;
+        }
+
+        .glass-level-2 {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            position: relative;
+            border-radius: 0.75rem;
+        }
+
+        .glass-specular::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+            pointer-events: none;
+            z-index: 10;
+            border-radius: inherit;
+        }
+
+        .glass-level-3 {
+            background: #4f6056;
+            color: #ffffff;
+            box-shadow: 0 4px 14px 0 rgba(79, 96, 86, 0.39);
+        }
+
+        body {
+            background: linear-gradient(135deg, #eef1f0 0%, #dce4e0 100%);
+            min-height: 100vh;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#434844",
+                        "outline": "#737874",
+                        "surface": "#f9f9f8",
+                        "inverse-primary": "#b8cbbf",
+                        "glass-border-light": "rgba(255, 255, 255, 0.6)",
+                        "on-secondary-fixed": "#0d1f16",
+                        "primary-fixed-dim": "#b8cbbf",
+                        "primary": "#4f6056",
+                        "secondary": "#506357",
+                        "on-primary-container": "#f5fff7",
+                        "inverse-on-surface": "#f0f1f0",
+                        "on-primary-fixed-variant": "#3a4a41",
+                        "on-tertiary-container": "#f5fff9",
+                        "on-tertiary-fixed-variant": "#3f4944",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#191c1c",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d9dad9",
+                        "inverse-surface": "#2e3131",
+                        "primary-container": "#67796e",
+                        "surface-container-high": "#e7e8e7",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#56695c",
+                        "background": "#f9f9f8",
+                        "glass-bg-light": "rgba(255, 255, 255, 0.4)",
+                        "on-tertiary-fixed": "#151d1a",
+                        "outline-variant": "#c3c8c3",
+                        "secondary-fixed-dim": "#b7ccbd",
+                        "secondary-container": "#d2e8d8",
+                        "surface-bright": "#f9f9f8",
+                        "secondary-fixed": "#d2e8d8",
+                        "surface-container-low": "#f3f4f3",
+                        "tertiary": "#545e59",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#6d7772",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#bfc9c3",
+                        "glass-input-bg": "rgba(0, 0, 0, 0.05)",
+                        "glass-bg-dark": "rgba(15, 15, 15, 0.5)",
+                        "on-background": "#191c1c",
+                        "surface-variant": "#e1e3e2",
+                        "on-secondary-fixed-variant": "#384b40",
+                        "surface-tint": "#516258",
+                        "surface-container": "#edeeed",
+                        "on-primary-fixed": "#0f1f17",
+                        "primary-fixed": "#d4e7da",
+                        "tertiary-fixed": "#dbe5df",
+                        "glass-border-dark": "rgba(255, 255, 255, 0.1)"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width": "1280px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "margin-desktop": "48px",
+                        "margin-mobile": "16px",
+                        "editor-max-width": "720px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "headline-sm": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Space Grotesk"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "1", "fontWeight": "500"}],
+                        "headline-sm": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="text-on-surface font-body-md text-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Focus Mode Container -->
+<div class="relative min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 glass-header flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<!-- Left: Breadcrumbs & Focus Action -->
+<div class="flex items-center gap-4">
+<button class="p-2 -ml-2 rounded hover:bg-surface-container-high transition-colors text-secondary" title="Expand Sidebar">
+<span class="material-symbols-outlined">menu_open</span>
+</button>
+<div class="hidden md:flex items-center font-label-md text-label-md text-secondary space-x-2">
+<span class="hover:text-primary cursor-pointer transition-colors">All Notes</span>
+<span class="text-outline-variant">/</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Personal</span>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface font-bold">Deep Work Space</span>
+</div>
+</div>
+<!-- Center: App Logo (Anchor Identity) -->
+<div class="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight">ZenFlow</h1>
+</div>
+<!-- Right: Secondary Actions -->
+<div class="flex items-center gap-3">
+<div class="hidden md:flex items-center gap-1 mr-4">
+<button class="px-3 py-1.5 font-label-md text-label-md text-secondary hover:text-primary transition-colors border border-transparent hover:border-outline-variant rounded">Drafts</button>
+<button class="px-3 py-1.5 font-label-md text-label-md text-secondary hover:text-primary transition-colors border border-transparent hover:border-outline-variant rounded">Shared</button>
+</div>
+<button class="material-symbols-outlined p-2 text-secondary hover:text-primary transition-colors">history</button>
+<button class="material-symbols-outlined p-2 text-secondary hover:text-primary transition-colors">more_vert</button>
+<button class="ml-2 glass-level-3 font-label-md text-label-md px-5 py-2 rounded-lg hover:opacity-90 transition-all active:scale-95">Save</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-screen-2xl mx-auto px-margin-mobile md:px-margin-desktop pt-12 pb-24">
+<div class="glass-level-1 p-8 md:p-12 mb-12">
+<!-- Focused Header Section -->
+<div class="max-w-editor-max-width mx-auto mb-16">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-6">The Architecture of Stillness</h2>
+<div class="flex items-center gap-6 font-label-md text-label-md text-secondary">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>Modified Oct 24, 2023</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span>8 min read</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-primary font-bold">Favorite</span>
+</div>
+</div>
+</div>
+<!-- Bento Explorer Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Large Highlight Card -->
+<div class="md:col-span-8 group cursor-pointer">
+<div class="h-[420px] glass-level-2 glass-specular overflow-hidden note-card-transition hover:-translate-y-1">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" data-alt="A serene, minimalist workspace with a large window overlooking a misty forest. The interior is decorated with natural wood, a single designer chair, and soft ambient lighting. The atmosphere is one of perfect quietude and deep focus, reflecting the brand's Sage Green and off-white color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyC_OuELCL-HEZ4vyyOUyKEIX954u7CQcAzonAaFo3WxtyV3LgvxPqjWp5tmrzwiERNbM32q1Jw7BZQFNFW9eJycuTKsz92shELb7ryr-ibxiVomf5El2UewQlVLak_W_UPfJ4JN9TJA8udpDw2-_2p3d8f4e2cOAkd04Lc_Nzsv9MaGS8IjqYsqLbjChluvAMP_Tv4mBnJlGbSbE_st0OVSb-qgeDW3n6y12U1qqvrB9oJQqhrxcq5_mBmCpaTc0VfPqMpxZcOjGQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+</div>
+<div class="absolute bottom-0 left-0 p-8 z-10 text-white">
+<span class="inline-block px-3 py-1 bg-white/20 text-white font-label-md text-label-md rounded mb-4 backdrop-blur-md border border-white/30">Featured Note</span>
+<h3 class="font-headline-md text-headline-md mb-3">Designing for Silence</h3>
+<p class="text-white/90 font-body-md text-body-md max-w-md line-clamp-2">How reducing visual complexity in digital tools directly correlates with an increase in sustained cognitive throughput.</p>
+</div>
+</div>
+</div>
+<!-- Secondary Vertical Card -->
+<div class="md:col-span-4 space-y-gutter">
+<div class="h-[200px] glass-level-2 glass-specular p-6 flex flex-col justify-between note-card-transition hover:-translate-y-1 group cursor-pointer">
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-secondary">folder</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity text-secondary">open_in_new</span>
+</div>
+<h4 class="font-body-md font-bold text-on-surface">Research Archive</h4>
+<p class="text-body-sm text-secondary mt-1">24 items · Updated yesterday</p>
+</div>
+<div class="flex -space-x-2 relative z-10">
+<div class="w-8 h-8 rounded-full border-2 border-white bg-surface-container-high flex items-center justify-center text-[10px] font-bold">JD</div>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-on-primary-fixed">MS</div>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-secondary-fixed flex items-center justify-center text-[10px] font-bold">+4</div>
+</div>
+</div>
+<div class="h-[196px] glass-level-2 glass-specular p-6 flex flex-col justify-between note-card-transition hover:-translate-y-1 group cursor-pointer">
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+<span class="font-label-md text-label-md text-primary opacity-80">AI Synthesis</span>
+</div>
+<h4 class="font-body-md font-bold text-on-surface">Weekly Summary</h4>
+<p class="text-body-sm text-secondary mt-1">Focusing on "Cognitive Load" and "Visual Rest".</p>
+</div>
+<button class="w-full py-2 bg-white/40 border border-white/60 backdrop-blur-sm rounded-lg text-primary font-label-md text-label-md hover:bg-white/60 transition-colors relative z-10">Generate Review</button>
+</div>
+</div>
+<!-- Three-Column Row -->
+<div class="md:col-span-4 glass-level-2 glass-specular p-6 note-card-transition hover:-translate-y-1 cursor-pointer group">
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-white/50 border border-white/60 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">description</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">DRAFT</p>
+<h5 class="font-body-md font-bold mt-1">Minimalism in UI</h5>
+</div>
+</div>
+<p class="text-body-sm text-secondary line-clamp-3 mb-5">The core principle is not to remove, but to clarify. Every pixel should serve a deliberate purpose for the user.</p>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Oct 12</span>
+<span class="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+</div>
+</div>
+<div class="md:col-span-4 glass-level-2 glass-specular p-6 note-card-transition hover:-translate-y-1 cursor-pointer group">
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-white/50 border border-white/60 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">mic</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">VOICE NOTE</p>
+<h5 class="font-body-md font-bold mt-1">Morning Thoughts</h5>
+</div>
+</div>
+<div class="flex items-center gap-3 mb-7">
+<div class="flex-1 h-1.5 bg-white/50 border border-white/20 rounded-full overflow-hidden">
+<div class="w-1/3 h-full bg-primary"></div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">02:45</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Oct 10</span>
+<span class="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">play_circle</span>
+</div>
+</div>
+</div>
+<div class="md:col-span-4 glass-level-2 glass-specular p-6 note-card-transition hover:-translate-y-1 cursor-pointer group">
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-white/50 border border-white/60 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">image</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">MOODBOARD</p>
+<h5 class="font-body-md font-bold mt-1">Wabi Sabi Aesthetic</h5>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-1.5 h-12 mb-5">
+<div class="bg-white/40 border border-white/50 rounded-sm"></div>
+<div class="bg-white/60 border border-white/70 rounded-sm"></div>
+<div class="bg-white/30 border border-white/40 rounded-sm"></div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Oct 08</span>
+<span class="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">visibility</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Dynamic Micro-interactions FAB -->
+<button class="fixed bottom-10 right-10 w-14 h-14 glass-level-3 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group" id="fab">
+<span class="material-symbols-outlined text-[28px] group-hover:rotate-90 transition-transform">add</span>
+<span class="absolute right-full mr-4 px-3 py-1.5 glass-level-2 text-on-surface rounded font-label-sm text-label-sm opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">New Note</span>
+</button>
+<!-- Subtle Atmospheric Gradient Layer -->
+<div class="fixed inset-0 -z-10 opacity-40 pointer-events-none">
+<div class="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-100px] left-[-100px] w-[700px] h-[700px] bg-secondary-fixed-dim/20 blur-[150px] rounded-full"></div>
+</div>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        // Subtle scroll behavior for the header
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
+                header.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
+            } else {
+                header.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+                header.style.boxShadow = 'none';
+            }
+        });
+
+        // Hover effect for the FAB
+        const fab = document.getElementById('fab');
+        fab.addEventListener('mouseenter', () => {
+            // Potential for vibration or sound feedback simulation
+        });
+    </script>
+</body></html>
