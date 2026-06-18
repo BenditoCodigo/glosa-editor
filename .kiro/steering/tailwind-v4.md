@@ -263,6 +263,11 @@ Tailwind v4 usa `oklch` internamente. Seguir esta convención:
 
 ## Transiciones y Animaciones
 
+### Filosofía: Interfaces dinámicas sin glitches
+
+Las animaciones son firma de Bendito Código. Cada transición debe sentirse fluida,
+intencional y libre de artefactos visuales. Prioridad absoluta: **zero glitches**.
+
 ### Utilidades nativas aprovechables
 
 ```html
@@ -291,6 +296,183 @@ Para animaciones de entrada/salida sin JavaScript:
   }
 }
 ```
+
+---
+
+## Prevención de Glitches en Animaciones
+
+### Regla 1: Siempre usar `will-change` antes de animar
+
+Declarar `will-change` en el estado base del elemento que se va a animar.
+Esto avisa al navegador que reserve una capa de composición **antes** de que
+la animación inicie, evitando el "pop" de primer frame.
+
+```html
+<!-- ✅ Pre-promueve la capa -->
+<div class="will-change-transform transition-transform duration-300 hover:translate-y-[-4px]">
+
+<!-- ❌ Sin will-change, el navegador promueve a capa mid-animation = glitch -->
+<div class="transition-transform duration-300 hover:translate-y-[-4px]">
+```
+
+**PERO**: No abusar. Solo en elementos que realmente se animan con frecuencia.
+Demasiados `will-change` = consumo excesivo de VRAM.
+
+### Regla 2: Animar SOLO propiedades compositable
+
+Las únicas propiedades que el navegador anima sin repaint/reflow:
+
+| Propiedad | Clase Tailwind | GPU-accelerated |
+|-----------|---------------|-----------------|
+| `transform` | `translate-*`, `scale-*`, `rotate-*` | ✅ Sí |
+| `opacity` | `opacity-*` | ✅ Sí |
+| `filter` | `blur-*`, `brightness-*` | ✅ Sí |
+| `backdrop-filter` | `backdrop-blur-*` | ✅ Sí |
+
+**NUNCA animar directamente:**
+- `width`, `height` → usar `scale-*` en su lugar
+- `top`, `left`, `right`, `bottom` → usar `translate-*`
+- `margin`, `padding` → no animable sin reflow
+- `border-radius` → causa repaint, no transicionar
+- `box-shadow` → causa repaint; si es necesario, transicionar `opacity` de un pseudo-elemento con la sombra
+
+### Regla 3: Transicionar propiedades específicas, no `all`
+
+```html
+<!-- ✅ Específico: solo anima lo necesario -->
+<div class="transition-[transform,opacity] duration-200">
+
+<!-- ⚠️ Aceptable para interacciones simples (hover sobre botones) -->
+<div class="transition-all duration-200">
+
+<!-- ❌ Problemático en elementos con muchas propiedades cambiantes -->
+<div class="transition-all duration-500"> <!-- anima TODO incluido layout -->
+```
+
+`transition-all` es válido solo en componentes simples (botones, badges).
+Para paneles, modales o elementos con glass: especificar propiedades explícitas.
+
+### Regla 4: Evitar layout shift durante animaciones
+
+```html
+<!-- ✅ El elemento ya ocupa su espacio, solo se revela -->
+<div class="opacity-0 translate-y-2 animate-fade-in">
+
+<!-- ❌ Cambia de display:none a block = layout shift -->
+<div v-if="show"> <!-- aparece de golpe, empuja contenido -->
+```
+
+Para entradas/salidas:
+- Usar `v-show` + transición (el elemento siempre ocupa espacio)
+- O usar Vue `<Transition>` con clases que solo animen `opacity` + `transform`
+
+### Regla 5: Forzar GPU layer en elementos problemáticos
+
+Cuando un elemento produce flickering o blinking al transicionar:
+
+```html
+<!-- Fuerza compositing layer sin will-change permanente -->
+<div class="translate-z-0"> <!-- shorthand: transform: translateZ(0) -->
+```
+
+En Tailwind, usar `transform-gpu` que aplica `translate3d(0, 0, 0)`:
+
+```html
+<div class="transform-gpu transition-transform duration-200 hover:scale-105">
+```
+
+### Regla 6: `backdrop-filter` + transiciones = cuidado especial
+
+`backdrop-filter` es costoso. Al transicionar elementos con glass:
+
+```css
+/* ✅ Transicionar solo opacity del panel, no el blur */
+@utility glass-panel-animated {
+  background: var(--bc-glass-bg-light);
+  backdrop-filter: blur(var(--bc-glass-blur-lg));
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  /* NO transicionar backdrop-filter */
+}
+```
+
+- Nunca transicionar el valor de `backdrop-filter` (ej. blur(0) → blur(24px))
+- En su lugar, transicionar la `opacity` del panel completo (0 → 1)
+- O usar un pseudo-elemento con el blur y transicionar su opacity
+
+### Regla 7: Vue `<Transition>` — naming y patrones
+
+```vue
+<Transition name="fade-up">
+  <div v-if="show" class="glass-panel">...</div>
+</Transition>
+```
+
+Las clases de transición van en el CSS global:
+
+```css
+/* En main.css */
+.fade-up-enter-active,
+.fade-up-leave-active {
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.fade-up-enter-from,
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+```
+
+Convención de nombres para transiciones Vue:
+- `fade` — solo opacity
+- `fade-up` — opacity + translateY desde abajo
+- `fade-down` — opacity + translateY desde arriba
+- `fade-scale` — opacity + scale desde 0.95
+- `slide-left` — translateX desde la derecha
+- `slide-right` — translateX desde la izquierda
+
+### Regla 8: Duraciones consistentes
+
+| Contexto | Duración | Easing |
+|----------|----------|--------|
+| Hover/Active states | 150-200ms | `ease-out` |
+| Paneles entrando/saliendo | 200-300ms | `ease-out` |
+| Modales/overlays | 200ms enter, 150ms leave | `ease-out` / `ease-in` |
+| Sidebar toggle | 250-300ms | `cubic-bezier(0.4, 0, 0.2, 1)` |
+| Page transitions | 200-250ms | `ease-out` |
+| Drag & drop feedback | 150ms | `ease-out` |
+
+**Regla**: Leave siempre más rápido que enter (se siente más responsivo).
+
+### Regla 9: `prefers-reduced-motion` — accesibilidad
+
+Respetar usuarios que desactivan animaciones:
+
+```html
+<!-- Las animaciones se desactivan automáticamente -->
+<div class="motion-safe:animate-fade-in motion-safe:transition-all">
+```
+
+O a nivel global en el CSS:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+### Regla 10: Testing visual de animaciones
+
+Antes de dar por terminada una animación:
+1. Probar a 60fps sostenidos (DevTools → Performance → check frame drops)
+2. Probar en throttled CPU (4x slowdown) — si glitchea ahí, glitcheará en móvil
+3. Verificar que no hay flash blanco/negro al iniciar
+4. Verificar que no hay "jump" en el primer frame
+5. Verificar suavidad de arranque y frenado (no cortes abruptos)
 
 ---
 
