@@ -15,16 +15,21 @@ const uiStore = useUiStore()
     bg-transparent
   ">
     <!-- Left group (glass pill) -->
-    <div class="glass-panel-md flex items-center gap-2 px-2 py-1.5 rounded-full pointer-events-auto">
+    <div class="glass-panel-md flex items-center gap-1 px-2 py-1.5 rounded-full pointer-events-auto">
       <UiIconButton
         icon="menu"
         ariaLabel="Toggle sidebar"
+        tooltip="Menú"
         size="sm"
         @click="uiStore.toggleSidebar()"
       />
-      <span class="font-display text-on-surface font-bold text-sm hidden sm:block pr-2">
-        Libreta Abierta
-      </span>
+      <UiIconButton
+        icon="home"
+        ariaLabel="Home"
+        tooltip="Inicio"
+        size="sm"
+        @click="$router.push('/')"
+      />
     </div>
 
     <!-- Right group (glass pill) -->
@@ -50,6 +55,14 @@ const uiStore = useUiStore()
       />
 
       <UiIconButton icon="more_vert" ariaLabel="More options" size="sm" />
+
+      <!-- User avatar -->
+      <button
+        class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container text-xs font-bold flex items-center justify-center ml-1 hover:opacity-80 transition-opacity"
+        title="Perfil"
+      >
+        U
+      </button>
     </div>
   </header>
 </template>
