@@ -12,11 +12,8 @@ const { editor } = defineProps<Props>()
 
 const showLinkModal = ref(false)
 const showImageModal = ref(false)
+const showHeadings = ref(false)
 const linkInitialValue = ref('')
-
-function toggleHeading() {
-  editor?.chain().focus().toggleHeading({ level: 2 }).run()
-}
 
 function toggleBold() {
   editor?.chain().focus().toggleBold().run()
@@ -82,14 +79,75 @@ function confirmImage(url: string) {
     transition-opacity duration-300
     opacity-60 hover:opacity-100
   ">
-    <UiIconButton
-      icon="format_h1"
-      ariaLabel="Heading"
-      tooltip="Encabezado"
-      size="sm"
-      :class="editor?.isActive('heading') && 'bg-primary/10 text-primary'"
-      @click="toggleHeading"
-    />
+    <!-- Heading selector (expands on hover) -->
+    <div class="relative" @mouseenter="showHeadings = true" @mouseleave="showHeadings = false">
+      <UiIconButton
+        icon="format_h1"
+        ariaLabel="Heading"
+        tooltip="Encabezado"
+        size="sm"
+        :class="editor?.isActive('heading') && 'bg-primary/10 text-primary'"
+        @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
+      />
+      <!-- Heading options H2-H4 (expand upward) -->
+      <div
+        v-show="showHeadings"
+        class="
+          absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+          flex flex-col-reverse items-center gap-1.5
+          pb-1
+        "
+      >
+        <button
+          class="
+            w-9 h-9 rounded-full flex items-center justify-center
+            bg-white/70 dark:bg-white/15 backdrop-blur-lg
+            border border-white/80 dark:border-white/20
+            shadow-lg
+            text-sm font-bold text-on-surface
+            transition-all duration-150
+            hover:bg-primary hover:text-on-primary hover:scale-110
+          "
+          :class="editor?.isActive('heading', { level: 2 }) && '!bg-primary !text-on-primary'"
+          title="Encabezado 2"
+          @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
+        >
+          H2
+        </button>
+        <button
+          class="
+            w-9 h-9 rounded-full flex items-center justify-center
+            bg-white/70 dark:bg-white/15 backdrop-blur-lg
+            border border-white/80 dark:border-white/20
+            shadow-lg
+            text-[13px] font-bold text-on-surface
+            transition-all duration-150
+            hover:bg-primary hover:text-on-primary hover:scale-110
+          "
+          :class="editor?.isActive('heading', { level: 3 }) && '!bg-primary !text-on-primary'"
+          title="Encabezado 3"
+          @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
+        >
+          H3
+        </button>
+        <button
+          class="
+            w-9 h-9 rounded-full flex items-center justify-center
+            bg-white/70 dark:bg-white/15 backdrop-blur-lg
+            border border-white/80 dark:border-white/20
+            shadow-lg
+            text-xs font-bold text-on-surface
+            transition-all duration-150
+            hover:bg-primary hover:text-on-primary hover:scale-110
+          "
+          :class="editor?.isActive('heading', { level: 4 }) && '!bg-primary !text-on-primary'"
+          title="Encabezado 4"
+          @click="editor?.chain().focus().toggleHeading({ level: 4 }).run()"
+        >
+          H4
+        </button>
+      </div>
+    </div>
     <UiIconButton
       icon="format_bold"
       ariaLabel="Bold"
