@@ -80,18 +80,20 @@ function handleBreadcrumbNavigate(path: string) {
       <!-- Floating toolbar (overlays content) -->
       <AppToolbar />
 
-      <!-- Content area (scrolls under toolbar) -->
+      <!-- Content area (scrolls under toolbar and breadcrumbs) -->
       <div class="flex-1 overflow-y-auto -mt-14">
-        <div class="pt-14">
+        <div class="pt-14 pb-14">
           <RouterView />
         </div>
       </div>
 
-      <!-- Breadcrumbs -->
-      <AppBreadcrumbs
-        :segments="breadcrumbs"
-        @navigate="handleBreadcrumbNavigate"
-      />
+      <!-- Breadcrumbs (floating at bottom) -->
+      <div class="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
+        <AppBreadcrumbs
+          :segments="breadcrumbs"
+          @navigate="handleBreadcrumbNavigate"
+        />
+      </div>
     </main>
   </div>
 </template>

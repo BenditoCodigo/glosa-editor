@@ -200,7 +200,7 @@ onUnmounted(() => {
                 v-model="tagInput"
                 type="text"
                 placeholder="#"
-                class="bg-transparent border-none p-0 text-[14px] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
+                class="bg-transparent border-none p-0 text-[14cpx] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
                 @keydown="handleTagKeydown"
                 @blur="addTag"
               >
@@ -234,7 +234,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Floating toolbar -->
-      <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+      <div class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50">
         <EditorToolbar :editor="editorRef?.editor" />
       </div>
     </template>
