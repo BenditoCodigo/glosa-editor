@@ -1,6 +1,6 @@
 # Testing - Convenciones y Prácticas
 
-Este steering define cómo escribir y mantener pruebas unitarias en Libreta Abierta.
+Este steering define cómo escribir y mantener pruebas unitarias en Glosa.
 Stack: Vitest + happy-dom + fake-indexeddb + @vue/test-utils.
 
 ---

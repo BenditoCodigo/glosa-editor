@@ -75,11 +75,11 @@ async function handleCreateNote() {
         <!-- Brand -->
         <div class="flex items-center gap-3 mb-8">
           <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm">
-            LA
+            G
           </div>
           <div class="flex flex-col">
             <span class="font-display text-primary text-lg font-semibold leading-tight">Notas</span>
-            <span class="text-[10px] text-secondary uppercase tracking-widest">Libreta Abierta</span>
+            <span class="text-[10px] text-secondary uppercase tracking-widest">Glosa</span>
           </div>
         </div>
 

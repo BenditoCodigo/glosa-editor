@@ -1,6 +1,6 @@
 # UI/UX - Liquid Glass Design System (Bendito Código)
 
-Este steering define los lineamientos visuales para Libreta Abierta siguiendo el playbook
+Este steering define los lineamientos visuales para Glosa siguiendo el playbook
 de Bendito Código: fusión de Glassmorphism con Liquid Glass.
 La plataforma soporta tema oscuro y claro.
 

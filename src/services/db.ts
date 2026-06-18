@@ -3,7 +3,7 @@ import type { Note } from '@/types/note'
 import type { Folder } from '@/types/folder'
 import type { ActivityEvent } from '@/types/activity'
 
-const db = new Dexie('libreta-abierta') as Dexie & {
+const db = new Dexie('glosa') as Dexie & {
   notes: EntityTable<Note, 'id'>
   folders: EntityTable<Folder, 'id'>
   activity: EntityTable<ActivityEvent, 'id'>

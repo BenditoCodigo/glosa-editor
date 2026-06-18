@@ -1,7 +1,7 @@
-# Libreta Abierta - Definición de Interfaz y Navegación
+# Glosa - Definición de Interfaz y Navegación
 
 Este steering describe la estructura, comportamiento y resultado esperado de la
-interfaz de Libreta Abierta: una plataforma personal de notas en markdown con
+interfaz de Glosa: una plataforma personal de notas en markdown con
 navegación tipo Google Drive y edición tipo Notion.
 
 ---

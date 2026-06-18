@@ -1,14 +1,15 @@
-# Libreta Abierta - Overview del Proyecto
+# Glosa - Overview del Proyecto
 
 ---
 
 ## Qué es
 
-Libreta Abierta es una plataforma personal de notas en formato markdown. Funciona como
+Glosa es una plataforma personal de notas en formato markdown. Funciona como
 una alternativa privada y autogestionada a herramientas como Notion o AppFlowy.
 
-El nombre refleja la intención: un cuaderno abierto — abierto en código, transparente
-en su funcionamiento, pero cerrado a terceros que quieran explotar tu información.
+El nombre viene de las glosas: las anotaciones y traducciones que los eruditos
+escribían en los márgenes de textos antiguos. Refleja la acción de tomar notas,
+agregar metadata y documentar.
 
 ---
 
@@ -21,7 +22,7 @@ Las plataformas comerciales de notas y productividad:
 - Cobran suscripciones mensuales por funcionalidad que un perfil técnico puede sostener por cuenta propia
 - Pueden desaparecer, cambiar términos, o bloquear el acceso a TU contenido
 
-Libreta Abierta existe para quienes tienen la capacidad técnica de mantener sus propias
+Glosa existe para quienes tienen la capacidad técnica de mantener sus propias
 herramientas y eligen hacerlo por principio: tu información es tuya, en tu infraestructura,
 bajo tu control.
 

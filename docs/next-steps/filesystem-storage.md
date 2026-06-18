@@ -16,7 +16,7 @@ versionables con Git, y sincronizables con cualquier servicio de archivos.
 1. El usuario entra a Configuración
 2. Selecciona "Vincular carpeta local"
 3. El navegador muestra el diálogo nativo de selección de carpeta
-4. El usuario selecciona/crea una carpeta (ej. `~/Documents/libreta-abierta/`)
+4. El usuario selecciona/crea una carpeta (ej. `~/Documents/glosa/`)
 5. El navegador otorga permisos de lectura/escritura sobre esa carpeta
 6. A partir de ahí, la app lee y escribe archivos `.md` directamente
 
@@ -28,8 +28,8 @@ Al reabrir el navegador, la app solicita re-autorización con un click
 ## Estructura de archivos en disco
 
 ```
-~/Documents/libreta-abierta/
-├── .libreta/
+~/Documents/glosa/
+├── .glosa/
 │   └── meta.json              ← Metadata de la app (folders, activity, etc.)
 ├── ideas/
 │   ├── proyecto-x.md
@@ -43,7 +43,7 @@ Al reabrir el navegador, la app solicita re-autorización con un click
 
 - Cada carpeta en el filesystem = un Folder en la app
 - Cada archivo `.md` = una Note
-- La metadata que no cabe en frontmatter (activity, orden de favoritos) va en `.libreta/meta.json`
+- La metadata que no cabe en frontmatter (activity, orden de favoritos) va en `.glosa/meta.json`
 - Los archivos se nombran con el slug del título: `mi-nota-importante.md`
 - Si hay conflicto de nombre, se agrega un sufijo numérico: `mi-nota-importante-2.md`
 
@@ -257,7 +257,7 @@ El `id` de un folder es su path relativo desde la raíz (ej. `ideas`, `ideas/sub
 
 Al listar una carpeta:
 1. Iterar entries del `DirectoryHandle`
-2. Subdirectorios (excepto `.libreta`) → Folders
+2. Subdirectorios (excepto `.glosa`) → Folders
 3. Archivos `.md` → Notes (con `folder` = path relativo del padre)
 
 ---
@@ -280,7 +280,7 @@ Al vincular una carpeta por primera vez, ofrecer:
 | Archivo eliminado externamente | Detectar al listar, marcar como eliminado en la app |
 | Nombre de archivo duplicado | Agregar sufijo numérico |
 | Caracteres no válidos en filename | Slugificar título (quitar acentos, especiales, etc.) |
-| Carpeta `.libreta` | Siempre oculta en la app, no se muestra como folder |
+| Carpeta `.glosa` | Siempre oculta en la app, no se muestra como folder |
 | Nota sin frontmatter (creada externamente) | Generar frontmatter al abrir por primera vez |
 
 ---

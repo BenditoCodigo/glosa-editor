@@ -1,6 +1,6 @@
 # Vue Ecosystem - Estándares y Mejores Prácticas
 
-Este steering define las convenciones de desarrollo para el proyecto Libreta Abierta.
+Este steering define las convenciones de desarrollo para el proyecto Glosa.
 Stack: Vue 3.5+, Vite 6+, Pinia, Vue Router 4, Tailwind CSS 4, TypeScript.
 
 ---

@@ -20,11 +20,11 @@ export const useUiStore = defineStore('ui', () => {
     } else {
       document.documentElement.classList.remove('dark')
     }
-    localStorage.setItem('libreta-theme', mode)
+    localStorage.setItem('glosa-theme', mode)
   }
 
   function getInitialTheme(): 'light' | 'dark' {
-    const stored = localStorage.getItem('libreta-theme')
+    const stored = localStorage.getItem('glosa-theme')
     if (stored === 'dark' || stored === 'light') return stored
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
