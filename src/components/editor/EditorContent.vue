@@ -5,6 +5,10 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
 import Link from '@tiptap/extension-link'
+import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import Image from '@tiptap/extension-image'
 
 interface Props {
   content: string
@@ -26,6 +30,20 @@ const editor = useEditor({
     Typography,
     Link.configure({
       openOnClick: false,
+    }),
+    Table.configure({
+      resizable: true,
+    }),
+    TableRow,
+    TableCell,
+    TableHeader,
+    TaskList,
+    TaskItem.configure({
+      nested: true,
+    }),
+    Image.configure({
+      inline: false,
+      allowBase64: false,
     }),
   ],
   editorProps: {
@@ -158,5 +176,118 @@ defineExpose({ editor })
   border: none;
   border-top: 1px solid var(--color-outline-variant);
   margin: 2rem 0;
+}
+
+/* Task list (checks) */
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.tiptap ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.tiptap ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid var(--color-outline);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.tiptap ul[data-type="taskList"] li[data-checked="true"] > div > p {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Table */
+.tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-outline-variant);
+}
+
+.tiptap table td,
+.tiptap table th {
+  border: 1px solid var(--color-outline-variant);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  min-width: 80px;
+}
+
+.tiptap table th {
+  background: var(--bc-glass-input-bg);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.tiptap table td {
+  font-size: 0.875rem;
+}
+
+.tiptap table .selectedCell {
+  background: rgba(79, 96, 86, 0.1);
+}
+
+.tiptap table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  background-color: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tiptap table .column-resize-handle:hover,
+.tiptap table .resize-cursor {
+  opacity: 1;
+}
+
+/* Image */
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.tiptap img.ProseMirror-selectednode {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 </style>
