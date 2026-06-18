@@ -22,12 +22,28 @@ function saveToStorage(settings: AppSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
 }
 
+function resolveEffectiveTheme(mode: ThemeMode): 'light' | 'dark' {
+  if (mode === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  return mode
+}
+
+function applyThemeToDocument(effective: 'light' | 'dark') {
+  if (effective === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>(loadFromStorage())
 
   // Derived state
   const profile = computed(() => settings.value.profile)
   const theme = computed(() => settings.value.theme)
+  const effectiveTheme = computed(() => resolveEffectiveTheme(settings.value.theme))
   const storageProvider = computed(() => settings.value.storageProvider)
   const editor = computed(() => settings.value.editor)
 
@@ -38,6 +54,19 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // Persist on every change
   watch(settings, (val) => saveToStorage(val), { deep: true })
+
+  // Apply theme whenever theme setting changes
+  watch(theme, () => {
+    applyThemeToDocument(effectiveTheme.value)
+  }, { immediate: true })
+
+  // Listen for system theme changes when mode is 'system'
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  mediaQuery.addEventListener('change', () => {
+    if (settings.value.theme === 'system') {
+      applyThemeToDocument(resolveEffectiveTheme('system'))
+    }
+  })
 
   // Actions
   function updateProfile(partial: Partial<UserProfile>) {
@@ -64,6 +93,7 @@ export const useSettingsStore = defineStore('settings', () => {
     settings,
     profile,
     theme,
+    effectiveTheme,
     storageProvider,
     editor,
     userInitial,

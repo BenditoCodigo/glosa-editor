@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '@/stores/settings'
-import { useUiStore } from '@/stores/ui'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -11,7 +10,6 @@ import type { ThemeMode, StorageProvider } from '@/types'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
-const uiStore = useUiStore()
 const { profile, theme, storageProvider, editor } = storeToRefs(settingsStore)
 
 // Local state for avatar preview
@@ -59,24 +57,6 @@ function removeAvatar() {
 
 function handleThemeChange(mode: ThemeMode) {
   settingsStore.setTheme(mode)
-  // Sync with existing uiStore theme toggle
-  if (mode === 'system') {
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    applyThemeClass(systemDark ? 'dark' : 'light')
-  } else {
-    applyThemeClass(mode)
-  }
-}
-
-function applyThemeClass(mode: 'light' | 'dark') {
-  if (mode === 'dark') {
-    document.documentElement.classList.add('dark')
-  } else {
-    document.documentElement.classList.remove('dark')
-  }
-  localStorage.setItem('glosa-theme', mode)
-  // Keep uiStore in sync
-  uiStore.theme = mode
 }
 
 function handleDeleteAllData() {

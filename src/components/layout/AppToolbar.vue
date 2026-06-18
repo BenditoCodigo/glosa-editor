@@ -48,14 +48,6 @@ const settingsStore = useSettingsStore()
 
       <UiIconButton icon="search" ariaLabel="Search" size="sm" class="md:hidden" />
 
-      <!-- Theme toggle -->
-      <UiIconButton
-        :icon="uiStore.theme === 'dark' ? 'light_mode' : 'dark_mode'"
-        ariaLabel="Toggle theme"
-        size="sm"
-        @click="uiStore.toggleTheme()"
-      />
-
       <UiIconButton icon="more_vert" ariaLabel="More options" size="sm" />
 
       <!-- User avatar -->

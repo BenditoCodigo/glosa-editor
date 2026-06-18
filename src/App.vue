@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUiStore } from '@/stores/ui'
+import { useSettingsStore } from '@/stores/settings'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
 import { seedIfEmpty } from '@/services/storage'
@@ -15,6 +16,7 @@ const router = useRouter()
 
 // Initialize stores
 useUiStore()
+useSettingsStore() // Applies theme on creation
 const notesStore = useNotesStore()
 const foldersStore = useFoldersStore()
 const { activeNote } = storeToRefs(notesStore)
