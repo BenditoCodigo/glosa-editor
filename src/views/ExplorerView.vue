@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
@@ -9,6 +9,7 @@ import FolderCard from '@/components/explorer/FolderCard.vue'
 import NoteCard from '@/components/explorer/NoteCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiPromptModal from '@/components/ui/UiPromptModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,6 +38,9 @@ const currentNotes = computed(() =>
 
 const isLoading = computed(() => notesLoading.value || foldersLoading.value)
 
+// Modal state
+const showFolderModal = ref(false)
+
 // Navigation
 function openFolder(folderId: string) {
   trackActivity(folderId, 'folder', 'open')
@@ -54,8 +58,12 @@ async function handleCreateNote() {
 }
 
 async function handleCreateFolder() {
-  const name = prompt('Nombre de la carpeta:')
-  if (name?.trim()) {
+  showFolderModal.value = true
+}
+
+async function confirmCreateFolder(name: string) {
+  showFolderModal.value = false
+  if (name.trim()) {
     await foldersStore.createFolder(name.trim(), currentFolderId.value)
   }
 }
@@ -145,4 +153,14 @@ function handleToggleFavorite(noteId: string) {
       </template>
     </div>
   </div>
+
+  <!-- Modal: Nueva carpeta -->
+  <UiPromptModal
+    :open="showFolderModal"
+    title="Nueva carpeta"
+    placeholder="Nombre de la carpeta"
+    confirmLabel="Crear"
+    @confirm="confirmCreateFolder"
+    @cancel="showFolderModal = false"
+  />
 </template>

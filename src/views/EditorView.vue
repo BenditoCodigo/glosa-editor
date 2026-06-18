@@ -7,6 +7,7 @@ import { trackActivity } from '@/services/activity'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiPromptModal from '@/components/ui/UiPromptModal.vue'
 import EditorContentComponent from '@/components/editor/EditorContent.vue'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EmojiPicker from '@/components/editor/EmojiPicker.vue'
@@ -117,9 +118,14 @@ function handleEmojiSelect(selectedEmoji: string) {
 }
 
 // Cover image
+const showCoverModal = ref(false)
+
 function handleSetCoverImage() {
-  const url = window.prompt('URL de la imagen de portada:', coverImage.value || '')
-  if (url === null) return // cancelled
+  showCoverModal.value = true
+}
+
+function confirmCoverImage(url: string) {
+  showCoverModal.value = false
   coverImage.value = url || undefined
   scheduleAutosave()
 }
@@ -256,4 +262,15 @@ onUnmounted(() => {
       </div>
     </template>
   </div>
+
+  <!-- Modal: Cover image -->
+  <UiPromptModal
+    :open="showCoverModal"
+    title="Imagen de portada"
+    placeholder="https://ejemplo.com/imagen.jpg"
+    :initialValue="coverImage || ''"
+    confirmLabel="Aplicar"
+    @confirm="confirmCoverImage"
+    @cancel="showCoverModal = false"
+  />
 </template>
