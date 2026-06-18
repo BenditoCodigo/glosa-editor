@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
@@ -16,9 +16,12 @@ const { activeNote } = storeToRefs(notesStore)
 
 const title = ref('')
 const content = ref('')
+const tags = ref<string[]>([])
+const tagInput = ref('')
 const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const isLoading = ref(true)
 const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
+const titleRef = ref<HTMLTextAreaElement | null>(null)
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -32,13 +35,24 @@ watch(
     if (note) {
       title.value = note.title
       content.value = note.content
+      tags.value = [...note.tags]
     } else {
       router.replace('/')
     }
     isLoading.value = false
+    await nextTick()
+    autoResizeTitle()
   },
   { immediate: true },
 )
+
+// Auto-resize title textarea
+function autoResizeTitle() {
+  const el = titleRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
 
 // Autosave scheduling
 function scheduleAutosave() {
@@ -59,19 +73,45 @@ async function save() {
     isFavorite: activeNote.value.isFavorite,
     createdAt: activeNote.value.createdAt,
     updatedAt: activeNote.value.updatedAt,
-    tags: [...activeNote.value.tags],
+    tags: [...tags.value],
   })
 
   saveStatus.value = 'saved'
 }
 
 function handleTitleInput(event: Event) {
-  title.value = (event.target as HTMLInputElement).value
+  title.value = (event.target as HTMLTextAreaElement).value
+  autoResizeTitle()
   scheduleAutosave()
 }
 
 function handleContentUpdate(newContent: string) {
   content.value = newContent
+  scheduleAutosave()
+}
+
+// Tag management
+function addTag() {
+  const tag = tagInput.value.trim().toLowerCase()
+  if (tag && !tags.value.includes(tag)) {
+    tags.value.push(tag)
+    scheduleAutosave()
+  }
+  tagInput.value = ''
+}
+
+function handleTagKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ',') {
+    event.preventDefault()
+    addTag()
+  } else if (event.key === 'Backspace' && tagInput.value === '' && tags.value.length > 0) {
+    tags.value.pop()
+    scheduleAutosave()
+  }
+}
+
+function removeTag(index: number) {
+  tags.value.splice(index, 1)
   scheduleAutosave()
 }
 
@@ -120,22 +160,50 @@ onUnmounted(() => {
       <!-- Editor area -->
       <div class="flex-1 overflow-y-auto px-4 md:px-12 py-8">
         <div class="max-w-[720px] mx-auto glass-panel-md rounded-2xl p-8 md:p-12">
-          <!-- Tags -->
-          <div v-if="activeNote.tags.length > 0" class="flex items-center gap-2 mb-4">
-            <template v-for="(tag, i) in activeNote.tags" :key="tag">
-              <span class="text-[11px] text-secondary/40 uppercase tracking-[0.2em] font-medium">{{ tag }}</span>
-              <span v-if="i < activeNote.tags.length - 1" class="text-outline-variant">/</span>
-            </template>
+          <!-- Tags editor -->
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <button
+              v-for="(tag, index) in tags"
+              :key="tag"
+              class="
+                inline-flex items-center gap-1
+                px-2.5 py-1 rounded-md
+                bg-primary-fixed/50 text-on-primary-fixed
+                text-[11px] uppercase tracking-[0.1em] font-semibold
+                hover:bg-primary-fixed transition-colors
+                group
+              "
+              @click="removeTag(index)"
+            >
+              {{ tag }}
+              <UiIcon name="close" size="sm" class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]" />
+            </button>
+            <input
+              v-model="tagInput"
+              type="text"
+              placeholder="Add tag..."
+              class="bg-transparent border-none p-0 text-[11px] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
+              @keydown="handleTagKeydown"
+              @blur="addTag"
+            >
           </div>
 
-          <!-- Title -->
-          <input
+          <!-- Title (auto-resizing textarea) -->
+          <textarea
+            ref="titleRef"
             :value="title"
-            type="text"
             placeholder="Note Title"
-            class="w-full bg-transparent border-none p-0 mb-8 focus:ring-0 focus:outline-none font-display text-4xl md:text-5xl font-bold text-on-surface leading-tight tracking-tight placeholder:text-outline-variant"
+            rows="1"
+            class="
+              w-full bg-transparent border-none p-0 mb-8
+              focus:ring-0 focus:outline-none
+              font-display text-4xl md:text-5xl font-bold text-on-surface
+              leading-tight tracking-tight
+              placeholder:text-outline-variant
+              resize-none overflow-hidden
+            "
             @input="handleTitleInput"
-          >
+          />
 
           <!-- Tiptap Editor -->
           <EditorContentComponent
