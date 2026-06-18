@@ -21,6 +21,7 @@ const content = ref('')
 const tags = ref<string[]>([])
 const tagInput = ref('')
 const emoji = ref<string | undefined>(undefined)
+const coverImage = ref<string | undefined>(undefined)
 const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const isLoading = ref(true)
 const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
@@ -40,6 +41,7 @@ watch(
       content.value = note.content
       tags.value = [...note.tags]
       emoji.value = note.emoji
+      coverImage.value = note.coverImage
       trackActivity(note.id, 'note', 'open')
     } else {
       router.replace('/')
@@ -80,6 +82,7 @@ async function save() {
     updatedAt: activeNote.value.updatedAt,
     tags: [...tags.value],
     emoji: emoji.value,
+    coverImage: coverImage.value,
   })
 
   trackActivity(activeNote.value.id, 'note', 'save')
@@ -110,6 +113,14 @@ function addTag() {
 // Emoji
 function handleEmojiSelect(selectedEmoji: string) {
   emoji.value = selectedEmoji
+  scheduleAutosave()
+}
+
+// Cover image
+function handleSetCoverImage() {
+  const url = window.prompt('URL de la imagen de portada:', coverImage.value || '')
+  if (url === null) return // cancelled
+  coverImage.value = url || undefined
   scheduleAutosave()
 }
 
@@ -165,9 +176,15 @@ onUnmounted(() => {
             </span>
           </div>
         </div>
-        <UiButton variant="solid" size="sm" @click="save">
-          Guardar
-        </UiButton>
+        <div class="flex items-center gap-2">
+          <UiIconButton icon="image" ariaLabel="Cover image" size="sm" @click="handleSetCoverImage" />
+          <UiButton variant="solid" size="sm" @click="save">
+            <template #icon-left>
+              <UiIcon name="save" size="sm" />
+            </template>
+            Guardar
+          </UiButton>
+        </div>
       </div>
 
       <!-- Editor area -->

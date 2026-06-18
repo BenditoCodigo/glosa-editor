@@ -8,6 +8,7 @@ export interface Note {
   updatedAt: string
   tags: string[]
   emoji?: string
+  coverImage?: string
 }
 
 export interface NoteMetadata {

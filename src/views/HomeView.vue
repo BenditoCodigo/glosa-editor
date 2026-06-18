@@ -147,6 +147,14 @@ function handleToggleFavorite(noteId: string) {
             "
             @dblclick="featuredNote && openNote(featuredNote.id)"
           >
+            <!-- Cover image -->
+            <img
+              v-if="featuredNote?.coverImage"
+              :src="featuredNote.coverImage"
+              alt=""
+              class="absolute inset-0 w-full h-full object-cover z-0 group-hover:scale-105 transition-transform duration-700"
+            >
+
             <!-- Gradient overlay -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"></div>
 
