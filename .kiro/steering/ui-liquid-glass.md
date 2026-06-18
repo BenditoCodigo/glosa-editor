@@ -159,6 +159,17 @@ El fondo cristalino reduce el contraste, la tipografía debe ser robusta.
 - Borde especular en lado superior e izquierdo (fuente de luz global)
 - Aplicar las 4 propiedades glass completas
 
+### Contenedores de tarjetas (fórmula de border-radius)
+Cuando un contenedor glass envuelve hijos con border-radius, aplicar la fórmula:
+
+**`border-radius del padre = border-radius del hijo + padding del padre`**
+
+Ejemplo: hijos con `rounded-2xl` (24px) dentro de un padre con `p-8` (32px)
+→ padre debe usar `rounded-[3.5rem]` (56px) o un valor cercano como `rounded-[2.5rem]` (40px)
+
+Esto evita que el radio del padre "corte" visualmente el radio del hijo y mantiene
+la coherencia óptica del efecto glass.
+
 ---
 
 ## Rendimiento y Responsive (Mobile First)

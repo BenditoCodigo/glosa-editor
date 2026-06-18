@@ -30,11 +30,29 @@ function stripHtml(html: string): string {
   return div.textContent || div.innerText || ''
 }
 
-function estimateReadTime(content: string): string {
-  const words = stripHtml(content).split(/\s+/).length
-  const minutes = Math.max(1, Math.ceil(words / 200))
-  return `${minutes} min de lectura`
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 6) return '¡Buenas Noches!'
+  if (hour < 12) return '¡Buenos Días!'
+  if (hour < 19) return '¡Buenas Tardes!'
+  return '¡Buenas Noches!'
 }
+
+function getCurrentDateTime(): string {
+  const now = new Date()
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }
+  return now.toLocaleDateString('es-MX', options)
+}
+
+const greeting = getGreeting()
+const currentDateTime = getCurrentDateTime()
 
 function relativeDate(dateStr: string): string {
   const now = Date.now()
@@ -107,16 +125,16 @@ function handleToggleFavorite(noteId: string) {
     <div class="max-w-[1200px] mx-auto">
       <!-- Header section -->
       <div class="mb-8">
-        <h1 v-if="featuredNote" class="font-display text-3xl md:text-4xl font-bold text-on-surface leading-tight">
-          {{ featuredNote.title }}
+        <h1 class="font-display text-3xl md:text-4xl font-bold text-on-surface leading-tight">
+          {{ greeting }}
         </h1>
-        <p v-if="featuredNote" class="text-secondary mt-2 text-sm">
-          Modificado {{ relativeDate(featuredNote.updatedAt) }} · {{ estimateReadTime(featuredNote.content) }}
+        <p class="text-secondary mt-2 text-sm capitalize">
+          {{ currentDateTime }}
         </p>
       </div>
 
       <!-- Bento grid -->
-      <div class="glass-panel p-8 md:p-12 mb-12">
+      <div class="glass-panel p-6 md:p-8 mb-12 rounded-[2.5rem]">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
           <!-- Large featured note: col-span-8 -->
           <div
