@@ -8,46 +8,48 @@ const uiStore = useUiStore()
 
 <template>
   <header class="
-    glass-panel
+    sticky top-0 z-10
     flex items-center justify-between
-    h-16 px-6 lg:px-12
-    border-b border-white/20
-    shrink-0 z-10
+    h-14 px-4 lg:px-6
+    pointer-events-none
+    bg-transparent
   ">
-    <!-- Left -->
-    <div class="flex items-center gap-4 lg:gap-8">
+    <!-- Left group (glass pill) -->
+    <div class="glass-panel-md flex items-center gap-2 px-2 py-1.5 rounded-full pointer-events-auto">
       <UiIconButton
         icon="menu"
         ariaLabel="Toggle sidebar"
+        size="sm"
         @click="uiStore.toggleSidebar()"
       />
-      <h1 class="font-display text-on-surface font-bold text-xl hidden sm:block">
+      <span class="font-display text-on-surface font-bold text-sm hidden sm:block pr-2">
         Libreta Abierta
-      </h1>
+      </span>
     </div>
 
-    <!-- Right -->
-    <div class="flex items-center gap-2 lg:gap-4">
+    <!-- Right group (glass pill) -->
+    <div class="glass-panel-md flex items-center gap-1 px-2 py-1.5 rounded-full pointer-events-auto">
       <!-- Search -->
       <div class="relative hidden md:block">
         <UiIcon name="search" size="sm" class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
         <input
           type="text"
           placeholder="Buscar notas..."
-          class="glass-input rounded-full pl-10 pr-4 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 w-48 lg:w-64 transition-all"
+          class="bg-transparent rounded-full pl-9 pr-4 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 w-44 lg:w-52 transition-all placeholder:text-secondary/50"
         >
       </div>
 
-      <UiIconButton icon="search" ariaLabel="Search" class="md:hidden" />
+      <UiIconButton icon="search" ariaLabel="Search" size="sm" class="md:hidden" />
 
       <!-- Theme toggle -->
       <UiIconButton
         :icon="uiStore.theme === 'dark' ? 'light_mode' : 'dark_mode'"
         ariaLabel="Toggle theme"
+        size="sm"
         @click="uiStore.toggleTheme()"
       />
 
-      <UiIconButton icon="more_vert" ariaLabel="More options" />
+      <UiIconButton icon="more_vert" ariaLabel="More options" size="sm" />
     </div>
   </header>
 </template>

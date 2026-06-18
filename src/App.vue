@@ -77,11 +77,14 @@ function handleBreadcrumbNavigate(path: string) {
 
     <!-- Main content -->
     <main class="flex-1 flex flex-col min-w-0 relative">
+      <!-- Floating toolbar (overlays content) -->
       <AppToolbar />
 
-      <!-- Content area -->
-      <div class="flex-1 overflow-y-auto">
-        <RouterView />
+      <!-- Content area (scrolls under toolbar) -->
+      <div class="flex-1 overflow-y-auto -mt-14">
+        <div class="pt-14">
+          <RouterView />
+        </div>
       </div>
 
       <!-- Breadcrumbs -->
