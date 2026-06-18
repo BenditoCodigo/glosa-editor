@@ -72,7 +72,7 @@ async function save() {
 
   await notesStore.updateNote({
     id: activeNote.value.id,
-    title: title.value || 'Untitled Note',
+    title: title.value || 'Sin título',
     content: content.value,
     folder: activeNote.value.folder,
     isFavorite: activeNote.value.isFavorite,
@@ -161,12 +161,12 @@ onUnmounted(() => {
               :class="saveStatus === 'saving' && 'animate-spin'"
             />
             <span class="text-xs opacity-70">
-              {{ saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved changes' }}
+              {{ saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Cambios sin guardar' }}
             </span>
           </div>
         </div>
         <UiButton variant="solid" size="sm" @click="save">
-          Save
+          Guardar
         </UiButton>
       </div>
 
@@ -199,8 +199,8 @@ onUnmounted(() => {
               <input
                 v-model="tagInput"
                 type="text"
-                placeholder="Add tag..."
-                class="bg-transparent border-none p-0 text-[11px] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
+                placeholder="#"
+                class="bg-transparent border-none p-0 text-[14px] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
                 @keydown="handleTagKeydown"
                 @blur="addTag"
               >
@@ -211,7 +211,7 @@ onUnmounted(() => {
           <textarea
             ref="titleRef"
             :value="title"
-            placeholder="Note Title"
+            placeholder="Título de la nota"
             rows="1"
             class="
               w-full bg-transparent border-none p-0 mb-8

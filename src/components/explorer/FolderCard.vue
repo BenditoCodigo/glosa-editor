@@ -41,7 +41,7 @@ defineEmits<{
       {{ folder.name }}
     </h3>
     <p class="text-xs text-secondary mt-1">
-      Updated {{ new Date(folder.updatedAt).toLocaleDateString() }}
+      Actualizado {{ new Date(folder.updatedAt).toLocaleDateString() }}
     </p>
   </div>
 </template>

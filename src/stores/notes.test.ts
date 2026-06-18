@@ -68,14 +68,14 @@ describe('Notes Store', () => {
     const store = useNotesStore()
     const note = await store.createNote(null)
 
-    expect(note.title).toBe('Untitled Note')
+    expect(note.title).toBe('Sin título')
     expect(note.folder).toBeNull()
     expect(store.notes).toHaveLength(1)
 
     // Verify persisted
     const fromDb = await db.notes.get(note.id)
     expect(fromDb).toBeDefined()
-    expect(fromDb!.title).toBe('Untitled Note')
+    expect(fromDb!.title).toBe('Sin título')
   })
 
   it('createNote in a folder sets the folder ID', async () => {
@@ -121,7 +121,7 @@ describe('Notes Store', () => {
     const note = await store.createNote(null)
     await store.loadNote(note.id)
 
-    expect(store.activeNote!.title).toBe('Untitled Note')
+    expect(store.activeNote!.title).toBe('Sin título')
 
     await store.updateNote({ ...note, title: 'Changed' })
     expect(store.activeNote!.title).toBe('Changed')

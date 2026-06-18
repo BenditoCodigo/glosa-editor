@@ -112,6 +112,9 @@ Contiene exclusivamente el frontend. Es una aplicación web SPA que:
 3. **Simplicidad**: No sobreingenierar. Resolver el problema actual, no el de dentro de 2 años
 4. **Independencia**: Mínimas dependencias externas. No depender de servicios cloud para funcionar
 5. **Código limpio**: Mantener los steering, seguir convenciones, código legible para el futuro
+6. **Interfaz en español neutro**: Todo texto visible para el usuario debe estar en español
+   neutro (sin regionalismos). El código (variables, funciones, archivos, comments) se escribe
+   en inglés. Este proyecto impulsa el open source latino.
 
 ---
 

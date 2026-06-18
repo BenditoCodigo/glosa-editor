@@ -33,7 +33,7 @@ function stripHtml(html: string): string {
 function estimateReadTime(content: string): string {
   const words = stripHtml(content).split(/\s+/).length
   const minutes = Math.max(1, Math.ceil(words / 200))
-  return `${minutes} min read`
+  return `${minutes} min de lectura`
 }
 
 function relativeDate(dateStr: string): string {
@@ -44,10 +44,10 @@ function relativeDate(dateStr: string): string {
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
 
-  if (diffMin < 1) return 'Just now'
-  if (diffMin < 60) return `${diffMin}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffMin < 1) return 'Ahora'
+  if (diffMin < 60) return `${diffMin}m`
+  if (diffHours < 24) return `${diffHours}h`
+  if (diffDays < 7) return `${diffDays}d`
   return new Date(dateStr).toLocaleDateString()
 }
 
@@ -111,7 +111,7 @@ function handleToggleFavorite(noteId: string) {
           {{ featuredNote.title }}
         </h1>
         <p v-if="featuredNote" class="text-secondary mt-2 text-sm">
-          Modified {{ relativeDate(featuredNote.updatedAt) }} · {{ estimateReadTime(featuredNote.content) }}
+          Modificado {{ relativeDate(featuredNote.updatedAt) }} · {{ estimateReadTime(featuredNote.content) }}
         </p>
       </div>
 
@@ -136,7 +136,7 @@ function handleToggleFavorite(noteId: string) {
             <div class="relative z-20 flex flex-col justify-end h-full p-8">
               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/50 text-on-primary-fixed text-[10px] uppercase tracking-widest font-bold w-fit mb-4">
                 <UiIcon name="auto_awesome" size="sm" />
-                Featured Note
+                Nota destacada
               </span>
               <h2 v-if="featuredNote" class="font-display text-2xl md:text-3xl font-bold text-white leading-tight mb-2">
                 {{ featuredNote.title }}
@@ -160,18 +160,18 @@ function handleToggleFavorite(noteId: string) {
                   {{ featuredFolder.name }}
                 </h3>
                 <p v-if="featuredFolder" class="text-secondary text-xs mt-1">
-                  {{ folderNoteCount(featuredFolder.id) }} items · Updated {{ relativeDate(featuredFolder.updatedAt) }}
+                  {{ folderNoteCount(featuredFolder.id) }} elementos · Actualizado {{ relativeDate(featuredFolder.updatedAt) }}
                 </p>
               </div>
-              <p v-if="!featuredFolder" class="text-secondary/40 text-sm italic">No folders yet</p>
+              <p v-if="!featuredFolder" class="text-secondary/40 text-sm italic">Sin carpetas aún</p>
             </div>
 
             <!-- Weekly summary -->
             <div class="glass-panel-md h-[190px] rounded-2xl p-6 flex flex-col justify-between">
               <div>
                 <UiIcon name="auto_awesome" class="text-primary mb-2" />
-                <h3 class="font-display text-lg font-bold text-on-surface leading-tight">Weekly Summary</h3>
-                <p class="text-secondary text-xs mt-1">AI-powered summaries coming soon</p>
+                <h3 class="font-display text-lg font-bold text-on-surface leading-tight">Resumen semanal</h3>
+                <p class="text-secondary text-xs mt-1">Resúmenes con IA próximamente</p>
               </div>
               <button
                 disabled
@@ -184,7 +184,7 @@ function handleToggleFavorite(noteId: string) {
                   opacity-50 cursor-not-allowed
                 "
               >
-                Generate Review
+                Generar resumen
               </button>
             </div>
           </div>
@@ -218,7 +218,7 @@ function handleToggleFavorite(noteId: string) {
       <!-- Recent Favorites section -->
       <section v-if="recentFavorites.length > 0">
         <div class="flex items-center gap-4 mb-6">
-          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Recent Favorites</h2>
+          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Favoritos recientes</h2>
           <div class="h-px flex-1 bg-white/30"></div>
         </div>
 

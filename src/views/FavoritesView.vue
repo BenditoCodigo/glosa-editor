@@ -41,14 +41,14 @@ function handleToggleFavorite(noteId: string) {
         <UiIconButton icon="arrow_back" ariaLabel="Back" size="sm" @click="router.push('/')" />
         <div class="flex items-center gap-3">
           <UiIcon name="star" class="text-primary" />
-          <h1 class="font-display text-2xl font-bold text-on-surface">Favorites</h1>
+          <h1 class="font-display text-2xl font-bold text-on-surface">Favoritos</h1>
         </div>
       </div>
 
       <!-- Favorite Folders -->
       <section v-if="favoriteFolders.length > 0" class="mb-12">
         <div class="flex items-center gap-4 mb-6">
-          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Folders</h2>
+          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Carpetas</h2>
           <div class="h-px flex-1 bg-white/30"></div>
         </div>
 
@@ -65,7 +65,7 @@ function handleToggleFavorite(noteId: string) {
       <!-- Favorite Notes -->
       <section v-if="favoriteNotes.length > 0">
         <div class="flex items-center gap-4 mb-6">
-          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Notes</h2>
+          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Notas</h2>
           <div class="h-px flex-1 bg-white/30"></div>
         </div>
 
@@ -86,8 +86,8 @@ function handleToggleFavorite(noteId: string) {
         class="flex flex-col items-center justify-center py-20 text-center"
       >
         <UiIcon name="star" size="lg" class="text-secondary/40 mb-4" />
-        <p class="text-secondary text-lg">No favorites yet</p>
-        <p class="text-secondary/60 text-sm mt-1">Star notes or folders to see them here</p>
+        <p class="text-secondary text-lg">Sin favoritos aún</p>
+        <p class="text-secondary/60 text-sm mt-1">Marca notas o carpetas con estrella para verlas aquí</p>
       </div>
     </div>
   </div>

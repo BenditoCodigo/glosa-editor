@@ -54,7 +54,7 @@ async function handleCreateNote() {
 }
 
 async function handleCreateFolder() {
-  const name = prompt('Folder name:')
+  const name = prompt('Nombre de la carpeta:')
   if (name?.trim()) {
     await foldersStore.createFolder(name.trim(), currentFolderId.value)
   }
@@ -74,13 +74,13 @@ function handleToggleFavorite(noteId: string) {
           <template #icon-left>
             <UiIcon name="create_new_folder" size="sm" />
           </template>
-          New Folder
+          Nueva carpeta
         </UiButton>
         <UiButton variant="solid" size="sm" @click="handleCreateNote">
           <template #icon-left>
             <UiIcon name="add" size="sm" />
           </template>
-          New Note
+          Nueva nota
         </UiButton>
       </div>
 
@@ -93,7 +93,7 @@ function handleToggleFavorite(noteId: string) {
         <!-- Folders Section -->
         <section v-if="currentFolders.length > 0" class="mb-12">
           <div class="flex items-center gap-4 mb-6">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Folders</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Carpetas</h2>
             <div class="h-px flex-1 bg-white/30"></div>
           </div>
 
@@ -111,7 +111,7 @@ function handleToggleFavorite(noteId: string) {
         <section v-if="currentNotes.length > 0">
           <div class="flex items-center gap-4 mb-6">
             <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
-              {{ currentFolderId ? 'Notes' : 'Loose Notes' }}
+              {{ currentFolderId ? 'Notas' : 'Notas sueltas' }}
             </h2>
             <div class="h-px flex-1 bg-white/30"></div>
           </div>
@@ -133,13 +133,13 @@ function handleToggleFavorite(noteId: string) {
           class="flex flex-col items-center justify-center py-20 text-center"
         >
           <UiIcon name="note_add" size="lg" class="text-secondary/40 mb-4" />
-          <p class="text-secondary text-lg mb-2">This space is empty</p>
-          <p class="text-secondary/60 text-sm mb-6">Create a note or folder to get started</p>
+          <p class="text-secondary text-lg mb-2">Este espacio está vacío</p>
+          <p class="text-secondary/60 text-sm mb-6">Crea una nota o carpeta para comenzar</p>
           <UiButton variant="solid" @click="handleCreateNote">
             <template #icon-left>
               <UiIcon name="add" size="sm" />
             </template>
-            Create your first note
+            Crea tu primera nota
           </UiButton>
         </div>
       </template>

@@ -39,7 +39,7 @@ function togglePicker() {
         hover:bg-white/20 dark:hover:bg-white/5
         transition-colors
       "
-      :title="currentEmoji ? 'Change emoji' : 'Add emoji'"
+      :title="currentEmoji ? 'Cambiar emoji' : 'Agregar emoji'"
       @click="togglePicker"
     >
       {{ currentEmoji || '😀' }}

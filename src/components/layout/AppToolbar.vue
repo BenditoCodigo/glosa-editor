@@ -33,7 +33,7 @@ const uiStore = useUiStore()
         <UiIcon name="search" size="sm" class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
         <input
           type="text"
-          placeholder="Search notes..."
+          placeholder="Buscar notas..."
           class="glass-input rounded-full pl-10 pr-4 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 w-48 lg:w-64 transition-all"
         >
       </div>

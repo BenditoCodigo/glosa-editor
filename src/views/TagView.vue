@@ -105,7 +105,7 @@ function navigateToFolder(folderId: string | null) {
             #{{ currentTag }}
           </h1>
           <span class="text-sm text-secondary">
-            {{ totalCount }} {{ totalCount === 1 ? 'note' : 'notes' }}
+            {{ totalCount }} {{ totalCount === 1 ? 'nota' : 'notas' }}
           </span>
         </div>
       </div>
@@ -116,7 +116,7 @@ function navigateToFolder(folderId: string | null) {
         class="flex flex-col items-center justify-center py-20 text-center"
       >
         <UiIcon name="label_off" size="lg" class="text-secondary/40 mb-4" />
-        <p class="text-secondary text-lg">No notes with this tag</p>
+        <p class="text-secondary text-lg">No hay notas con esta etiqueta</p>
       </div>
 
       <!-- Grouped notes by folder -->
@@ -137,7 +137,7 @@ function navigateToFolder(folderId: string | null) {
             </button>
             <div class="h-px flex-1 bg-white/30"></div>
             <span class="text-[11px] text-secondary/50">
-              {{ group.notes.length }} {{ group.notes.length === 1 ? 'note' : 'notes' }}
+              {{ group.notes.length }} {{ group.notes.length === 1 ? 'nota' : 'notas' }}
             </span>
           </div>
 

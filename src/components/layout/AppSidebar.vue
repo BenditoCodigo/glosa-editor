@@ -78,7 +78,7 @@ async function handleCreateNote() {
             LA
           </div>
           <div class="flex flex-col">
-            <span class="font-display text-primary text-lg font-semibold leading-tight">Notes</span>
+            <span class="font-display text-primary text-lg font-semibold leading-tight">Notas</span>
             <span class="text-[10px] text-secondary uppercase tracking-widest">Libreta Abierta</span>
           </div>
         </div>
@@ -88,7 +88,7 @@ async function handleCreateNote() {
           <template #icon-left>
             <UiIcon name="add" size="sm" />
           </template>
-          New Note
+          Nueva nota
         </UiButton>
 
         <!-- Navigation -->
@@ -107,7 +107,7 @@ async function handleCreateNote() {
               @click="router.push('/')"
             >
               <UiIcon name="home" />
-              <span class="text-sm">Home</span>
+              <span class="text-sm">Inicio</span>
             </button>
             <button
               class="
@@ -121,17 +121,17 @@ async function handleCreateNote() {
               @click="router.push('/notes')"
             >
               <UiIcon name="description" />
-              <span class="text-sm">Notes</span>
+              <span class="text-sm">Notas</span>
             </button>
           </div>
 
           <!-- Favorites section -->
           <div>
             <div class="flex items-center justify-between px-4 mb-2">
-              <span class="text-[10px] text-secondary/60 uppercase tracking-widest font-medium">Favorites</span>
+              <span class="text-[10px] text-secondary/60 uppercase tracking-widest font-medium">Favoritos</span>
               <button
                 class="text-secondary/40 hover:text-primary transition-colors"
-                title="See all favorites"
+                title="Ver todos"
                 @click="router.push({ name: 'favorites' })"
               >
                 <UiIcon name="arrow_forward" size="sm" />
@@ -151,14 +151,14 @@ async function handleCreateNote() {
               </button>
             </div>
             <p v-else class="px-4 text-xs text-secondary/40 italic">
-              No favorites yet
+              Sin favoritos
             </p>
           </div>
 
           <!-- Folders section (contextual) -->
           <div>
             <div class="flex items-center px-4 mb-2">
-              <span class="text-[10px] text-secondary/60 uppercase tracking-widest font-medium">Folders</span>
+              <span class="text-[10px] text-secondary/60 uppercase tracking-widest font-medium">Carpetas</span>
             </div>
 
             <div v-if="contextFolders.length > 0" class="space-y-0.5">
@@ -173,7 +173,7 @@ async function handleCreateNote() {
               </button>
             </div>
             <p v-else class="px-4 text-xs text-secondary/40 italic">
-              No folders here
+              Sin carpetas aquí
             </p>
           </div>
         </nav>
@@ -182,7 +182,7 @@ async function handleCreateNote() {
         <div class="mt-auto pt-4 border-t border-white/20">
           <button class="w-full flex items-center gap-3 px-4 py-2 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200 text-left">
             <UiIcon name="settings" />
-            <span class="text-sm">Settings</span>
+            <span class="text-sm">Configuración</span>
           </button>
         </div>
       </div>

@@ -21,7 +21,7 @@ const editor = useEditor({
   extensions: [
     StarterKit,
     Placeholder.configure({
-      placeholder: 'Start writing...',
+      placeholder: 'Comienza a escribir...',
     }),
     Typography,
     Link.configure({

@@ -29,10 +29,10 @@ const relativeDate = computed(() => {
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
 
-  if (diffMin < 1) return 'Just now'
-  if (diffMin < 60) return `${diffMin}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffMin < 1) return 'Ahora'
+  if (diffMin < 60) return `${diffMin}m`
+  if (diffHours < 24) return `${diffHours}h`
+  if (diffDays < 7) return `${diffDays}d`
   return new Date(note.updatedAt).toLocaleDateString()
 })
 </script>

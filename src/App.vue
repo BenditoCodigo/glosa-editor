@@ -28,36 +28,36 @@ onMounted(async () => {
 // Dynamic breadcrumbs based on route
 const breadcrumbs = computed(() => {
   if (route.name === 'home') {
-    return [{ label: 'Home' }]
+    return [{ label: 'Inicio' }]
   }
 
   const segments: { label: string; path?: string }[] = [
-    { label: 'Home', path: '/' },
+    { label: 'Inicio', path: '/' },
   ]
 
   if (route.name === 'explorer-root') {
-    segments.push({ label: 'Notes' })
+    segments.push({ label: 'Notas' })
   } else if (route.name === 'explorer-folder') {
-    segments.push({ label: 'Notes', path: '/notes' })
+    segments.push({ label: 'Notas', path: '/notes' })
     const folderId = route.params.path as string
     const path = foldersStore.getFolderPath(folderId)
     for (const folder of path) {
       segments.push({ label: folder.name, path: `/folder/${folder.id}` })
     }
   } else if (route.name === 'favorites') {
-    segments.push({ label: 'Favorites' })
+    segments.push({ label: 'Favoritos' })
   } else if (route.name === 'tag-view') {
     const tag = route.params.tag as string
     segments.push({ label: `#${tag}` })
   } else if (route.name === 'editor' && activeNote.value) {
     if (activeNote.value.folder) {
-      segments.push({ label: 'Notes', path: '/notes' })
+      segments.push({ label: 'Notas', path: '/notes' })
       const path = foldersStore.getFolderPath(activeNote.value.folder)
       for (const folder of path) {
         segments.push({ label: folder.name, path: `/folder/${folder.id}` })
       }
     } else {
-      segments.push({ label: 'Notes', path: '/notes' })
+      segments.push({ label: 'Notas', path: '/notes' })
     }
     segments.push({ label: activeNote.value.title })
   }
