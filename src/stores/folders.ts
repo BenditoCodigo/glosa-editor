@@ -1,4 +1,4 @@
-import { ref, computed, toRaw } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Folder } from '@/types'
 import * as storage from '@/services/storage'
@@ -58,14 +58,13 @@ export const useFoldersStore = defineStore('folders', () => {
   async function toggleFavorite(id: string) {
     const folder = folders.value.find((f) => f.id === id)
     if (!folder) return
-    const updated: Folder = {
-      ...structuredClone(toRaw(folder)),
-      isFavorite: !folder.isFavorite,
-      updatedAt: new Date().toISOString(),
-    }
-    await storage.saveFolder(updated)
+    // Deep-clone to strip reactive proxies
+    const plain = JSON.parse(JSON.stringify(folder)) as Folder
+    plain.isFavorite = !plain.isFavorite
+    plain.updatedAt = new Date().toISOString()
+    await storage.saveFolder(plain)
     const index = folders.value.findIndex((f) => f.id === id)
-    if (index !== -1) folders.value[index] = updated
+    if (index !== -1) folders.value[index] = plain
   }
 
   async function removeFolder(id: string) {

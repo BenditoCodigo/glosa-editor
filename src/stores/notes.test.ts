@@ -140,6 +140,48 @@ describe('Notes Store', () => {
     expect(original.updatedAt).toBe(originalUpdatedAt)
   })
 
+  it('updateNote handles objects spread from reactive refs (EditorView pattern)', async () => {
+    const store = useNotesStore()
+    const note = await store.createNote(null)
+    await store.loadNote(note.id)
+
+    // Simulate what EditorView does: spread activeNote.value + override fields
+    // activeNote.value is a reactive proxy, spreading it keeps nested proxied arrays
+    const updatedNote = {
+      ...store.activeNote!,
+      title: 'Edited Title',
+      content: 'Edited content',
+    }
+
+    // This should NOT throw DataCloneError
+    await expect(store.updateNote(updatedNote)).resolves.toBeUndefined()
+
+    // Verify it persisted correctly
+    const fromDb = await db.notes.get(note.id)
+    expect(fromDb!.title).toBe('Edited Title')
+    expect(fromDb!.content).toBe('Edited content')
+  })
+
+  it('updateNote handles notes with non-empty tags array from reactive state', async () => {
+    // Seed a note with tags directly in DB
+    await db.notes.put(makeNote({ id: 'tagged', title: 'Tagged', tags: ['vue', 'test'] }))
+    const store = useNotesStore()
+    await store.loadAll()
+    await store.loadNote('tagged')
+
+    // Spread the reactive activeNote (which has a reactive tags array)
+    const updatedNote = {
+      ...store.activeNote!,
+      title: 'Updated Tagged',
+    }
+
+    await expect(store.updateNote(updatedNote)).resolves.toBeUndefined()
+
+    const fromDb = await db.notes.get('tagged')
+    expect(fromDb!.title).toBe('Updated Tagged')
+    expect(fromDb!.tags).toEqual(['vue', 'test'])
+  })
+
   it('toggleFavorite toggles and persists', async () => {
     const store = useNotesStore()
     const note = await store.createNote(null)

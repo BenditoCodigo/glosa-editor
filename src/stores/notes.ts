@@ -1,4 +1,4 @@
-import { ref, computed, toRaw } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Note } from '@/types'
 import * as storage from '@/services/storage'
@@ -53,27 +53,25 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   async function updateNote(note: Note) {
-    const updated: Note = {
-      ...structuredClone(toRaw(note)),
-      updatedAt: new Date().toISOString(),
-    }
-    await storage.saveNote(updated)
-    const index = notes.value.findIndex((n) => n.id === updated.id)
-    if (index !== -1) notes.value[index] = updated
-    if (activeNote.value?.id === updated.id) activeNote.value = updated
+    // Deep-clone to strip any Vue reactive proxies before persisting
+    const plain = JSON.parse(JSON.stringify(note)) as Note
+    plain.updatedAt = new Date().toISOString()
+    await storage.saveNote(plain)
+    const index = notes.value.findIndex((n) => n.id === plain.id)
+    if (index !== -1) notes.value[index] = plain
+    if (activeNote.value?.id === plain.id) activeNote.value = plain
   }
 
   async function toggleFavorite(id: string) {
     const note = notes.value.find((n) => n.id === id)
     if (!note) return
-    const updated: Note = {
-      ...structuredClone(toRaw(note)),
-      isFavorite: !note.isFavorite,
-      updatedAt: new Date().toISOString(),
-    }
-    await storage.saveNote(updated)
+    // Deep-clone to strip reactive proxies
+    const plain = JSON.parse(JSON.stringify(note)) as Note
+    plain.isFavorite = !plain.isFavorite
+    plain.updatedAt = new Date().toISOString()
+    await storage.saveNote(plain)
     const index = notes.value.findIndex((n) => n.id === id)
-    if (index !== -1) notes.value[index] = updated
+    if (index !== -1) notes.value[index] = plain
   }
 
   async function removeNote(id: string) {
