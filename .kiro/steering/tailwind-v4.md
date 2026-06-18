@@ -365,3 +365,94 @@ Para animaciones de entrada/salida sin JavaScript:
 6. **oklch** como formato de color preferido
 7. **Container queries** para componentes que viven en paneles redimensionables
 8. **`dark:`** variante con class strategy para toggle manual de tema
+
+---
+
+## Convención de orden de clases CSS en templates
+
+### Orden obligatorio de clases Tailwind en atributos `class`
+
+Seguir este orden lógico al escribir clases en el template:
+
+```
+[utility-custom] [layout] [sizing] [spacing] [typography] [visual] [interactive] [responsive] [dark]
+```
+
+#### Categorías en detalle:
+
+1. **Utilidades custom** (`glass-panel`, `text-on-glass`, etc.)
+2. **Layout** (`flex`, `grid`, `inline-flex`, `relative`, `absolute`, `z-*`)
+3. **Sizing** (`w-*`, `h-*`, `min-*`, `max-*`)
+4. **Spacing** (`p-*`, `m-*`, `gap-*`)
+5. **Typography** (`font-*`, `text-*`, `leading-*`, `tracking-*`)
+6. **Borders & Radius** (`border-*`, `rounded-*`)
+7. **Visual** (`bg-*`, `shadow-*`, `opacity-*`, `backdrop-*`)
+8. **Transitions & Animation** (`transition-*`, `duration-*`, `animate-*`)
+9. **Interactive/States** (`hover:*`, `focus:*`, `active:*`, `disabled:*`)
+10. **Responsive** (`sm:*`, `md:*`, `lg:*`)
+11. **Dark mode** (`dark:*`)
+
+#### Ejemplo aplicado:
+
+```html
+<!-- ✅ Orden correcto -->
+<button class="glass-panel inline-flex items-center h-10 px-4 text-sm font-medium rounded-xl bg-primary text-white shadow-hard transition-all duration-200 hover:bg-primary-hover active:scale-[0.98] dark:bg-primary/90">
+  Guardar
+</button>
+
+<!-- ❌ Orden caótico -->
+<button class="hover:bg-primary-hover text-white h-10 glass-panel shadow-hard bg-primary px-4 inline-flex rounded-xl duration-200 text-sm items-center font-medium active:scale-[0.98] transition-all dark:bg-primary/90">
+  Guardar
+</button>
+```
+
+### Clases largas: cuándo partir en múltiples líneas
+
+Si un atributo `class` supera ~80 caracteres, partir con line breaks lógicos:
+
+```vue
+<template>
+  <article
+    class="
+      glass-panel
+      flex flex-col
+      w-full min-h-[120px]
+      p-6 gap-3
+      rounded-2xl
+      transition-shadow duration-200
+      hover:shadow-lg
+    "
+  >
+    <!-- contenido -->
+  </article>
+</template>
+```
+
+### Uso de arrays dinámicos (`:class` binding)
+
+Para clases condicionales, usar array syntax o computed:
+
+```vue
+<!-- Array con condicionales -->
+<div :class="[
+  'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
+  isSelected && 'bg-primary/10 border-primary',
+  !isSelected && 'hover:bg-black/5 dark:hover:bg-white/5',
+]">
+
+<!-- Computed para lógica compleja (en componentes UI) -->
+<button :class="buttonClasses">
+```
+
+### Nombrado de `@utility` custom
+
+Las utilidades creadas con `@utility` siguen esta convención:
+
+| Prefijo | Uso | Ejemplo |
+|---------|-----|---------|
+| `glass-*` | Superficies con efecto Liquid Glass | `glass-panel`, `glass-input`, `glass-panel-md` |
+| `text-on-*` | Estilos de texto sobre superficies especiales | `text-on-glass` |
+| `layout-*` | Patrones de layout reutilizables | `layout-main`, `layout-sidebar` |
+| `animate-*` | Animaciones custom (ya soportado por @theme) | `animate-fade-in` |
+
+Nunca crear `@utility` para algo que se resuelve con 1-2 clases de Tailwind nativas.

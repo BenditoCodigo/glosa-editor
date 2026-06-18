@@ -205,10 +205,12 @@ export interface NoteMetadata {
 src/
 ├── assets/
 │   └── styles/
-│       └── main.css          # Tailwind + @theme
+│       └── main.css          # Tailwind + @theme + @utility
 ├── components/
-│   ├── ui/                   # Componentes base (Button, Input, Modal)
-│   └── editor/               # Componentes del editor Tiptap
+│   ├── ui/                   # Componentes base genéricos (UiButton, UiInput, UiCard...)
+│   ├── editor/               # Componentes del editor Tiptap
+│   ├── explorer/             # Componentes del explorador de archivos
+│   └── layout/               # Componentes del layout (Toolbar, Sidebar, Breadcrumbs)
 ├── composables/              # Composables reutilizables
 ├── router/
 │   └── index.ts
@@ -251,13 +253,132 @@ Orden recomendado dentro del bloque script:
 7. Funciones/métodos
 8. Lifecycle hooks
 
-### Reglas
+### Reglas generales
 
 - Componentes pequeños y con una sola responsabilidad
 - Props hacia abajo, eventos hacia arriba (no mutar props)
 - Usar `v-model` con `defineModel()` para inputs controlados
 - Slots para composición flexible
 - Componentes base (ui/) son genéricos y sin lógica de negocio
+
+### Componentes reutilizables y configurables (`src/components/ui/`)
+
+Los componentes UI son **genéricos, configurables vía props, y desacoplados de lógica de negocio**.
+Siguen un patrón consistente:
+
+#### Principios
+
+1. **Configurables vía props**: tamaño, variante, estado, ícono, etc.
+2. **Extensibles vía slots**: contenido flexible sin forzar estructura interna
+3. **Estilizables vía prop `class`**: permiten override de clases Tailwind desde el padre
+4. **Sin estado interno innecesario**: el estado vive en el padre o en el store
+5. **Accesibles**: roles ARIA, labels, keyboard navigation cuando aplique
+
+#### Patrón de props (variantes y tamaños)
+
+```typescript
+interface Props {
+  variant?: 'solid' | 'ghost' | 'outline'
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+}
+
+const { variant = 'solid', size = 'md', disabled = false } = defineProps<Props>()
+```
+
+#### Patrón de clases computadas
+
+Usar una computed que resuelve las clases según las props:
+
+```typescript
+const classes = computed(() => [
+  // Base
+  'inline-flex items-center justify-center font-medium transition-all duration-200',
+  // Tamaño
+  sizeClasses[size],
+  // Variante
+  variantClasses[variant],
+  // Estado
+  disabled && 'opacity-50 pointer-events-none',
+])
+```
+
+#### Mapas de variantes (objeto constante)
+
+Definir mapas de clases como constantes fuera del componente:
+
+```typescript
+const sizeClasses = {
+  sm: 'h-8 px-3 text-sm rounded-lg',
+  md: 'h-10 px-4 text-sm rounded-xl',
+  lg: 'h-12 px-6 text-base rounded-xl',
+} as const
+
+const variantClasses = {
+  solid: 'bg-primary text-white shadow-hard hover:bg-primary-hover active:scale-[0.98]',
+  ghost: 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5',
+  outline: 'border border-current bg-transparent hover:bg-black/5',
+} as const
+```
+
+#### Slot default + slots nombrados
+
+```vue
+<template>
+  <button :class="classes" :disabled="disabled">
+    <slot name="icon-left" />
+    <slot />
+    <slot name="icon-right" />
+  </button>
+</template>
+```
+
+#### Catálogo de componentes UI base a construir
+
+| Componente | Props clave | Notas |
+|-----------|-------------|-------|
+| `UiButton` | variant, size, disabled, loading | Sólido por defecto (Nivel 3) |
+| `UiInput` | size, placeholder, disabled, error | Glass-input estilizado |
+| `UiIconButton` | variant, size, icon, ariaLabel | Solo ícono, cuadrado |
+| `UiCard` | padding, hoverable | Glass-panel con border-radius 24px |
+| `UiModal` | open, title | Nivel 2, overlay + glass-panel-md |
+| `UiBreadcrumb` | segments | Clickeable, separador `/` |
+| `UiDropdown` | items, position | Menú contextual |
+| `UiTooltip` | text, position | Nivel 2, glass-panel-md |
+| `UiToggle` | modelValue | Switch on/off |
+| `UiBadge` | variant, size | Tags, estados |
+
+#### Prefijo `Ui` para componentes base
+
+Todos los componentes genéricos del sistema de diseño usan prefijo `Ui`:
+`UiButton.vue`, `UiInput.vue`, `UiCard.vue`, etc.
+
+Esto los distingue de componentes de feature (`NoteCard.vue`, `FolderItem.vue`)
+que son específicos del dominio y consumen los `Ui*` internamente.
+
+### Componentes de feature (`src/components/`)
+
+Componentes específicos del dominio de la app. Consumen componentes `Ui*` y
+contienen lógica de negocio ligera. Ejemplo:
+
+```
+components/
+├── ui/             ← Genéricos, sin lógica de negocio
+│   ├── UiButton.vue
+│   ├── UiInput.vue
+│   └── UiCard.vue
+├── editor/         ← Relacionados al editor Tiptap
+│   ├── EditorToolbar.vue
+│   └── EditorContent.vue
+├── explorer/       ← Relacionados al explorador de archivos
+│   ├── NoteCard.vue
+│   ├── FolderCard.vue
+│   └── ExplorerGrid.vue
+└── layout/         ← Relacionados al layout general
+    ├── AppToolbar.vue
+    ├── AppSidebar.vue
+    └── AppBreadcrumbs.vue
+```
 
 ---
 
