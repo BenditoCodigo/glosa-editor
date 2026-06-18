@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.1",
+    "@tiptap/extension-code-block-lowlight": "^3.27.0",
     "@tiptap/extension-image": "^3.27.0",
     "@tiptap/extension-link": "^3.27.0",
     "@tiptap/extension-placeholder": "^3.27.0",
@@ -28,6 +29,7 @@
     "@tiptap/starter-kit": "^3.27.0",
     "@tiptap/vue-3": "^3.27.0",
     "dexie": "^4.4.4",
+    "lowlight": "^3.3.0",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.3.1",
     "vue": "^3.5.38",

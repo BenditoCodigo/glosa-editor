@@ -9,6 +9,10 @@ import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Image from '@tiptap/extension-image'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { common, createLowlight } from 'lowlight'
+
+const lowlight = createLowlight(common)
 
 interface Props {
   content: string
@@ -23,7 +27,13 @@ const emit = defineEmits<{
 const editor = useEditor({
   content,
   extensions: [
-    StarterKit,
+    StarterKit.configure({
+      codeBlock: false, // Replaced by CodeBlockLowlight
+    }),
+    CodeBlockLowlight.configure({
+      lowlight,
+      defaultLanguage: 'plaintext',
+    }),
     Placeholder.configure({
       placeholder: 'Comienza a escribir...',
     }),
@@ -156,6 +166,7 @@ defineExpose({ editor })
   font-size: 0.875rem;
   overflow-x: auto;
   margin: 1rem 0;
+  position: relative;
 }
 
 .tiptap code {
@@ -170,7 +181,94 @@ defineExpose({ editor })
   background: none;
   padding: 0;
   border-radius: 0;
+  font-size: inherit;
 }
+
+/* Language label */
+.tiptap pre::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-outline);
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+/* Syntax highlighting - Light mode (sage-inspired) */
+.tiptap pre .hljs-keyword,
+.tiptap pre .hljs-selector-tag,
+.tiptap pre .hljs-built_in { color: #4f6056; font-weight: 600; }
+
+.tiptap pre .hljs-string,
+.tiptap pre .hljs-addition { color: #3a6b4f; }
+
+.tiptap pre .hljs-number,
+.tiptap pre .hljs-literal { color: #8b5c2a; }
+
+.tiptap pre .hljs-comment,
+.tiptap pre .hljs-quote { color: #737874; font-style: italic; }
+
+.tiptap pre .hljs-function,
+.tiptap pre .hljs-title { color: #3a4a41; font-weight: 600; }
+
+.tiptap pre .hljs-variable,
+.tiptap pre .hljs-template-variable,
+.tiptap pre .hljs-attr { color: #506357; }
+
+.tiptap pre .hljs-type,
+.tiptap pre .hljs-class { color: #5e7a68; }
+
+.tiptap pre .hljs-tag,
+.tiptap pre .hljs-name { color: #4f6056; }
+
+.tiptap pre .hljs-attribute { color: #6b8f7a; }
+
+.tiptap pre .hljs-symbol,
+.tiptap pre .hljs-bullet { color: #7a5c3a; }
+
+.tiptap pre .hljs-deletion { color: #ba1a1a; }
+
+.tiptap pre .hljs-meta { color: #737874; }
+
+/* Syntax highlighting - Dark mode */
+.dark .tiptap pre .hljs-keyword,
+.dark .tiptap pre .hljs-selector-tag,
+.dark .tiptap pre .hljs-built_in { color: #b8cbbf; font-weight: 600; }
+
+.dark .tiptap pre .hljs-string,
+.dark .tiptap pre .hljs-addition { color: #8fd4a8; }
+
+.dark .tiptap pre .hljs-number,
+.dark .tiptap pre .hljs-literal { color: #e0b080; }
+
+.dark .tiptap pre .hljs-comment,
+.dark .tiptap pre .hljs-quote { color: #8d918d; font-style: italic; }
+
+.dark .tiptap pre .hljs-function,
+.dark .tiptap pre .hljs-title { color: #d4e7da; font-weight: 600; }
+
+.dark .tiptap pre .hljs-variable,
+.dark .tiptap pre .hljs-template-variable,
+.dark .tiptap pre .hljs-attr { color: #b7ccbd; }
+
+.dark .tiptap pre .hljs-type,
+.dark .tiptap pre .hljs-class { color: #a3c4ad; }
+
+.dark .tiptap pre .hljs-tag,
+.dark .tiptap pre .hljs-name { color: #b8cbbf; }
+
+.dark .tiptap pre .hljs-attribute { color: #9ec2a8; }
+
+.dark .tiptap pre .hljs-symbol,
+.dark .tiptap pre .hljs-bullet { color: #d4a76a; }
+
+.dark .tiptap pre .hljs-deletion { color: #ffa0a0; }
+
+.dark .tiptap pre .hljs-meta { color: #8d918d; }
 
 .tiptap hr {
   border: none;
