@@ -43,7 +43,7 @@ watch(() => content, (newContent) => {
   if (!editor.value) return
   const currentContent = editor.value.getHTML()
   if (currentContent !== newContent) {
-    editor.value.commands.setContent(newContent, false)
+    editor.value.commands.setContent(newContent, { emitUpdate: false })
   }
 })
 
