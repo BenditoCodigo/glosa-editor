@@ -5,7 +5,8 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppToolbar from '@/components/layout/AppToolbar.vue'
 import AppBreadcrumbs from '@/components/layout/AppBreadcrumbs.vue'
 
-const uiStore = useUiStore()
+// Initialize UI store (applies theme on creation)
+useUiStore()
 
 const breadcrumbs = [
   { label: 'All Notes', path: '/' },
