@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/* --- Dark mode por clase (toggle manual) --- */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --- Theme tokens --- */
+@theme {
+  /* Tipografía */
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+
+  /* Colores semánticos */
+  --color-primary: oklch(0.6 0.2 250);
+  --color-primary-hover: oklch(0.55 0.22 250);
+  --color-accent: oklch(0.7 0.18 330);
+  --color-success: oklch(0.7 0.18 145);
+  --color-warning: oklch(0.8 0.15 85);
+  --color-error: oklch(0.6 0.22 25);
+
+  /* Superficies */
+  --color-surface: oklch(0.98 0.005 250);
+  --color-surface-elevated: oklch(0.96 0.005 250);
+  --color-surface-dark: oklch(0.12 0.01 250);
+  --color-surface-dark-elevated: oklch(0.16 0.01 250);
+
+  /* Texto */
+  --color-text-primary: oklch(0.2 0.02 250);
+  --color-text-secondary: oklch(0.4 0.02 250);
+  --color-text-dark-primary: oklch(0.95 0.005 250);
+  --color-text-dark-secondary: oklch(0.7 0.01 250);
+
+  /* Radios */
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  /* Sombras */
+  --shadow-glass: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --shadow-glass-inner: inset 0px 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-hard: 0 4px 0 rgba(0, 0, 0, 0.8);
+
+  /* Animaciones */
+  --animate-fade-in: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Liquid Glass Design Tokens (CSS custom properties) --- */
+:root {
+  /* Glass surfaces - Light */
+  --bc-glass-bg-light: rgba(255, 255, 255, 0.4);
+  --bc-glass-border-light: rgba(255, 255, 255, 0.6);
+
+  /* Glass surfaces - Dark */
+  --bc-glass-bg-dark: rgba(15, 15, 15, 0.5);
+  --bc-glass-border-dark: rgba(255, 255, 255, 0.1);
+
+  /* Inputs */
+  --bc-glass-input-bg: rgba(0, 0, 0, 0.05);
+
+  /* Blur levels */
+  --bc-glass-blur-sm: 8px;
+  --bc-glass-blur-md: 16px;
+  --bc-glass-blur-lg: 24px;
+
+  /* Shadows & highlights */
+  --bc-glass-shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --bc-glass-shadow-inner: inset 0px 2px 4px rgba(0, 0, 0, 0.15);
+  --bc-glass-highlight: inset 1px 1px 0px rgba(255, 255, 255, 0.2);
+}
+
+/* --- Custom utilities --- */
+@utility glass-panel {
+  background: var(--bc-glass-bg-light);
+  backdrop-filter: blur(var(--bc-glass-blur-lg));
+  border: 1px solid var(--bc-glass-border-light);
+  box-shadow: var(--bc-glass-highlight), var(--bc-glass-shadow-soft);
+
+  @variant dark {
+    background: var(--bc-glass-bg-dark);
+    border-color: var(--bc-glass-border-dark);
+    box-shadow: var(--bc-glass-highlight);
+  }
+}
+
+@utility glass-panel-md {
+  background: var(--bc-glass-bg-light);
+  backdrop-filter: blur(var(--bc-glass-blur-md));
+  border: 1px solid var(--bc-glass-border-light);
+  box-shadow: var(--bc-glass-highlight), var(--bc-glass-shadow-soft);
+
+  @variant dark {
+    background: var(--bc-glass-bg-dark);
+    border-color: var(--bc-glass-border-dark);
+    box-shadow: var(--bc-glass-highlight);
+  }
+}
+
+@utility glass-input {
+  background: var(--bc-glass-input-bg);
+  box-shadow: var(--bc-glass-shadow-inner);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+
+  @variant dark {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+@utility text-on-glass {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Base styles --- */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .dark body {
+    background-color: var(--color-surface-dark);
+    color: var(--color-text-dark-primary);
+  }
+}
