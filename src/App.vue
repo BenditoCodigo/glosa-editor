@@ -37,6 +37,8 @@ const breadcrumbs = computed(() => {
     for (const folder of path) {
       segments.push({ label: folder.name, path: `/folder/${folder.id}` })
     }
+  } else if (route.name === 'favorites') {
+    segments.push({ label: 'Favorites' })
   } else if (route.name === 'tag-view') {
     const tag = route.params.tag as string
     segments.push({ label: `#${tag}` })

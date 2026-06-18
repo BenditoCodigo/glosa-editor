@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import('@/views/ExplorerView.vue'),
     },
     {
+      path: '/favorites',
+      name: 'favorites',
+      component: () => import('@/views/FavoritesView.vue'),
+    },
+    {
       path: '/tag/:tag',
       name: 'tag-view',
       component: () => import('@/views/TagView.vue'),
