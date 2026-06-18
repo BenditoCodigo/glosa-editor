@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
+import { useSettingsStore } from '@/stores/settings'
 import { getMostActiveNote, getMostActiveFolder, getRecentlyActiveNotes } from '@/services/activity'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import NoteCard from '@/components/explorer/NoteCard.vue'
@@ -12,8 +13,10 @@ import type { Note, Folder } from '@/types'
 const router = useRouter()
 const notesStore = useNotesStore()
 const foldersStore = useFoldersStore()
+const settingsStore = useSettingsStore()
 const { notes, favorites } = storeToRefs(notesStore)
 const { folders } = storeToRefs(foldersStore)
+const { profile } = storeToRefs(settingsStore)
 
 const featuredNote = ref<Note | null>(null)
 const featuredFolder = ref<Folder | null>(null)
@@ -32,10 +35,10 @@ function stripHtml(html: string): string {
 
 function getGreeting(): string {
   const hour = new Date().getHours()
-  if (hour < 6) return '¡Buenas Noches!'
-  if (hour < 12) return '¡Buenos Días!'
-  if (hour < 19) return '¡Buenas Tardes!'
-  return '¡Buenas Noches!'
+  if (hour < 6) return '¡Buenas Noches'
+  if (hour < 12) return '¡Buenos Días'
+  if (hour < 19) return '¡Buenas Tardes'
+  return '¡Buenas Noches'
 }
 
 function getCurrentDateTime(): string {
@@ -51,7 +54,11 @@ function getCurrentDateTime(): string {
   return now.toLocaleDateString('es-MX', options)
 }
 
-const greeting = getGreeting()
+const greeting = computed(() => {
+  const base = getGreeting()
+  const name = profile.value.username.trim()
+  return name ? `${base}, ${name}!` : `${base}!`
+})
 const currentDateTime = getCurrentDateTime()
 
 function relativeDate(dateStr: string): string {
