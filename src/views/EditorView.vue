@@ -170,7 +170,7 @@ onUnmounted(() => {
       <!-- Editor header -->
       <div class="flex items-center justify-between px-6 lg:px-12 py-2">
         <div class="flex items-center gap-3">
-          <UiIconButton icon="arrow_back" ariaLabel="Back to explorer" size="sm" @click="goBack" />
+          <UiIconButton icon="arrow_back" ariaLabel="Back to explorer" tooltip="Volver" size="sm" @click="goBack" />
           <div class="flex items-center gap-2 text-secondary">
             <UiIcon
               :name="saveStatus === 'saving' ? 'sync' : saveStatus === 'saved' ? 'cloud_done' : 'edit'"
@@ -178,12 +178,32 @@ onUnmounted(() => {
               :class="saveStatus === 'saving' && 'animate-spin'"
             />
             <span class="text-xs opacity-70">
-              {{ saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Cambios sin guardar' }}
+              {{ saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Guardando' }}
             </span>
+          </div>
+
+          <!-- Undo / Redo -->
+          <div class="flex items-center gap-0.5 ml-2">
+            <UiIconButton
+              icon="undo"
+              ariaLabel="Undo"
+              tooltip="Deshacer"
+              size="sm"
+              :class="!editorRef?.editor?.can().undo() && 'opacity-30 pointer-events-none'"
+              @click="editorRef?.editor?.chain().focus().undo().run()"
+            />
+            <UiIconButton
+              icon="redo"
+              ariaLabel="Redo"
+              tooltip="Rehacer"
+              size="sm"
+              :class="!editorRef?.editor?.can().redo() && 'opacity-30 pointer-events-none'"
+              @click="editorRef?.editor?.chain().focus().redo().run()"
+            />
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <UiIconButton icon="image" ariaLabel="Cover image" size="sm" @click="handleSetCoverImage" />
+          <UiIconButton icon="image" ariaLabel="Cover image" tooltip="Imagen de portada" size="sm" @click="handleSetCoverImage" />
           <UiButton variant="solid" size="sm" @click="save">
             <template #icon-left>
               <UiIcon name="save" size="sm" />
