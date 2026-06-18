@@ -192,9 +192,14 @@ El fondo cristalino reduce el contraste, la tipografía debe ser robusta.
 
 1. Todos los valores de glass se consumen vía tokens `--bc-*`, nunca hardcodeados
 2. Los componentes `ui/` base deben respetar la jerarquía de capas
-3. El editor de notas (Tiptap) vive sobre una superficie Nivel 1; sus controles son Nivel 3 (sólidos)
-4. El sidebar de navegación de notas es Nivel 1
+3. El editor de notas (Tiptap) vive sobre una superficie Nivel 1 (glass-panel-md); sus controles son Nivel 3 (sólidos)
+4. El sidebar de navegación de notas es Nivel 1 (glass-panel)
 5. Modales de confirmación o settings son Nivel 2
-6. Siempre proveer fallback para `backdrop-filter`
+6. Siempre proveer fallback para `backdrop-filter` (via `-webkit-backdrop-filter`)
 7. En dark mode, reemplazar sombras por bordes especulares
 8. Mantener contraste WCAG AA mínimo en texto sobre superficies glass
+9. El fondo base (Level 0) es un gradiente fluido animado (`bg-fluid-gradient`) — no un color sólido
+10. La paleta principal es sage green (#4f6056) — transmite calma y enfoque
+11. La toolbar flotante del editor aparece en hover/focus — no ocupa espacio permanente
+12. El sidebar usa navegación fija: All Notes, Recent, Favorites, Folders, Archive
+13. Iconografía: Material Symbols Outlined (weight 300, FILL 0, optical size 20)
