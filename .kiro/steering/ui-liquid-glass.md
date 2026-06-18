@@ -112,7 +112,23 @@ El fondo cristalino reduce el contraste, la tipografía debe ser robusta.
 ### Pairing para este proyecto (Tech/Herramientas)
 - **Titulares**: Space Grotesk (geométrica, impactante)
 - **Cuerpo/UI**: Inter (legibilidad perfecta en tamaños pequeños)
+- **Código**: Geist Mono (monoespaciada moderna para code blocks)
 - Importar desde Google Fonts
+- Iconos: Material Symbols Outlined (variable weight 300, FILL 0)
+
+### Escala tipográfica
+
+| Token | Font | Size | Weight | Line Height |
+|-------|------|------|--------|-------------|
+| headline-lg | Space Grotesk | 48px | 700 | 1.1 |
+| headline-md | Space Grotesk | 32px | 600 | 1.2 |
+| headline-sm | Space Grotesk | 24px | 600 | 1.3 |
+| body-lg | Inter | 18px | 400 | 1.6 |
+| body-md | Inter | 16px | 400 | 1.5 |
+| body-sm | Inter | 14px | 400 | 1.4 |
+| label-md | Inter | 14px | 600 | 1.0 |
+| label-sm | Inter | 12px | 500 | 1.0 |
+| mono-code | Geist Mono | 14px | 400 | 22px |
 
 ### Renderizado obligatorio sobre glass
 
