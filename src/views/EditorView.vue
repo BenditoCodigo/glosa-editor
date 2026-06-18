@@ -6,6 +6,8 @@ import { useNotesStore } from '@/stores/notes'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import EditorContentComponent from '@/components/editor/EditorContent.vue'
+import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +18,7 @@ const title = ref('')
 const content = ref('')
 const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const isLoading = ref(true)
+const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -37,7 +40,7 @@ watch(
   { immediate: true },
 )
 
-// Autosave on content/title changes
+// Autosave scheduling
 function scheduleAutosave() {
   if (autosaveTimer) clearTimeout(autosaveTimer)
   saveStatus.value = 'unsaved'
@@ -48,13 +51,17 @@ async function save() {
   if (!activeNote.value) return
   saveStatus.value = 'saving'
 
-  const updatedNote = {
-    ...activeNote.value,
+  await notesStore.updateNote({
+    id: activeNote.value.id,
     title: title.value || 'Untitled Note',
     content: content.value,
-  }
+    folder: activeNote.value.folder,
+    isFavorite: activeNote.value.isFavorite,
+    createdAt: activeNote.value.createdAt,
+    updatedAt: activeNote.value.updatedAt,
+    tags: [...activeNote.value.tags],
+  })
 
-  await notesStore.updateNote(updatedNote)
   saveStatus.value = 'saved'
 }
 
@@ -63,8 +70,8 @@ function handleTitleInput(event: Event) {
   scheduleAutosave()
 }
 
-function handleContentInput(event: Event) {
-  content.value = (event.target as HTMLTextAreaElement).value
+function handleContentUpdate(newContent: string) {
+  content.value = newContent
   scheduleAutosave()
 }
 
@@ -76,21 +83,8 @@ function goBack() {
   }
 }
 
-const toolbarItems = [
-  { icon: 'format_h1', label: 'Headings' },
-  { icon: 'format_bold', label: 'Bold' },
-  { icon: 'format_italic', label: 'Italic' },
-  { divider: true },
-  { icon: 'format_list_bulleted', label: 'Bullet List' },
-  { icon: 'format_list_numbered', label: 'Numbered List' },
-  { divider: true },
-  { icon: 'code', label: 'Code Block' },
-  { icon: 'link', label: 'Link' },
-] as const
-
 onUnmounted(() => {
   if (autosaveTimer) clearTimeout(autosaveTimer)
-  // Save on leave if unsaved
   if (saveStatus.value !== 'saved') save()
 })
 </script>
@@ -109,12 +103,12 @@ onUnmounted(() => {
           <UiIconButton icon="arrow_back" ariaLabel="Back to explorer" size="sm" @click="goBack" />
           <div class="flex items-center gap-2 text-secondary">
             <UiIcon
-              :name="saveStatus === 'saving' ? 'sync' : 'cloud_done'"
+              :name="saveStatus === 'saving' ? 'sync' : saveStatus === 'saved' ? 'cloud_done' : 'edit'"
               size="sm"
               :class="saveStatus === 'saving' && 'animate-spin'"
             />
             <span class="text-xs opacity-70">
-              {{ saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved' }}
+              {{ saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved changes' }}
             </span>
           </div>
         </div>
@@ -143,36 +137,18 @@ onUnmounted(() => {
             @input="handleTitleInput"
           >
 
-          <!-- Content (textarea placeholder for Tiptap) -->
-          <textarea
-            :value="content"
-            placeholder="Start writing..."
-            class="w-full min-h-[400px] bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-lg leading-relaxed text-on-surface/90 resize-none placeholder:text-outline-variant"
-            @input="handleContentInput"
+          <!-- Tiptap Editor -->
+          <EditorContentComponent
+            ref="editorRef"
+            :content="content"
+            @update:content="handleContentUpdate"
           />
         </div>
       </div>
 
       <!-- Floating toolbar -->
       <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-        <div class="
-          bg-surface-container-highest
-          shadow-lg border border-outline-variant
-          rounded-full p-2
-          flex items-center gap-1
-          transition-opacity duration-300
-          opacity-60 hover:opacity-100
-        ">
-          <template v-for="(item, index) in toolbarItems" :key="index">
-            <div v-if="'divider' in item" class="w-px h-6 bg-outline-variant mx-1" />
-            <UiIconButton
-              v-else
-              :icon="item.icon"
-              :ariaLabel="item.label"
-              size="sm"
-            />
-          </template>
-        </div>
+        <EditorToolbar :editor="editorRef?.editor" />
       </div>
     </template>
   </div>
