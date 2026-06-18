@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import('@/views/ExplorerView.vue'),
     },
     {
+      path: '/tag/:tag',
+      name: 'tag-view',
+      component: () => import('@/views/TagView.vue'),
+    },
+    {
       path: '/note/:id',
       name: 'editor',
       component: () => import('@/views/EditorView.vue'),

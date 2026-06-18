@@ -83,13 +83,15 @@ const relativeDate = computed(() => {
     <!-- Footer -->
     <div class="flex items-center justify-between mt-auto pt-2">
       <div class="flex gap-1">
-        <span
+        <router-link
           v-for="tag in note.tags.slice(0, 2)"
           :key="tag"
-          class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary"
+          :to="{ name: 'tag-view', params: { tag } }"
+          class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary hover:bg-primary-fixed/50 hover:text-on-primary-fixed transition-colors"
+          @click.stop
         >
           {{ tag }}
-        </span>
+        </router-link>
       </div>
       <button
         class="transition-colors"
