@@ -15,11 +15,25 @@ defineEmits<{
 }>()
 
 const contentPreview = computed(() => {
-  // Strip HTML tags and decode entities for plain text preview
   const div = document.createElement('div')
   div.innerHTML = note.content
   const text = div.textContent || div.innerText || ''
   return text.slice(0, 120).trim()
+})
+
+const relativeDate = computed(() => {
+  const now = Date.now()
+  const updated = new Date(note.updatedAt).getTime()
+  const diffMs = now - updated
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return 'Just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return new Date(note.updatedAt).toLocaleDateString()
 })
 </script>
 
@@ -38,7 +52,9 @@ const contentPreview = computed(() => {
   >
     <!-- Header -->
     <div class="flex justify-between items-start">
+      <span v-if="note.emoji" class="text-2xl leading-none">{{ note.emoji }}</span>
       <UiIcon
+        v-else
         name="description"
         class="text-secondary group-hover:text-primary transition-colors"
       />
@@ -54,8 +70,8 @@ const contentPreview = computed(() => {
       <h3 class="font-display text-on-surface text-lg font-semibold leading-tight">
         {{ note.title }}
       </h3>
-      <p class="text-xs text-secondary mt-1">
-        {{ new Date(note.updatedAt).toLocaleDateString() }}
+      <p class="text-[11px] text-secondary/60 mt-1">
+        {{ relativeDate }}
       </p>
     </div>
 
