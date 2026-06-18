@@ -1,24 +1,58 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUiStore } from '@/stores/ui'
+import { useNotesStore } from '@/stores/notes'
+import { useFoldersStore } from '@/stores/folders'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 
+const router = useRouter()
+const route = useRoute()
 const uiStore = useUiStore()
+const notesStore = useNotesStore()
+const foldersStore = useFoldersStore()
 const { sidebarOpen } = storeToRefs(uiStore)
 
+const showAllFavorites = computed(() => false) // toggle state for "see more"
+
+const allFavorites = computed(() => [
+  ...foldersStore.favorites.map((f) => ({ type: 'folder' as const, id: f.id, name: f.name })),
+  ...notesStore.favorites.map((n) => ({ type: 'note' as const, id: n.id, name: n.title })),
+])
+
+const visibleFavorites = computed(() =>
+  allFavorites.value.slice(0, showAllFavorites.value ? undefined : 5),
+)
+
 const navItems = [
-  { icon: 'description', label: 'All Notes', id: 'all' },
-  { icon: 'history', label: 'Recent', id: 'recent' },
-  { icon: 'star', label: 'Favorites', id: 'favorites' },
-  { icon: 'folder', label: 'Folders', id: 'folders' },
-  { icon: 'archive', label: 'Archive', id: 'archive' },
+  { icon: 'description', label: 'All Notes', id: 'all', route: '/' },
+  { icon: 'star', label: 'Favorites', id: 'favorites', route: '/' },
+  { icon: 'folder', label: 'Folders', id: 'folders', route: '/' },
 ] as const
 
-const footerItems = [
-  { icon: 'settings', label: 'Settings', id: 'settings' },
-  { icon: 'help', label: 'Help', id: 'help' },
-] as const
+function isActive(itemId: string) {
+  if (itemId === 'all' && route.name === 'explorer-root') return true
+  return false
+}
+
+function navigate(item: (typeof navItems)[number]) {
+  router.push(item.route)
+}
+
+function openFavorite(fav: { type: 'folder' | 'note'; id: string }) {
+  if (fav.type === 'folder') {
+    router.push({ name: 'explorer-folder', params: { path: fav.id } })
+  } else {
+    router.push({ name: 'editor', params: { id: fav.id } })
+  }
+}
+
+async function handleCreateNote() {
+  const note = await notesStore.createNote(null)
+  router.push({ name: 'editor', params: { id: note.id } })
+}
 </script>
 
 <template>
@@ -41,12 +75,12 @@ const footerItems = [
           </div>
           <div class="flex flex-col">
             <span class="font-display text-primary text-lg font-semibold leading-tight">Notes</span>
-            <span class="text-xs text-secondary uppercase tracking-widest">Libreta Abierta</span>
+            <span class="text-[10px] text-secondary uppercase tracking-widest">Libreta Abierta</span>
           </div>
         </div>
 
         <!-- CTA -->
-        <UiButton variant="solid" size="lg" class="w-full mb-8">
+        <UiButton variant="solid" size="lg" class="w-full mb-8" @click="handleCreateNote">
           <template #icon-left>
             <UiIcon name="add" size="sm" />
           </template>
@@ -55,35 +89,44 @@ const footerItems = [
 
         <!-- Navigation -->
         <nav class="flex-1 space-y-1 overflow-y-auto">
-          <a
+          <button
             v-for="item in navItems"
             :key="item.id"
-            href="#"
             class="
-              flex items-center gap-3 px-4 py-2
-              rounded-xl transition-colors duration-200
+              w-full flex items-center gap-3 px-4 py-2
+              rounded-xl transition-colors duration-200 text-left
             "
-            :class="item.id === 'all'
+            :class="isActive(item.id)
               ? 'text-primary font-bold bg-white/20 dark:bg-black/10'
               : 'text-secondary hover:bg-white/10 dark:hover:bg-black/5'
             "
+            @click="navigate(item)"
           >
             <UiIcon :name="item.icon" />
             <span class="text-sm">{{ item.label }}</span>
-          </a>
+          </button>
+
+          <!-- Favorites in sidebar -->
+          <div v-if="visibleFavorites.length > 0" class="mt-4 pt-4 border-t border-white/10">
+            <span class="text-[10px] text-secondary/60 uppercase tracking-widest px-4 mb-2 block">Favorites</span>
+            <button
+              v-for="fav in visibleFavorites"
+              :key="fav.id"
+              class="w-full flex items-center gap-3 px-4 py-1.5 text-secondary hover:bg-white/10 rounded-xl transition-colors duration-200 text-left"
+              @click="openFavorite(fav)"
+            >
+              <UiIcon :name="fav.type === 'folder' ? 'folder' : 'description'" size="sm" />
+              <span class="text-sm truncate">{{ fav.name }}</span>
+            </button>
+          </div>
         </nav>
 
         <!-- Footer -->
         <div class="mt-auto pt-4 border-t border-white/20 space-y-1">
-          <a
-            v-for="item in footerItems"
-            :key="item.id"
-            href="#"
-            class="flex items-center gap-3 px-4 py-2 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200"
-          >
-            <UiIcon :name="item.icon" />
-            <span class="text-sm">{{ item.label }}</span>
-          </a>
+          <button class="w-full flex items-center gap-3 px-4 py-2 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200 text-left">
+            <UiIcon name="settings" />
+            <span class="text-sm">Settings</span>
+          </button>
         </div>
       </div>
     </aside>

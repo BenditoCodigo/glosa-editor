@@ -1,18 +1,58 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useUiStore } from '@/stores/ui'
+import { useNotesStore } from '@/stores/notes'
+import { useFoldersStore } from '@/stores/folders'
+import { seedIfEmpty } from '@/services/storage'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppToolbar from '@/components/layout/AppToolbar.vue'
 import AppBreadcrumbs from '@/components/layout/AppBreadcrumbs.vue'
 
-// Initialize UI store (applies theme on creation)
-useUiStore()
+const route = useRoute()
+const router = useRouter()
 
-const breadcrumbs = [
-  { label: 'All Notes', path: '/' },
-  { label: 'Personal', path: '/folder/personal' },
-  { label: 'Deep Work Space' },
-]
+// Initialize stores
+useUiStore()
+const notesStore = useNotesStore()
+const foldersStore = useFoldersStore()
+const { activeNote } = storeToRefs(notesStore)
+
+// Seed DB and load data on app start
+onMounted(async () => {
+  await seedIfEmpty()
+  await Promise.all([notesStore.loadAll(), foldersStore.loadAll()])
+})
+
+// Dynamic breadcrumbs based on route
+const breadcrumbs = computed(() => {
+  const segments: { label: string; path?: string }[] = [
+    { label: 'All Notes', path: '/' },
+  ]
+
+  if (route.name === 'explorer-folder') {
+    const folderId = route.params.path as string
+    const path = foldersStore.getFolderPath(folderId)
+    for (const folder of path) {
+      segments.push({ label: folder.name, path: `/folder/${folder.id}` })
+    }
+  } else if (route.name === 'editor' && activeNote.value) {
+    if (activeNote.value.folder) {
+      const path = foldersStore.getFolderPath(activeNote.value.folder)
+      for (const folder of path) {
+        segments.push({ label: folder.name, path: `/folder/${folder.id}` })
+      }
+    }
+    segments.push({ label: activeNote.value.title })
+  }
+
+  return segments
+})
+
+function handleBreadcrumbNavigate(path: string) {
+  router.push(path)
+}
 </script>
 
 <template>
@@ -30,7 +70,10 @@ const breadcrumbs = [
       </div>
 
       <!-- Breadcrumbs -->
-      <AppBreadcrumbs :segments="breadcrumbs" />
+      <AppBreadcrumbs
+        :segments="breadcrumbs"
+        @navigate="handleBreadcrumbNavigate"
+      />
     </main>
   </div>
 </template>

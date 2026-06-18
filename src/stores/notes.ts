@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Note } from '@/types'
+import * as storage from '@/services/storage'
 
 export const useNotesStore = defineStore('notes', () => {
   const notes = ref<Note[]>([])
@@ -15,16 +16,62 @@ export const useNotesStore = defineStore('notes', () => {
     notes.value.filter((n) => n.isFavorite),
   )
 
-  function setNotes(newNotes: Note[]) {
-    notes.value = newNotes
+  function notesByFolder(folderId: string | null) {
+    return notes.value.filter((n) => n.folder === folderId)
   }
 
-  function setActiveNote(note: Note | null) {
-    activeNote.value = note
+  async function loadAll() {
+    isLoading.value = true
+    try {
+      notes.value = await storage.getAllNotes()
+    } finally {
+      isLoading.value = false
+    }
   }
 
-  function setLoading(loading: boolean) {
-    isLoading.value = loading
+  async function loadNote(id: string) {
+    const note = await storage.getNoteById(id)
+    activeNote.value = note ?? null
+    return note
+  }
+
+  async function createNote(folder: string | null): Promise<Note> {
+    const now = new Date().toISOString()
+    const note: Note = {
+      id: crypto.randomUUID(),
+      title: 'Untitled Note',
+      content: '',
+      folder,
+      isFavorite: false,
+      createdAt: now,
+      updatedAt: now,
+      tags: [],
+    }
+    await storage.saveNote(note)
+    notes.value.push(note)
+    return note
+  }
+
+  async function updateNote(note: Note) {
+    note.updatedAt = new Date().toISOString()
+    await storage.saveNote(note)
+    const index = notes.value.findIndex((n) => n.id === note.id)
+    if (index !== -1) notes.value[index] = { ...note }
+    if (activeNote.value?.id === note.id) activeNote.value = { ...note }
+  }
+
+  async function toggleFavorite(id: string) {
+    const note = notes.value.find((n) => n.id === id)
+    if (!note) return
+    note.isFavorite = !note.isFavorite
+    note.updatedAt = new Date().toISOString()
+    await storage.saveNote(note)
+  }
+
+  async function removeNote(id: string) {
+    await storage.deleteNote(id)
+    notes.value = notes.value.filter((n) => n.id !== id)
+    if (activeNote.value?.id === id) activeNote.value = null
   }
 
   return {
@@ -33,8 +80,12 @@ export const useNotesStore = defineStore('notes', () => {
     isLoading,
     sortedNotes,
     favorites,
-    setNotes,
-    setActiveNote,
-    setLoading,
+    notesByFolder,
+    loadAll,
+    loadNote,
+    createNote,
+    updateNote,
+    toggleFavorite,
+    removeNote,
   }
 })
