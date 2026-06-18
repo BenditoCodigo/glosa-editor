@@ -29,6 +29,7 @@ export function slugify(title: string): string {
     .replace(/[\s_]/g, '-')
     .replace(/[^a-z0-9-]/g, '')
     .replace(/-{2,}/g, '-')
+    .replace(/^-+/, '')
 
   slug = slug.slice(0, MAX_SLUG_LENGTH).replace(/-+$/, '')
 

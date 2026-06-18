@@ -75,11 +75,18 @@ describe('Slug Utility', () => {
     })
 
     it('trims trailing hyphens specifically after truncation breaks a word', () => {
-      // 98 a's + space + space = "aaa...a--" after collapse = "aaa...a-"
-      // then "bbb" which gets cut off, leaving trailing hyphen
-      const title = 'a'.repeat(98) + '  ' + 'b'.repeat(50)
+      // 100 a's followed by "-b" → after truncation to 100: just "aaa...a" (100 a's)
+      const title = 'a'.repeat(100) + '-b'
       const result = slugify(title)
-      expect(result).toBe('a'.repeat(98))
+      expect(result).toBe('a'.repeat(100))
+      expect(result).not.toMatch(/-$/)
+    })
+
+    it('trims trailing hyphen that appears exactly at the cut point', () => {
+      // 99 a's + space → "aaa...a-" which is 100 chars, trailing hyphen must be trimmed
+      const title = 'a'.repeat(99) + ' '
+      const result = slugify(title)
+      expect(result).toBe('a'.repeat(99))
       expect(result).not.toMatch(/-$/)
     })
 
