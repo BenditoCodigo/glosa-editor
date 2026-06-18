@@ -8,9 +8,10 @@ interface Props {
   size?: 'sm' | 'md' | 'lg'
   ariaLabel: string
   filled?: boolean
+  tooltip?: string
 }
 
-const { icon, variant = 'ghost', size = 'md', ariaLabel, filled = false } = defineProps<Props>()
+const { icon, variant = 'ghost', size = 'md', ariaLabel, filled = false, tooltip } = defineProps<Props>()
 
 const sizeClasses = {
   sm: 'w-8 h-8',
@@ -31,7 +32,7 @@ const classes = computed(() => [
 </script>
 
 <template>
-  <button :class="classes" :aria-label="ariaLabel">
+  <button :class="classes" :aria-label="ariaLabel" :title="tooltip || ariaLabel">
     <UiIcon :name="icon" :filled="filled" />
   </button>
 </template>

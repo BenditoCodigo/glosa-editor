@@ -85,6 +85,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="format_h1"
       ariaLabel="Heading"
+      tooltip="Encabezado"
       size="sm"
       :class="editor?.isActive('heading') && 'bg-primary/10 text-primary'"
       @click="toggleHeading"
@@ -92,6 +93,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="format_bold"
       ariaLabel="Bold"
+      tooltip="Negrita"
       size="sm"
       :class="editor?.isActive('bold') && 'bg-primary/10 text-primary'"
       @click="toggleBold"
@@ -99,6 +101,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="format_italic"
       ariaLabel="Italic"
+      tooltip="Cursiva"
       size="sm"
       :class="editor?.isActive('italic') && 'bg-primary/10 text-primary'"
       @click="toggleItalic"
@@ -109,6 +112,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="format_list_bulleted"
       ariaLabel="Bullet List"
+      tooltip="Lista con viñetas"
       size="sm"
       :class="editor?.isActive('bulletList') && 'bg-primary/10 text-primary'"
       @click="toggleBulletList"
@@ -116,6 +120,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="format_list_numbered"
       ariaLabel="Ordered List"
+      tooltip="Lista numerada"
       size="sm"
       :class="editor?.isActive('orderedList') && 'bg-primary/10 text-primary'"
       @click="toggleOrderedList"
@@ -123,6 +128,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="checklist"
       ariaLabel="Task List"
+      tooltip="Lista de tareas"
       size="sm"
       :class="editor?.isActive('taskList') && 'bg-primary/10 text-primary'"
       @click="toggleTaskList"
@@ -133,6 +139,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="table_chart"
       ariaLabel="Table"
+      tooltip="Insertar tabla"
       size="sm"
       :class="editor?.isActive('table') && 'bg-primary/10 text-primary'"
       @click="insertTable"
@@ -143,30 +150,35 @@ function confirmImage(url: string) {
       <UiIconButton
         icon="add_column_right"
         ariaLabel="Agregar columna"
+        tooltip="Agregar columna"
         size="sm"
         @click="editor?.chain().focus().addColumnAfter().run()"
       />
       <UiIconButton
         icon="add_row_below"
         ariaLabel="Agregar fila"
+        tooltip="Agregar fila"
         size="sm"
         @click="editor?.chain().focus().addRowAfter().run()"
       />
       <UiIconButton
         icon="remove"
         ariaLabel="Eliminar columna"
+        tooltip="Eliminar columna"
         size="sm"
         @click="editor?.chain().focus().deleteColumn().run()"
       />
       <UiIconButton
         icon="delete_sweep"
         ariaLabel="Eliminar fila"
+        tooltip="Eliminar fila"
         size="sm"
         @click="editor?.chain().focus().deleteRow().run()"
       />
       <UiIconButton
         icon="delete"
         ariaLabel="Eliminar tabla"
+        tooltip="Eliminar tabla"
         size="sm"
         @click="editor?.chain().focus().deleteTable().run()"
       />
@@ -175,6 +187,7 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="code"
       ariaLabel="Code Block"
+      tooltip="Bloque de código"
       size="sm"
       :class="editor?.isActive('codeBlock') && 'bg-primary/10 text-primary'"
       @click="toggleCodeBlock"
@@ -185,12 +198,14 @@ function confirmImage(url: string) {
     <UiIconButton
       icon="image"
       ariaLabel="Image"
+      tooltip="Insertar imagen"
       size="sm"
       @click="openImageModal"
     />
     <UiIconButton
       icon="link"
       ariaLabel="Link"
+      tooltip="Insertar enlace"
       size="sm"
       :class="editor?.isActive('link') && 'bg-primary/10 text-primary'"
       @click="openLinkModal"
