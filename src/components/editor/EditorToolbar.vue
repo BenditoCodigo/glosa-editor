@@ -74,6 +74,7 @@ function confirmImage(url: string) {
 </script>
 
 <template>
+  <!-- Main toolbar only -->
   <div class="
     glass-panel-md
     rounded-full p-2
@@ -136,6 +137,41 @@ function confirmImage(url: string) {
       :class="editor?.isActive('table') && 'bg-primary/10 text-primary'"
       @click="insertTable"
     />
+
+    <!-- Table controls (inline, only when inside a table) -->
+    <template v-if="editor?.isActive('table')">
+      <UiIconButton
+        icon="add_column_right"
+        ariaLabel="Agregar columna"
+        size="sm"
+        @click="editor?.chain().focus().addColumnAfter().run()"
+      />
+      <UiIconButton
+        icon="add_row_below"
+        ariaLabel="Agregar fila"
+        size="sm"
+        @click="editor?.chain().focus().addRowAfter().run()"
+      />
+      <UiIconButton
+        icon="remove"
+        ariaLabel="Eliminar columna"
+        size="sm"
+        @click="editor?.chain().focus().deleteColumn().run()"
+      />
+      <UiIconButton
+        icon="delete_sweep"
+        ariaLabel="Eliminar fila"
+        size="sm"
+        @click="editor?.chain().focus().deleteRow().run()"
+      />
+      <UiIconButton
+        icon="delete"
+        ariaLabel="Eliminar tabla"
+        size="sm"
+        @click="editor?.chain().focus().deleteTable().run()"
+      />
+    </template>
+
     <UiIconButton
       icon="code"
       ariaLabel="Code Block"
