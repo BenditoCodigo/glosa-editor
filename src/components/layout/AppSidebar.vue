@@ -40,7 +40,8 @@ const contextFolders = computed(() =>
 )
 
 function isNavActive(id: string) {
-  if (id === 'all' && route.name === 'explorer-root') return true
+  if (id === 'home' && route.name === 'home') return true
+  if (id === 'notes' && (route.name === 'explorer-root' || route.name === 'explorer-folder')) return true
   return false
 }
 
@@ -99,14 +100,28 @@ async function handleCreateNote() {
                 w-full flex items-center gap-3 px-4 py-2
                 rounded-xl transition-colors duration-200 text-left
               "
-              :class="isNavActive('all')
+              :class="isNavActive('home')
                 ? 'text-primary font-bold bg-white/20 dark:bg-black/10'
                 : 'text-secondary hover:bg-white/10 dark:hover:bg-black/5'
               "
               @click="router.push('/')"
             >
+              <UiIcon name="home" />
+              <span class="text-sm">Home</span>
+            </button>
+            <button
+              class="
+                w-full flex items-center gap-3 px-4 py-2
+                rounded-xl transition-colors duration-200 text-left
+              "
+              :class="isNavActive('notes')
+                ? 'text-primary font-bold bg-white/20 dark:bg-black/10'
+                : 'text-secondary hover:bg-white/10 dark:hover:bg-black/5'
+              "
+              @click="router.push('/notes')"
+            >
               <UiIcon name="description" />
-              <span class="text-sm">All Notes</span>
+              <span class="text-sm">Notes</span>
             </button>
           </div>
 

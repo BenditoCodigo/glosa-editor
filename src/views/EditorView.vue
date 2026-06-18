@@ -3,6 +3,7 @@ import { ref, watch, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
+import { trackActivity } from '@/services/activity'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -39,6 +40,7 @@ watch(
       content.value = note.content
       tags.value = [...note.tags]
       emoji.value = note.emoji
+      trackActivity(note.id, 'note', 'open')
     } else {
       router.replace('/')
     }
@@ -80,6 +82,7 @@ async function save() {
     emoji: emoji.value,
   })
 
+  trackActivity(activeNote.value.id, 'note', 'save')
   saveStatus.value = 'saved'
 }
 

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
+import { trackActivity } from '@/services/activity'
 import FolderCard from '@/components/explorer/FolderCard.vue'
 import NoteCard from '@/components/explorer/NoteCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -38,6 +39,7 @@ const isLoading = computed(() => notesLoading.value || foldersLoading.value)
 
 // Navigation
 function openFolder(folderId: string) {
+  trackActivity(folderId, 'folder', 'open')
   router.push({ name: 'explorer-folder', params: { path: folderId } })
 }
 

@@ -27,11 +27,18 @@ onMounted(async () => {
 
 // Dynamic breadcrumbs based on route
 const breadcrumbs = computed(() => {
+  if (route.name === 'home') {
+    return [{ label: 'Home' }]
+  }
+
   const segments: { label: string; path?: string }[] = [
-    { label: 'All Notes', path: '/' },
+    { label: 'Home', path: '/' },
   ]
 
-  if (route.name === 'explorer-folder') {
+  if (route.name === 'explorer-root') {
+    segments.push({ label: 'Notes' })
+  } else if (route.name === 'explorer-folder') {
+    segments.push({ label: 'Notes', path: '/notes' })
     const folderId = route.params.path as string
     const path = foldersStore.getFolderPath(folderId)
     for (const folder of path) {
@@ -44,10 +51,13 @@ const breadcrumbs = computed(() => {
     segments.push({ label: `#${tag}` })
   } else if (route.name === 'editor' && activeNote.value) {
     if (activeNote.value.folder) {
+      segments.push({ label: 'Notes', path: '/notes' })
       const path = foldersStore.getFolderPath(activeNote.value.folder)
       for (const folder of path) {
         segments.push({ label: folder.name, path: `/folder/${folder.id}` })
       }
+    } else {
+      segments.push({ label: 'Notes', path: '/notes' })
     }
     segments.push({ label: activeNote.value.title })
   }
