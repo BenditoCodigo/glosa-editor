@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPromptModal from '@/components/ui/UiPromptModal.vue'
+import LinkModal from './LinkModal.vue'
 
 interface Props {
   editor: Editor | undefined
@@ -14,6 +15,7 @@ const showLinkModal = ref(false)
 const showImageModal = ref(false)
 const showHeadings = ref(false)
 const linkInitialValue = ref('')
+const linkInitialText = ref('')
 
 function toggleBold() {
   editor?.chain().focus().toggleBold().run()
@@ -46,17 +48,49 @@ function insertTable() {
 function openLinkModal() {
   if (!editor) return
   linkInitialValue.value = editor.getAttributes('link').href || ''
+  // Get selected text as initial link text
+  const { from, to } = editor.state.selection
+  linkInitialText.value = editor.state.doc.textBetween(from, to, '') || ''
   showLinkModal.value = true
 }
 
-function confirmLink(url: string) {
+function confirmLink(url: string, text: string) {
   showLinkModal.value = false
   if (!editor) return
+
   if (url === '') {
     editor.chain().focus().extendMarkRange('link').unsetLink().run()
     return
   }
-  editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+
+  // If text is provided and different from selection, insert it
+  if (text) {
+    const { from, to } = editor.state.selection
+    const selectedText = editor.state.doc.textBetween(from, to, '')
+
+    if (selectedText) {
+      // Has selection: apply link to selection, replace text if different
+      if (text !== selectedText) {
+        editor.chain().focus().deleteSelection().insertContent(`<a href="${url}">${text}</a>`).run()
+      } else {
+        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+      }
+    } else {
+      // No selection: insert link with text
+      editor.chain().focus().insertContent(`<a href="${url}">${text}</a>`).run()
+    }
+  } else {
+    // No text: if there's a selection, just apply link to it
+    const { from, to } = editor.state.selection
+    const selectedText = editor.state.doc.textBetween(from, to, '')
+
+    if (selectedText) {
+      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    } else {
+      // No selection, no text: insert URL as both text and link
+      editor.chain().focus().insertContent(`<a href="${url}">${url}</a>`).run()
+    }
+  }
 }
 
 function openImageModal() {
@@ -286,12 +320,10 @@ function confirmImage(url: string) {
   </div>
 
   <!-- Modal: Link -->
-  <UiPromptModal
+  <LinkModal
     :open="showLinkModal"
-    title="Insertar enlace"
-    placeholder="https://ejemplo.com"
-    :initialValue="linkInitialValue"
-    confirmLabel="Aplicar"
+    :initialUrl="linkInitialValue"
+    :initialText="linkInitialText"
     @confirm="confirmLink"
     @cancel="showLinkModal = false"
   />
