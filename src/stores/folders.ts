@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import type { Folder } from '@/types'
 import * as storage from '@/services/storage'
@@ -59,7 +59,7 @@ export const useFoldersStore = defineStore('folders', () => {
     const folder = folders.value.find((f) => f.id === id)
     if (!folder) return
     const updated: Folder = {
-      ...folder,
+      ...structuredClone(toRaw(folder)),
       isFavorite: !folder.isFavorite,
       updatedAt: new Date().toISOString(),
     }

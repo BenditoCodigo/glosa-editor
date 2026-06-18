@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import type { Note } from '@/types'
 import * as storage from '@/services/storage'
@@ -54,7 +54,7 @@ export const useNotesStore = defineStore('notes', () => {
 
   async function updateNote(note: Note) {
     const updated: Note = {
-      ...note,
+      ...structuredClone(toRaw(note)),
       updatedAt: new Date().toISOString(),
     }
     await storage.saveNote(updated)
@@ -67,7 +67,7 @@ export const useNotesStore = defineStore('notes', () => {
     const note = notes.value.find((n) => n.id === id)
     if (!note) return
     const updated: Note = {
-      ...note,
+      ...structuredClone(toRaw(note)),
       isFavorite: !note.isFavorite,
       updatedAt: new Date().toISOString(),
     }
