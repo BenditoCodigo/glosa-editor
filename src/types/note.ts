@@ -7,6 +7,7 @@ export interface Note {
   createdAt: string
   updatedAt: string
   tags: string[]
+  emoji?: string
 }
 
 export interface NoteMetadata {

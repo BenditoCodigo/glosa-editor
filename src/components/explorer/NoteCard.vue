@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import type { Note } from '@/types'
 
@@ -6,12 +7,20 @@ interface Props {
   note: Note
 }
 
-defineProps<Props>()
+const { note } = defineProps<Props>()
 
 defineEmits<{
   dblclick: []
   toggleFavorite: []
 }>()
+
+const contentPreview = computed(() => {
+  // Strip HTML tags and decode entities for plain text preview
+  const div = document.createElement('div')
+  div.innerHTML = note.content
+  const text = div.textContent || div.innerText || ''
+  return text.slice(0, 120).trim()
+})
 </script>
 
 <template>
@@ -52,7 +61,7 @@ defineEmits<{
 
     <!-- Preview -->
     <p class="text-sm text-secondary line-clamp-2">
-      {{ note.content.slice(0, 120) }}
+      {{ contentPreview }}
     </p>
 
     <!-- Footer -->

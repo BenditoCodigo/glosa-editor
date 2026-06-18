@@ -8,6 +8,7 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import EditorContentComponent from '@/components/editor/EditorContent.vue'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
+import EmojiPicker from '@/components/editor/EmojiPicker.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +19,7 @@ const title = ref('')
 const content = ref('')
 const tags = ref<string[]>([])
 const tagInput = ref('')
+const emoji = ref<string | undefined>(undefined)
 const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const isLoading = ref(true)
 const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
@@ -36,6 +38,7 @@ watch(
       title.value = note.title
       content.value = note.content
       tags.value = [...note.tags]
+      emoji.value = note.emoji
     } else {
       router.replace('/')
     }
@@ -74,6 +77,7 @@ async function save() {
     createdAt: activeNote.value.createdAt,
     updatedAt: activeNote.value.updatedAt,
     tags: [...tags.value],
+    emoji: emoji.value,
   })
 
   saveStatus.value = 'saved'
@@ -98,6 +102,12 @@ function addTag() {
     scheduleAutosave()
   }
   tagInput.value = ''
+}
+
+// Emoji
+function handleEmojiSelect(selectedEmoji: string) {
+  emoji.value = selectedEmoji
+  scheduleAutosave()
 }
 
 function handleTagKeydown(event: KeyboardEvent) {
@@ -160,32 +170,38 @@ onUnmounted(() => {
       <!-- Editor area -->
       <div class="flex-1 overflow-y-auto px-4 md:px-12 py-8">
         <div class="max-w-[720px] mx-auto glass-panel-md rounded-2xl p-8 md:p-12">
-          <!-- Tags editor -->
-          <div class="flex flex-wrap items-center gap-2 mb-4">
-            <button
-              v-for="(tag, index) in tags"
-              :key="tag"
-              class="
-                inline-flex items-center gap-1
-                px-2.5 py-1 rounded-md
-                bg-primary-fixed/50 text-on-primary-fixed
-                text-[11px] uppercase tracking-[0.1em] font-semibold
-                hover:bg-primary-fixed transition-colors
-                group
-              "
-              @click="removeTag(index)"
-            >
-              {{ tag }}
-              <UiIcon name="close" size="sm" class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]" />
-            </button>
-            <input
-              v-model="tagInput"
-              type="text"
-              placeholder="Add tag..."
-              class="bg-transparent border-none p-0 text-[11px] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
-              @keydown="handleTagKeydown"
-              @blur="addTag"
-            >
+          <!-- Emoji + Tags editor -->
+          <div class="flex items-center gap-3 mb-4">
+            <!-- Emoji picker -->
+            <EmojiPicker :currentEmoji="emoji" @select="handleEmojiSelect" />
+
+            <!-- Tags -->
+            <div class="flex flex-wrap items-center gap-2 flex-1">
+              <button
+                v-for="(tag, index) in tags"
+                :key="tag"
+                class="
+                  inline-flex items-center gap-1
+                  px-2.5 py-1 rounded-md
+                  bg-primary-fixed/50 text-on-primary-fixed
+                  text-[11px] uppercase tracking-[0.1em] font-semibold
+                  hover:bg-primary-fixed transition-colors
+                  group
+                "
+                @click="removeTag(index)"
+              >
+                {{ tag }}
+                <UiIcon name="close" size="sm" class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]" />
+              </button>
+              <input
+                v-model="tagInput"
+                type="text"
+                placeholder="Add tag..."
+                class="bg-transparent border-none p-0 text-[11px] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
+                @keydown="handleTagKeydown"
+                @blur="addTag"
+              >
+            </div>
           </div>
 
           <!-- Title (auto-resizing textarea) -->
