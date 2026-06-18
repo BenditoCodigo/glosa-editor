@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, watch } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
@@ -11,6 +12,7 @@ import TaskItem from '@tiptap/extension-task-item'
 import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
+import CodeBlockNode from './CodeBlockNode.vue'
 
 const lowlight = createLowlight(common)
 
@@ -33,6 +35,10 @@ const editor = useEditor({
     CodeBlockLowlight.configure({
       lowlight,
       defaultLanguage: 'plaintext',
+    }).extend({
+      addNodeView() {
+        return VueNodeViewRenderer(CodeBlockNode)
+      },
     }),
     Placeholder.configure({
       placeholder: 'Comienza a escribir...',
