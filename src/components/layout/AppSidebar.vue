@@ -180,7 +180,11 @@ async function handleCreateNote() {
 
         <!-- Footer -->
         <div class="mt-auto pt-4 border-t border-white/20">
-          <button class="w-full flex items-center gap-3 px-4 py-2 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200 text-left">
+          <button
+            class="w-full flex items-center gap-3 px-4 py-2 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200 text-left"
+            :class="$route.name === 'settings' && 'text-primary font-bold bg-white/20 dark:bg-black/10'"
+            @click="router.push({ name: 'settings' })"
+          >
             <UiIcon name="settings" />
             <span class="text-sm">Configuración</span>
           </button>

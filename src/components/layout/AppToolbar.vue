@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useUiStore } from '@/stores/ui'
+import { useSettingsStore } from '@/stores/settings'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 
 const uiStore = useUiStore()
+const settingsStore = useSettingsStore()
 </script>
 
 <template>
@@ -58,10 +60,17 @@ const uiStore = useUiStore()
 
       <!-- User avatar -->
       <button
-        class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container text-xs font-bold flex items-center justify-center ml-1 hover:opacity-80 transition-opacity"
-        title="Perfil"
+        class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container text-xs font-bold flex items-center justify-center ml-1 hover:opacity-80 transition-opacity overflow-hidden"
+        title="Configuración"
+        @click="$router.push({ name: 'settings' })"
       >
-        U
+        <img
+          v-if="settingsStore.profile.avatarUrl"
+          :src="settingsStore.profile.avatarUrl"
+          alt="Avatar"
+          class="w-full h-full object-cover"
+        >
+        <span v-else>{{ settingsStore.userInitial }}</span>
       </button>
     </div>
   </header>

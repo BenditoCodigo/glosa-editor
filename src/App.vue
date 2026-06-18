@@ -35,7 +35,9 @@ const breadcrumbs = computed(() => {
     { label: 'Inicio', path: '/' },
   ]
 
-  if (route.name === 'explorer-root') {
+  if (route.name === 'settings') {
+    segments.push({ label: 'Configuración' })
+  } else if (route.name === 'explorer-root') {
     segments.push({ label: 'Notas' })
   } else if (route.name === 'explorer-folder') {
     segments.push({ label: 'Notas', path: '/notes' })
