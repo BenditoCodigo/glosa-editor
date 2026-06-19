@@ -397,7 +397,7 @@ export class FilesystemAdapter implements StorageAdapter {
     const normalizedFolderPath = folderPath === '' ? null : folderPath
 
     const filenames: string[] = []
-    for (const [noteId, entry] of this.fileMap) {
+    for (const [noteId, entry] of Array.from(this.fileMap.entries())) {
       if (noteId === excludeNoteId) continue
       if (entry.folderPath === normalizedFolderPath) {
         filenames.push(entry.filename)
