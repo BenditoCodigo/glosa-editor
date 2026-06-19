@@ -254,7 +254,7 @@ export class FilesystemAdapter implements StorageAdapter {
   private async scanDirectory(dirPath: string, depth: number): Promise<void> {
     if (depth >= MAX_DEPTH) return
 
-    let entries
+    let entries: Awaited<ReturnType<typeof readDir>>
     try {
       entries = await readDir(dirPath)
     } catch {
