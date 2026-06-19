@@ -9,6 +9,7 @@ import { useFoldersStore } from '@/stores/folders'
 import { seedIfEmpty, getAdapter } from '@/services/storage'
 import { isTauri } from '@/utils/tauri'
 import { FilesystemAdapter } from '@/services/adapters/filesystem'
+import DeviceGuard from '@/components/ui/DeviceGuard.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppToolbar from '@/components/layout/AppToolbar.vue'
 import AppBreadcrumbs from '@/components/layout/AppBreadcrumbs.vue'
@@ -142,29 +143,31 @@ function handleBreadcrumbNavigate(path: string) {
 </script>
 
 <template>
-  <div class="bg-fluid-gradient flex h-dvh overflow-hidden">
-    <!-- Sidebar -->
-    <AppSidebar />
+  <DeviceGuard>
+    <div class="bg-fluid-gradient flex h-dvh overflow-hidden">
+      <!-- Sidebar -->
+      <AppSidebar />
 
-    <!-- Main content -->
-    <main class="flex-1 flex flex-col min-w-0 relative">
-      <!-- Floating toolbar (overlays content) -->
-      <AppToolbar />
+      <!-- Main content -->
+      <main class="flex-1 flex flex-col min-w-0 relative">
+        <!-- Floating toolbar (overlays content) -->
+        <AppToolbar />
 
-      <!-- Content area (scrolls under toolbar and breadcrumbs) -->
-      <div class="flex-1 overflow-y-auto -mt-14">
-        <div class="pt-14 pb-14">
-          <RouterView />
+        <!-- Content area (scrolls under toolbar and breadcrumbs) -->
+        <div class="flex-1 overflow-y-auto -mt-14">
+          <div class="pt-14 pb-14">
+            <RouterView />
+          </div>
         </div>
-      </div>
 
-      <!-- Breadcrumbs (floating at bottom) -->
-      <div class="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
-        <AppBreadcrumbs
-          :segments="breadcrumbs"
-          @navigate="handleBreadcrumbNavigate"
-        />
-      </div>
-    </main>
-  </div>
+        <!-- Breadcrumbs (floating at bottom) -->
+        <div class="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
+          <AppBreadcrumbs
+            :segments="breadcrumbs"
+            @navigate="handleBreadcrumbNavigate"
+          />
+        </div>
+      </main>
+    </div>
+  </DeviceGuard>
 </template>
