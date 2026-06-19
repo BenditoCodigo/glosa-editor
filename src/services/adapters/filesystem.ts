@@ -1,4 +1,5 @@
-import { readDir, readTextFile, writeTextFile, remove, mkdir, exists } from '@tauri-apps/plugin-fs'
+import { readDir, readTextFile, writeTextFile, remove, mkdir, exists, watch } from '@tauri-apps/plugin-fs'
+import type { WatchEvent, UnwatchFn } from '@tauri-apps/plugin-fs'
 import type { Note } from '@/types/note'
 import type { Folder } from '@/types/folder'
 import type { StorageAdapter, FileEntry, FilesystemMetadata, ActivityEvent } from './types'
@@ -9,9 +10,22 @@ const MAX_DEPTH = 10
 const GLOSA_DIR = '.glosa'
 const META_FILE = 'meta.json'
 const MAX_ACTIVITY_EVENTS = 500
+const WATCH_DEBOUNCE_MS = 300
 
 function defaultMetadata(): FilesystemMetadata {
   return { version: 1, activity: [], folderFavorites: [] }
+}
+
+/**
+ * Callback invoked when external changes are detected by the watcher.
+ * Allows stores to reload their state reactively.
+ */
+export interface WatcherChangeCallback {
+  onNoteChanged(note: Note): void
+  onNoteRemoved(noteId: string, wasActive: boolean): void
+  onNoteAdded(note: Note): void
+  onFolderAdded(folder: Folder): void
+  onFolderRemoved(folderId: string): void
 }
 
 export class FilesystemAdapter implements StorageAdapter {
@@ -22,6 +36,10 @@ export class FilesystemAdapter implements StorageAdapter {
   readonly extraFieldsMap: Map<string, Record<string, unknown>> = new Map()
   metadata: FilesystemMetadata = defaultMetadata()
   skippedFiles: string[] = []
+
+  private unwatchFn: UnwatchFn | null = null
+  private activeNoteId: string | null = null
+  private watcherCallback: WatcherChangeCallback | null = null
 
   constructor(rootPath: string) {
     this.rootPath = rootPath
@@ -220,6 +238,274 @@ export class FilesystemAdapter implements StorageAdapter {
         this.extraFieldsMap.delete(noteId)
       }
     }
+  }
+
+  // --- File watching ---
+
+  /**
+   * Sets the currently active note ID (the note open in the editor).
+   * Used to implement "local wins" — external modifications to the active note
+   * are ignored to protect unsaved local changes.
+   */
+  setActiveNoteId(id: string | null): void {
+    this.activeNoteId = id
+  }
+
+  /**
+   * Starts a recursive file watcher on the root directory.
+   * The callback is invoked when external changes are detected so stores can
+   * update their reactive state.
+   */
+  async startWatching(callback: WatcherChangeCallback): Promise<void> {
+    if (this.unwatchFn) return // Already watching
+
+    this.watcherCallback = callback
+
+    this.unwatchFn = await watch(
+      this.rootPath,
+      (event: WatchEvent) => { this.handleWatchEvent(event) },
+      { recursive: true, delayMs: WATCH_DEBOUNCE_MS },
+    )
+  }
+
+  /**
+   * Stops the file watcher. Called when deactivating the filesystem adapter.
+   */
+  stopWatching(): void {
+    if (this.unwatchFn) {
+      this.unwatchFn()
+      this.unwatchFn = null
+    }
+    this.watcherCallback = null
+  }
+
+  private handleWatchEvent(event: WatchEvent): void {
+    for (const filePath of event.paths) {
+      // Ignore paths inside .glosa directory
+      const relativePath = this.relativize(filePath)
+      if (relativePath.startsWith(GLOSA_DIR) || relativePath.includes(`/${GLOSA_DIR}/`)) {
+        continue
+      }
+
+      // Ignore dot-directories
+      const segments = relativePath.split('/')
+      if (segments.some(s => s.startsWith('.') && s !== '.')) {
+        continue
+      }
+
+      if (typeof event.type === 'object') {
+        if ('create' in event.type) {
+          this.handleCreateEvent(filePath, relativePath)
+        } else if ('modify' in event.type) {
+          this.handleModifyEvent(filePath, relativePath)
+        } else if ('remove' in event.type) {
+          this.handleRemoveEvent(filePath, relativePath)
+        }
+      }
+    }
+  }
+
+  private handleCreateEvent(absolutePath: string, relativePath: string): void {
+    if (absolutePath.endsWith('.md')) {
+      this.handleFileCreated(absolutePath, relativePath)
+    } else {
+      // Might be a new directory — register as folder
+      this.handleDirectoryCreated(absolutePath, relativePath)
+    }
+  }
+
+  private handleModifyEvent(absolutePath: string, relativePath: string): void {
+    if (absolutePath.endsWith('.md')) {
+      this.handleFileModified(absolutePath, relativePath)
+    }
+    // Directory modification events are not actionable
+  }
+
+  private handleRemoveEvent(absolutePath: string, relativePath: string): void {
+    if (absolutePath.endsWith('.md')) {
+      this.handleFileRemoved(absolutePath, relativePath)
+    } else {
+      // Might be a directory removal
+      this.handleDirectoryRemoved(relativePath)
+    }
+  }
+
+  private async handleFileCreated(absolutePath: string, relativePath: string): Promise<void> {
+    // Check if we already know about this file (our own write triggered the event)
+    for (const entry of this.fileMap.values()) {
+      if (entry.absolutePath === absolutePath) return
+    }
+
+    const filename = relativePath.includes('/')
+      ? relativePath.split('/').pop()!
+      : relativePath
+
+    let content: string
+    try {
+      content = await readTextFile(absolutePath)
+    } catch {
+      // Requirement 12.6: skip files that can't be read
+      return
+    }
+
+    const folderPath = relativePath.includes('/')
+      ? relativePath.slice(0, relativePath.lastIndexOf('/'))
+      : null
+
+    const { frontmatter, body } = parseMarkdownFile(filename, content)
+    const note = frontmatterToNote(frontmatter, body, folderPath, filename)
+
+    // Track extra fields
+    const knownKeys = new Set(['id', 'title', 'createdAt', 'updatedAt', 'tags', 'isFavorite', 'emoji', 'coverImage'])
+    const extraFields: Record<string, unknown> = {}
+    let hasExtra = false
+    for (const [key, value] of Object.entries(frontmatter)) {
+      if (!knownKeys.has(key)) {
+        extraFields[key] = value
+        hasExtra = true
+      }
+    }
+    if (hasExtra) {
+      this.extraFieldsMap.set(note.id, extraFields)
+    }
+
+    this.noteCache.set(note.id, note)
+    this.fileMap.set(note.id, {
+      noteId: note.id,
+      absolutePath,
+      relativePath,
+      filename,
+      folderPath,
+      lastModified: Date.now(),
+    })
+
+    this.watcherCallback?.onNoteAdded(note)
+  }
+
+  private async handleFileModified(absolutePath: string, _relativePath: string): Promise<void> {
+    // Find which note this file belongs to
+    let noteId: string | null = null
+    for (const [id, entry] of this.fileMap.entries()) {
+      if (entry.absolutePath === absolutePath) {
+        noteId = id
+        break
+      }
+    }
+
+    if (!noteId) return // Unknown file, might be newly created — handled by create event
+
+    // Requirement 12.5: local wins — don't overwrite active note with unsaved changes
+    if (noteId === this.activeNoteId) return
+
+    let content: string
+    try {
+      content = await readTextFile(absolutePath)
+    } catch {
+      // Requirement 12.6: skip files that can't be read
+      return
+    }
+
+    const entry = this.fileMap.get(noteId)!
+    const filename = entry.filename
+    const folderPath = entry.folderPath
+
+    const { frontmatter, body } = parseMarkdownFile(filename, content)
+    const note = frontmatterToNote(frontmatter, body, folderPath, filename)
+
+    // Track extra fields
+    const knownKeys = new Set(['id', 'title', 'createdAt', 'updatedAt', 'tags', 'isFavorite', 'emoji', 'coverImage'])
+    const extraFields: Record<string, unknown> = {}
+    let hasExtra = false
+    for (const [key, value] of Object.entries(frontmatter)) {
+      if (!knownKeys.has(key)) {
+        extraFields[key] = value
+        hasExtra = true
+      }
+    }
+    if (hasExtra) {
+      this.extraFieldsMap.set(note.id, extraFields)
+    } else {
+      this.extraFieldsMap.delete(note.id)
+    }
+
+    this.noteCache.set(note.id, note)
+    this.fileMap.set(note.id, { ...entry, lastModified: Date.now() })
+
+    this.watcherCallback?.onNoteChanged(note)
+  }
+
+  private handleFileRemoved(absolutePath: string, _relativePath: string): void {
+    // Find which note this file belongs to
+    let noteId: string | null = null
+    for (const [id, entry] of this.fileMap.entries()) {
+      if (entry.absolutePath === absolutePath) {
+        noteId = id
+        break
+      }
+    }
+
+    if (!noteId) return
+
+    const wasActive = noteId === this.activeNoteId
+
+    this.noteCache.delete(noteId)
+    this.fileMap.delete(noteId)
+    this.extraFieldsMap.delete(noteId)
+
+    this.watcherCallback?.onNoteRemoved(noteId, wasActive)
+  }
+
+  private handleDirectoryCreated(absolutePath: string, relativePath: string): void {
+    // Only register if not already known
+    if (this.folderCache.has(relativePath)) return
+
+    const name = relativePath.includes('/')
+      ? relativePath.split('/').pop()!
+      : relativePath
+    const parentFolder = relativePath.includes('/')
+      ? relativePath.slice(0, relativePath.lastIndexOf('/'))
+      : null
+
+    const now = new Date().toISOString()
+    const folder: Folder = {
+      id: relativePath,
+      name,
+      parentFolder,
+      isFavorite: false,
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    this.folderCache.set(relativePath, folder)
+    this.watcherCallback?.onFolderAdded(folder)
+  }
+
+  private handleDirectoryRemoved(relativePath: string): void {
+    // Check if it's a known folder
+    if (!this.folderCache.has(relativePath)) return
+
+    this.folderCache.delete(relativePath)
+
+    // Remove child folders
+    const prefix = `${relativePath}/`
+    for (const folderId of Array.from(this.folderCache.keys())) {
+      if (folderId.startsWith(prefix)) {
+        this.folderCache.delete(folderId)
+      }
+    }
+
+    // Remove child notes
+    for (const [noteId, entry] of Array.from(this.fileMap.entries())) {
+      if (entry.folderPath === relativePath || (entry.folderPath && entry.folderPath.startsWith(prefix))) {
+        const wasActive = noteId === this.activeNoteId
+        this.noteCache.delete(noteId)
+        this.fileMap.delete(noteId)
+        this.extraFieldsMap.delete(noteId)
+        this.watcherCallback?.onNoteRemoved(noteId, wasActive)
+      }
+    }
+
+    this.watcherCallback?.onFolderRemoved(relativePath)
   }
 
   // --- Activity tracking ---

@@ -153,8 +153,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // No migration needed — activate directly (zero notes or re-linking)
     try {
-      const { activateFilesystemAdapter } = await import('@/services/activateFilesystemAdapter')
-      await activateFilesystemAdapter(selected)
+      const { activateFilesystemAdapter, startFilesystemWatcher } = await import('@/services/activateFilesystemAdapter')
+      const adapter = await activateFilesystemAdapter(selected)
 
       // Reload stores with data from the new adapter
       const { useNotesStore } = await import('@/stores/notes')
@@ -162,6 +162,31 @@ export const useSettingsStore = defineStore('settings', () => {
       const notesStore = useNotesStore()
       const foldersStore = useFoldersStore()
       await Promise.all([notesStore.loadAll(), foldersStore.loadAll()])
+
+      // Start watching for external changes
+      await startFilesystemWatcher(adapter, {
+        onNoteChanged(note) {
+          const idx = notesStore.notes.findIndex(n => n.id === note.id)
+          if (idx !== -1) notesStore.notes[idx] = note
+        },
+        onNoteRemoved(noteId, wasActive) {
+          notesStore.notes = notesStore.notes.filter(n => n.id !== noteId)
+          if (wasActive) notesStore.activeNote = null
+        },
+        onNoteAdded(note) {
+          if (!notesStore.notes.find(n => n.id === note.id)) {
+            notesStore.notes.push(note)
+          }
+        },
+        onFolderAdded(folder) {
+          if (!foldersStore.folders.find(f => f.id === folder.id)) {
+            foldersStore.folders.push(folder)
+          }
+        },
+        onFolderRemoved(folderId) {
+          foldersStore.folders = foldersStore.folders.filter(f => f.id !== folderId && !f.id.startsWith(`${folderId}/`))
+        },
+      })
     } catch (err) {
       // Initialization failed — revert settings
       console.warn('[Glosa] No se pudo activar la carpeta seleccionada:', err)
@@ -197,6 +222,14 @@ export const useSettingsStore = defineStore('settings', () => {
    * Clears the linked filesystem folder, reverts to IndexedDB adapter, and reloads stores.
    */
   async function clearFilesystemPath() {
+    // Stop file watcher if active
+    const { getAdapter } = await import('@/services/storage')
+    const { FilesystemAdapter } = await import('@/services/adapters/filesystem')
+    const currentAdapter = getAdapter()
+    if (currentAdapter instanceof FilesystemAdapter) {
+      currentAdapter.stopWatching()
+    }
+
     settings.value.filesystemPath = null
     settings.value.storageProvider = 'indexeddb'
 

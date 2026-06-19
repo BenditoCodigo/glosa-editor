@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUiStore } from '@/stores/ui'
 import { useSettingsStore } from '@/stores/settings'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
-import { seedIfEmpty } from '@/services/storage'
+import { seedIfEmpty, getAdapter } from '@/services/storage'
 import { isTauri } from '@/utils/tauri'
+import { FilesystemAdapter } from '@/services/adapters/filesystem'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppToolbar from '@/components/layout/AppToolbar.vue'
 import AppBreadcrumbs from '@/components/layout/AppBreadcrumbs.vue'
@@ -29,10 +30,19 @@ onMounted(async () => {
   await Promise.all([notesStore.loadAll(), foldersStore.loadAll()])
 })
 
+// Keep the filesystem adapter's activeNoteId in sync with the notes store
+watch(activeNote, (note) => {
+  const adapter = getAdapter()
+  if (adapter instanceof FilesystemAdapter) {
+    adapter.setActiveNoteId(note?.id ?? null)
+  }
+})
+
 /**
  * On app launch, if filesystem provider is configured with a stored path:
  * - Verify the folder exists via plugin-fs
  * - Activate the FilesystemAdapter
+ * - Start the file watcher for external change detection
  * - If folder doesn't exist or init fails: fall back to IndexedDB with a warning
  */
 async function activateAdapterOnLaunch() {
@@ -51,8 +61,33 @@ async function activateAdapterOnLaunch() {
       return
     }
 
-    const { activateFilesystemAdapter } = await import('@/services/activateFilesystemAdapter')
-    await activateFilesystemAdapter(folderPath)
+    const { activateFilesystemAdapter, startFilesystemWatcher } = await import('@/services/activateFilesystemAdapter')
+    const adapter = await activateFilesystemAdapter(folderPath)
+
+    // Start watching for external changes after stores are loaded
+    await startFilesystemWatcher(adapter, {
+      onNoteChanged(note) {
+        const idx = notesStore.notes.findIndex(n => n.id === note.id)
+        if (idx !== -1) notesStore.notes[idx] = note
+      },
+      onNoteRemoved(noteId, wasActive) {
+        notesStore.notes = notesStore.notes.filter(n => n.id !== noteId)
+        if (wasActive) notesStore.activeNote = null
+      },
+      onNoteAdded(note) {
+        if (!notesStore.notes.find(n => n.id === note.id)) {
+          notesStore.notes.push(note)
+        }
+      },
+      onFolderAdded(folder) {
+        if (!foldersStore.folders.find(f => f.id === folder.id)) {
+          foldersStore.folders.push(folder)
+        }
+      },
+      onFolderRemoved(folderId) {
+        foldersStore.folders = foldersStore.folders.filter(f => f.id !== folderId && !f.id.startsWith(`${folderId}/`))
+      },
+    })
   } catch (err) {
     console.warn('[Glosa] Error al activar la carpeta vinculada. Se utilizará IndexedDB:', err)
     settingsStore.clearFilesystemPath()
