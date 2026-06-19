@@ -97,13 +97,15 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Opens Tauri's native folder picker dialog and stores the selected path.
-   * Returns the selected path or null if cancelled.
+   * Opens Tauri's native folder picker dialog, stores the selected path,
+   * instantiates and activates the FilesystemAdapter, and reloads stores.
+   * Returns the selected path or null if cancelled/failed.
    */
   async function selectFilesystemFolder(): Promise<string | null> {
     if (!isTauri()) return null
 
     const previousProvider = settings.value.storageProvider
+    const previousPath = settings.value.filesystemPath
     const { open } = await import('@tauri-apps/plugin-dialog')
 
     const selected = await open({
@@ -121,15 +123,46 @@ export const useSettingsStore = defineStore('settings', () => {
     // Store the selected path and set provider to filesystem
     settings.value.filesystemPath = selected
     settings.value.storageProvider = 'filesystem'
+
+    try {
+      const { activateFilesystemAdapter } = await import('@/services/activateFilesystemAdapter')
+      await activateFilesystemAdapter(selected)
+
+      // Reload stores with data from the new adapter
+      const { useNotesStore } = await import('@/stores/notes')
+      const { useFoldersStore } = await import('@/stores/folders')
+      const notesStore = useNotesStore()
+      const foldersStore = useFoldersStore()
+      await Promise.all([notesStore.loadAll(), foldersStore.loadAll()])
+    } catch (err) {
+      // Initialization failed — revert settings
+      console.warn('[Glosa] No se pudo activar la carpeta seleccionada:', err)
+      settings.value.filesystemPath = previousPath
+      settings.value.storageProvider = previousProvider
+      return null
+    }
+
     return selected
   }
 
   /**
-   * Clears the linked filesystem folder and reverts to IndexedDB.
+   * Clears the linked filesystem folder, reverts to IndexedDB adapter, and reloads stores.
    */
-  function clearFilesystemPath() {
+  async function clearFilesystemPath() {
     settings.value.filesystemPath = null
     settings.value.storageProvider = 'indexeddb'
+
+    // Reset adapter back to IndexedDB
+    const { IndexedDBAdapter } = await import('@/services/adapters/indexeddb')
+    const { setAdapter } = await import('@/services/storage')
+    setAdapter(new IndexedDBAdapter())
+
+    // Reload stores with IndexedDB data
+    const { useNotesStore } = await import('@/stores/notes')
+    const { useFoldersStore } = await import('@/stores/folders')
+    const notesStore = useNotesStore()
+    const foldersStore = useFoldersStore()
+    await Promise.all([notesStore.loadAll(), foldersStore.loadAll()])
   }
 
   function resetAll() {

@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
 import { seedIfEmpty } from '@/services/storage'
+import { isTauri } from '@/utils/tauri'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppToolbar from '@/components/layout/AppToolbar.vue'
 import AppBreadcrumbs from '@/components/layout/AppBreadcrumbs.vue'
@@ -16,16 +17,47 @@ const router = useRouter()
 
 // Initialize stores
 useUiStore()
-useSettingsStore() // Applies theme on creation
+const settingsStore = useSettingsStore() // Applies theme on creation
 const notesStore = useNotesStore()
 const foldersStore = useFoldersStore()
 const { activeNote } = storeToRefs(notesStore)
 
-// Seed DB and load data on app start
+// Activate filesystem adapter on launch if configured, then load data
 onMounted(async () => {
+  await activateAdapterOnLaunch()
   await seedIfEmpty()
   await Promise.all([notesStore.loadAll(), foldersStore.loadAll()])
 })
+
+/**
+ * On app launch, if filesystem provider is configured with a stored path:
+ * - Verify the folder exists via plugin-fs
+ * - Activate the FilesystemAdapter
+ * - If folder doesn't exist or init fails: fall back to IndexedDB with a warning
+ */
+async function activateAdapterOnLaunch() {
+  if (settingsStore.storageProvider !== 'filesystem' || !settingsStore.filesystemPath) return
+  if (!isTauri()) return
+
+  const folderPath = settingsStore.filesystemPath
+
+  try {
+    const { exists } = await import('@tauri-apps/plugin-fs')
+    const folderExists = await exists(folderPath)
+
+    if (!folderExists) {
+      console.warn(`[Glosa] La carpeta vinculada no existe: ${folderPath}. Se utilizará IndexedDB.`)
+      settingsStore.clearFilesystemPath()
+      return
+    }
+
+    const { activateFilesystemAdapter } = await import('@/services/activateFilesystemAdapter')
+    await activateFilesystemAdapter(folderPath)
+  } catch (err) {
+    console.warn('[Glosa] Error al activar la carpeta vinculada. Se utilizará IndexedDB:', err)
+    settingsStore.clearFilesystemPath()
+  }
+}
 
 // Dynamic breadcrumbs based on route
 const breadcrumbs = computed(() => {

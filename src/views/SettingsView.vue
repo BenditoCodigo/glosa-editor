@@ -75,8 +75,8 @@ async function handleStorageSelect(option: { id: StorageProvider; available: boo
   }
 }
 
-function handleUnlinkFolder() {
-  settingsStore.clearFilesystemPath()
+async function handleUnlinkFolder() {
+  await settingsStore.clearFilesystemPath()
 }
 
 function handleDeleteAllData() {
