@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import type { AppSettings, UserProfile, EditorSettings, ThemeMode, StorageProvider } from '@/types'
 import { DEFAULT_SETTINGS } from '@/types'
+import { isTauri } from '@/utils/tauri'
 
 const STORAGE_KEY = 'glosa-settings'
 
@@ -46,11 +47,21 @@ export const useSettingsStore = defineStore('settings', () => {
   const effectiveTheme = computed(() => resolveEffectiveTheme(settings.value.theme))
   const storageProvider = computed(() => settings.value.storageProvider)
   const editor = computed(() => settings.value.editor)
+  const filesystemPath = computed(() => settings.value.filesystemPath)
+
+  // Tauri detection — true only when running inside Tauri desktop app
+  const isFileSystemSupported = computed(() => isTauri())
 
   const userInitial = computed(() => {
     const name = settings.value.profile.username.trim()
     return name ? name.charAt(0).toUpperCase() : 'U'
   })
+
+  // Validate: if storageProvider is 'filesystem' but not in Tauri, fall back
+  if (settings.value.storageProvider === 'filesystem' && !isTauri()) {
+    settings.value.storageProvider = 'indexeddb'
+    settings.value.filesystemPath = null
+  }
 
   // Persist on every change
   watch(settings, (val) => saveToStorage(val), { deep: true })
@@ -85,6 +96,42 @@ export const useSettingsStore = defineStore('settings', () => {
     settings.value.editor = { ...settings.value.editor, ...partial }
   }
 
+  /**
+   * Opens Tauri's native folder picker dialog and stores the selected path.
+   * Returns the selected path or null if cancelled.
+   */
+  async function selectFilesystemFolder(): Promise<string | null> {
+    if (!isTauri()) return null
+
+    const previousProvider = settings.value.storageProvider
+    const { open } = await import('@tauri-apps/plugin-dialog')
+
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: 'Seleccionar carpeta para notas',
+    })
+
+    if (selected === null) {
+      // User cancelled — revert to previous provider
+      settings.value.storageProvider = previousProvider
+      return null
+    }
+
+    // Store the selected path and set provider to filesystem
+    settings.value.filesystemPath = selected
+    settings.value.storageProvider = 'filesystem'
+    return selected
+  }
+
+  /**
+   * Clears the linked filesystem folder and reverts to IndexedDB.
+   */
+  function clearFilesystemPath() {
+    settings.value.filesystemPath = null
+    settings.value.storageProvider = 'indexeddb'
+  }
+
   function resetAll() {
     settings.value = { ...DEFAULT_SETTINGS }
   }
@@ -96,11 +143,15 @@ export const useSettingsStore = defineStore('settings', () => {
     effectiveTheme,
     storageProvider,
     editor,
+    filesystemPath,
+    isFileSystemSupported,
     userInitial,
     updateProfile,
     setTheme,
     setStorageProvider,
     updateEditor,
+    selectFilesystemFolder,
+    clearFilesystemPath,
     resetAll,
   }
 })

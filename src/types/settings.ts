@@ -17,6 +17,7 @@ export interface AppSettings {
   theme: ThemeMode
   storageProvider: StorageProvider
   editor: EditorSettings
+  filesystemPath: string | null
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -31,4 +32,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
     autosaveInterval: 5,
     showWordCount: true,
   },
+  filesystemPath: null,
 }

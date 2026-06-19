@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '@/stores/settings'
@@ -10,18 +10,19 @@ import type { ThemeMode, StorageProvider } from '@/types'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
-const { profile, theme, storageProvider, editor } = storeToRefs(settingsStore)
+const { profile, theme, storageProvider, editor, isFileSystemSupported, filesystemPath } = storeToRefs(settingsStore)
 
 // Local state for avatar preview
 const avatarInput = ref<HTMLInputElement | null>(null)
 const showDeleteConfirm = ref(false)
+const isSelectingFolder = ref(false)
 
-const storageOptions: { id: StorageProvider; label: string; description: string; available: boolean }[] = [
+const storageOptions = computed<{ id: StorageProvider; label: string; description: string; available: boolean }[]>(() => [
   { id: 'indexeddb', label: 'IndexedDB (local)', description: 'Almacenamiento en el navegador. Ideal para pruebas y uso personal.', available: true },
-  { id: 'filesystem', label: 'Sistema de archivos', description: 'Archivos .md en tu disco local vía backend.', available: false },
+  { id: 'filesystem', label: 'Sistema de archivos', description: 'Archivos .md en tu disco local. Requiere la app de escritorio.', available: isFileSystemSupported.value },
   { id: 's3', label: 'Amazon S3', description: 'Bucket S3 privado para almacenamiento en la nube.', available: false },
   { id: 'webdav', label: 'WebDAV / NAS', description: 'Servidor WebDAV, Nextcloud, Synology, etc.', available: false },
-]
+])
 
 const themeOptions: { id: ThemeMode; label: string; icon: string }[] = [
   { id: 'light', label: 'Claro', icon: 'light_mode' },
@@ -57,6 +58,25 @@ function removeAvatar() {
 
 function handleThemeChange(mode: ThemeMode) {
   settingsStore.setTheme(mode)
+}
+
+async function handleStorageSelect(option: { id: StorageProvider; available: boolean }) {
+  if (!option.available) return
+
+  if (option.id === 'filesystem') {
+    isSelectingFolder.value = true
+    try {
+      await settingsStore.selectFilesystemFolder()
+    } finally {
+      isSelectingFolder.value = false
+    }
+  } else {
+    settingsStore.setStorageProvider(option.id)
+  }
+}
+
+function handleUnlinkFolder() {
+  settingsStore.clearFilesystemPath()
 }
 
 function handleDeleteAllData() {
@@ -190,8 +210,8 @@ async function confirmDeleteAll() {
                     : 'border-outline-variant/30 hover:border-outline-variant/60',
                   !option.available && 'opacity-50 cursor-not-allowed',
                 ]"
-                :disabled="!option.available"
-                @click="option.available && settingsStore.setStorageProvider(option.id)"
+                :disabled="!option.available || isSelectingFolder"
+                @click="handleStorageSelect(option)"
               >
                 <div class="flex items-center gap-2">
                   <div
@@ -212,6 +232,24 @@ async function confirmDeleteAll() {
                   </span>
                 </div>
                 <p class="text-xs text-secondary/70 pl-5.5">{{ option.description }}</p>
+              </button>
+            </div>
+
+            <!-- Linked folder info -->
+            <div
+              v-if="storageProvider === 'filesystem' && filesystemPath"
+              class="mt-4 flex items-center gap-3 p-3 rounded-xl border border-outline-variant/30 bg-primary/5 dark:bg-primary/10"
+            >
+              <UiIcon name="folder" class="text-primary shrink-0" />
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium text-secondary">Carpeta vinculada</p>
+                <p class="text-sm text-on-surface truncate">{{ filesystemPath }}</p>
+              </div>
+              <button
+                class="text-xs text-error hover:underline shrink-0"
+                @click="handleUnlinkFolder"
+              >
+                Desvincular
               </button>
             </div>
           </div>
