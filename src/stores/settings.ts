@@ -97,11 +97,24 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Opens Tauri's native folder picker dialog, stores the selected path,
-   * instantiates and activates the FilesystemAdapter, and reloads stores.
-   * Returns the selected path or null if cancelled/failed.
+   * Result of selecting a filesystem folder.
+   * If `needsMigration` is true, the caller should show the migration modal
+   * instead of activating the adapter directly.
    */
-  async function selectFilesystemFolder(): Promise<string | null> {
+  interface SelectFolderResult {
+    path: string
+    needsMigration: boolean
+    noteCount: number
+  }
+
+  /**
+   * Opens Tauri's native folder picker dialog, stores the selected path,
+   * and determines whether a migration dialog is needed.
+   *
+   * Returns null if cancelled/failed, or a result object with the selected path
+   * and whether migration is needed (first-time link with existing notes).
+   */
+  async function selectFilesystemFolder(): Promise<SelectFolderResult | null> {
     if (!isTauri()) return null
 
     const previousProvider = settings.value.storageProvider
@@ -120,10 +133,25 @@ export const useSettingsStore = defineStore('settings', () => {
       return null
     }
 
+    // Determine if this is a first-time link (no previous filesystemPath)
+    const isFirstTimeLink = previousPath === null || previousPath === undefined
+
     // Store the selected path and set provider to filesystem
     settings.value.filesystemPath = selected
     settings.value.storageProvider = 'filesystem'
 
+    if (isFirstTimeLink) {
+      // Check how many notes exist in IndexedDB
+      const { db } = await import('@/services/db')
+      const noteCount = await db.notes.count()
+
+      if (noteCount > 0) {
+        // Needs migration dialog — don't activate adapter yet
+        return { path: selected, needsMigration: true, noteCount }
+      }
+    }
+
+    // No migration needed — activate directly (zero notes or re-linking)
     try {
       const { activateFilesystemAdapter } = await import('@/services/activateFilesystemAdapter')
       await activateFilesystemAdapter(selected)
@@ -142,7 +170,27 @@ export const useSettingsStore = defineStore('settings', () => {
       return null
     }
 
-    return selected
+    return { path: selected, needsMigration: false, noteCount: 0 }
+  }
+
+  /**
+   * Completes the migration process after the user picks an option in the modal.
+   * Reloads stores with data from the active adapter.
+   */
+  async function completeMigration(): Promise<void> {
+    const { useNotesStore } = await import('@/stores/notes')
+    const { useFoldersStore } = await import('@/stores/folders')
+    const notesStore = useNotesStore()
+    const foldersStore = useFoldersStore()
+    await Promise.all([notesStore.loadAll(), foldersStore.loadAll()])
+  }
+
+  /**
+   * Reverts settings when migration is cancelled.
+   */
+  function cancelMigration(previousPath: string | null, previousProvider: StorageProvider) {
+    settings.value.filesystemPath = previousPath
+    settings.value.storageProvider = previousProvider
   }
 
   /**
@@ -184,6 +232,8 @@ export const useSettingsStore = defineStore('settings', () => {
     setStorageProvider,
     updateEditor,
     selectFilesystemFolder,
+    completeMigration,
+    cancelMigration,
     clearFilesystemPath,
     resetAll,
   }

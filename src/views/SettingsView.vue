@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/stores/settings'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import MigrationModal from '@/components/ui/MigrationModal.vue'
 import type { ThemeMode, StorageProvider } from '@/types'
 
 const router = useRouter()
@@ -16,6 +17,13 @@ const { profile, theme, storageProvider, editor, isFileSystemSupported, filesyst
 const avatarInput = ref<HTMLInputElement | null>(null)
 const showDeleteConfirm = ref(false)
 const isSelectingFolder = ref(false)
+
+// Migration modal state
+const showMigrationModal = ref(false)
+const migrationFolderPath = ref('')
+const migrationNoteCount = ref(0)
+const previousProviderBeforeMigration = ref<StorageProvider>('indexeddb')
+const previousPathBeforeMigration = ref<string | null>(null)
 
 const storageOptions = computed<{ id: StorageProvider; label: string; description: string; available: boolean }[]>(() => [
   { id: 'indexeddb', label: 'IndexedDB (local)', description: 'Almacenamiento en el navegador. Ideal para pruebas y uso personal.', available: true },
@@ -65,14 +73,35 @@ async function handleStorageSelect(option: { id: StorageProvider; available: boo
 
   if (option.id === 'filesystem') {
     isSelectingFolder.value = true
+    // Save previous state in case migration gets cancelled
+    previousProviderBeforeMigration.value = settingsStore.settings.storageProvider
+    previousPathBeforeMigration.value = settingsStore.settings.filesystemPath
     try {
-      await settingsStore.selectFilesystemFolder()
+      const result = await settingsStore.selectFilesystemFolder()
+      if (result && result.needsMigration) {
+        // Show migration dialog
+        migrationFolderPath.value = result.path
+        migrationNoteCount.value = result.noteCount
+        showMigrationModal.value = true
+      }
     } finally {
       isSelectingFolder.value = false
     }
   } else {
     settingsStore.setStorageProvider(option.id)
   }
+}
+
+async function handleMigrationComplete() {
+  showMigrationModal.value = false
+  // Reload stores with the new adapter's data
+  await settingsStore.completeMigration()
+}
+
+function handleMigrationCancel() {
+  showMigrationModal.value = false
+  // Revert settings to before the folder was selected
+  settingsStore.cancelMigration(previousPathBeforeMigration.value, previousProviderBeforeMigration.value)
 }
 
 async function handleUnlinkFolder() {
@@ -477,4 +506,13 @@ async function confirmDeleteAll() {
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Migration modal -->
+  <MigrationModal
+    :open="showMigrationModal"
+    :folder-path="migrationFolderPath"
+    :note-count="migrationNoteCount"
+    @complete="handleMigrationComplete"
+    @cancel="handleMigrationCancel"
+  />
 </template>
