@@ -1,267 +1,78 @@
 # 📓 Glosa
 
-**Anotaciones, metadata y documentación — en tus propios márgenes.**
+**Tu cuaderno digital. Privado, portable y completamente tuyo.**
 
-Glosa es una plataforma de notas en formato markdown con una interfaz moderna y fluida. Funciona como alternativa privada a herramientas como Notion o AppFlowy — sin telemetría, sin tracking, sin explotar tus datos.
-
-El nombre viene de las glosas: las anotaciones y traducciones que los eruditos escribían en los márgenes de textos antiguos. Refleja la acción de tomar notas, agregar metadata y documentar.
-
-Tus notas son tuyas. En tu infraestructura. Bajo tu control.
+Glosa es una plataforma personal de notas con formato markdown. Escribe, organiza y conserva tus ideas sin depender de servicios externos — todo vive en tu máquina.
 
 ---
 
-## ¿Por qué existe?
+## ¿Para qué sirve?
 
-Las plataformas comerciales de productividad:
+- Escribir notas con formato enriquecido (títulos, listas, tablas, código, imágenes)
+- Organizar por carpetas con navegación intuitiva
+- Marcar favoritos para acceder rápido a lo que más usas
+- Trabajar directamente con archivos `.md` de tu disco
+- Cambiar entre tema claro y oscuro
 
-- Almacenan tu información en sus servidores sin garantías reales de privacidad
-- Utilizan datos de usuarios para entrenar modelos de IA sin consentimiento explícito
-- Cobran suscripciones por funcionalidad que un perfil técnico puede sostener por cuenta propia
-- Pueden desaparecer, cambiar términos, o bloquear el acceso a tu contenido
-
-Glosa existe para quienes tienen la capacidad técnica de mantener sus propias herramientas y eligen hacerlo por principio.
-
----
-
-## Características
-
-- ✍️ Editor rico en markdown (Tiptap + tiptap-markdown) con formateo, tablas, listas de tareas, imágenes y bloques de código con syntax highlighting
-- 📁 Organización por carpetas con navegación tipo Google Drive (renombrar, eliminar, favoritos)
-- 🏷️ Sistema de tags navegables
-- ⭐ Favoritos con acceso rápido desde el sidebar
-- 🌙 Tema claro y oscuro (Liquid Glass design system)
-- 🏠 Vista de inicio con actividad reciente y nota destacada
-- 💾 Autosave con persistencia local (IndexedDB o sistema de archivos)
-- 📂 Vinculación de carpetas del sistema de archivos — trabaja directamente con archivos `.md`
-- 📝 Formato portable: archivos markdown con frontmatter YAML — legibles por cualquier editor
-- 🖥️ App de escritorio nativa (macOS, Windows, Linux) via Tauri 2
-- 📱 App para tablets Android (pantalla mínima 7")
-- 🔒 Zero datos enviados a terceros. Nunca.
+Tus notas son archivos markdown estándar — legibles con cualquier editor de texto, copiables a cualquier destino.
 
 ---
 
-## Stack técnico
+## Descargar
 
-| Capa | Tecnología |
-|------|-----------|
-| Framework | Vue 3.5+ (Composition API, `<script setup>`) |
-| Bundler | Vite 8 |
-| Estado | Pinia |
-| Router | Vue Router 4 |
-| Editor | Tiptap + extensiones (tablas, tasks, code highlight, imágenes) |
-| Estilos | Tailwind CSS 4 (CSS-first, sin config JS) |
-| Almacenamiento | IndexedDB (Dexie.js) + Filesystem adapter (Tauri) |
-| Testing | Vitest + happy-dom + fake-indexeddb |
-| Lenguaje | TypeScript (strict mode) |
-| Desktop | Tauri 2 (app nativa multiplataforma) |
+Glosa está disponible para escritorio y tablets. Descarga el instalador o APK desde la sección de **Releases** de este repositorio.
+
+| Plataforma | Formato |
+|-----------|---------|
+| macOS | `.dmg` |
+| Windows | `.msi` / `.exe` |
+| Linux | `.AppImage` / `.deb` |
+| Android (tablet 7"+) | `.apk` |
+
+> Glosa está diseñada para pantallas de tablet y escritorio. En dispositivos con pantalla menor a 7 pulgadas se muestra un aviso de incompatibilidad.
 
 ---
 
-## Inicio rápido
+## Privacidad
 
-### Web (navegador)
+- Ningún dato se envía a internet
+- No hay telemetría, tracking ni analytics
+- No requiere cuenta ni registro
+- Funciona completamente sin conexión
 
-```bash
-# Clonar el repositorio
-git clone https://gitlab.com/bendito-codigo/glosa-frontend.git
-cd glosa-frontend
-
-# Instalar dependencias
-npm install
-
-# Ejecutar en desarrollo
-npm run dev
-
-# Build de producción
-npm run build
-
-# Ejecutar pruebas
-npm run test
-
-# Lint
-npm run lint
-```
-
-> Requiere Node.js 22+ y npm 10+
-
-### Desktop (app nativa con Tauri)
-
-La misma app empaquetada como aplicación de escritorio nativa. No requiere navegador abierto.
-
-```bash
-# Requisitos adicionales: Rust (https://rustup.rs)
-
-# Ejecutar en modo desarrollo (con hot reload)
-npm run tauri:dev
-
-# Generar instalador para tu plataforma
-npm run tauri:build
-```
-
-Los binarios se generan en `src-tauri/target/release/bundle/`:
-- **macOS**: `.app` + `.dmg`
-- **Windows**: `.exe` + `.msi`
-- **Linux**: `.AppImage` + `.deb`
-
-### Android (tablet)
-
-La app compilada para tablets Android (pantalla mínima 600dp / ~7"). No se distribuye en Play Store — se descarga directamente como APK.
-
-```bash
-# Requisitos: Android SDK, NDK r28, JDK 21
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
-export ANDROID_HOME=~/Library/Android/sdk
-export NDK_HOME=$ANDROID_HOME/ndk/28.0.13004108
-
-# Build debug APK
-npm run tauri android build -- --debug
-```
-
-El APK se genera en `src-tauri/gen/android/app/build/outputs/apk/universal/debug/`.
-
-> En dispositivos con pantalla menor a 7" se muestra un mensaje indicando que la app está diseñada para tablets y escritorio.
+Tu información es tuya. Siempre.
 
 ---
 
-## Estructura del proyecto
+## Cómo funciona
 
-```
-src/                        # Frontend Vue
-├── assets/styles/          # Tailwind + design tokens + utilidades glass
-├── components/
-│   ├── ui/                 # Componentes base reutilizables (Button, Icon, Modal...)
-│   ├── editor/             # Componentes del editor Tiptap
-│   ├── explorer/           # Componentes del explorador de archivos
-│   └── layout/             # Layout (Toolbar, Sidebar, Breadcrumbs)
-├── composables/            # Lógica reutilizable
-├── router/                 # Definición de rutas
-├── services/               # Capa de storage (IndexedDB + Filesystem adapters) y actividad
-├── stores/                 # Pinia stores (notas, carpetas, UI)
-├── types/                  # Interfaces TypeScript
-└── views/                  # Vistas/páginas
+Al abrir la aplicación puedes empezar a escribir de inmediato. Las notas se guardan automáticamente en tu dispositivo.
 
-src-tauri/                  # App de escritorio y móvil (Tauri/Rust)
-├── tauri.conf.json         # Configuración de la ventana, plugins y build
-├── Cargo.toml              # Dependencias Rust
-├── capabilities/           # Permisos de acceso (fs, dialog)
-├── gen/android/            # Proyecto Android generado
-├── src/lib.rs              # Entry point (~15 líneas)
-└── icons/                  # Íconos de la app por plataforma
-```
+Si prefieres que tus notas sean archivos de texto en una carpeta de tu disco (para respaldarlos, sincronizarlos o editarlos con otras herramientas), puedes vincular una carpeta desde la configuración.
+
+Para más detalles sobre cómo usar la aplicación, consulta los [manuales de usuario](./documentacion/manuales-usuario/).
 
 ---
 
-## Formato de notas
+## Para desarrolladores
 
-Cada nota es un archivo markdown válido con frontmatter YAML:
-
-```markdown
----
-id: abc123
-title: Mi primera nota
-createdAt: 2026-06-17T10:00:00Z
-updatedAt: 2026-06-17T10:30:00Z
-tags: [idea, proyecto]
-folder: ideas
-isFavorite: false
-emoji: 📝
----
-
-# Mi primera nota
-
-Contenido libre en markdown...
-```
-
-Este formato es el contrato entre frontend, backend y storage. No se transforma al migrar — se copia tal cual.
+Si tienes perfil técnico y quieres entender cómo está construida la aplicación, compilarla desde el código fuente o crear tu propia versión, consulta los [manuales técnicos](./documentacion/manuales-tecnicos/).
 
 ---
 
-## Arquitectura
+## Estado del proyecto
 
-Glosa está diseñada para funcionar **sin backend**. El frontend es completamente autónomo — persiste tus notas en el navegador (IndexedDB) y no necesita ningún servidor para operar.
+🟡 En desarrollo activo.
 
-El backend y el almacenamiento en la nube son **opcionales**. Si los quieres, puedes clonar el repo del backend oficial o construir el tuyo propio — la API es simple (CRUD de archivos markdown).
-
-```
-┌─────────────────────────────────────────┐
-│          Frontend (este repo)            │
-│     Vue 3 + Vite + Tailwind + Tiptap    │
-│     ✅ Funciona solo, sin backend        │
-├─────────────────────────────────────────┤
-│     Backend (opcional, repo aparte)      │
-│     Python (FastAPI) dockerizado         │
-│     Clónalo o construye el tuyo         │
-├─────────────────────────────────────────┤
-│        Storage (tú decides)             │
-│     IndexedDB / Filesystem / S3 / NAS   │
-├─────────────────────────────────────────┤
-│        AI (opcional, próximamente)       │
-│     Ollama — modelos locales            │
-└─────────────────────────────────────────┘
-```
-
-**¿Quieres solo tomar notas?** Clona este repo, corre `npm run dev`, listo. Sin Docker, sin API keys, sin configuración.
-
-**¿Quieres sync entre dispositivos o backup en la nube?** Conecta un backend. El frontend detecta si hay un API disponible y la usa; si no, trabaja en modo local.
-
----
-
-## Modelo de uso
-
-Glosa es **código libre no comercial**. Puedes usarlo, estudiarlo, modificarlo y redistribuirlo libremente — con la condición de que no sea para fines de lucro.
-
-**Self-hosted (gratuito):** La app completa en tu infraestructura. Sin cuenta, sin servidor central, sin limitaciones funcionales.
-
-**Servicio gestionado (próximamente):** Para quienes prefieren no administrar infraestructura — una cuenta en la plataforma con almacenamiento cifrado y sincronización entre dispositivos. Mismo software, alguien más se encarga del hosting.
-
----
-
-## Principios
-
-1. **Privacidad primero** — Ningún dato sale de tu máquina sin tu consentimiento
-2. **Portabilidad** — Tus notas son archivos markdown estándar, legibles por cualquier editor
-3. **Simplicidad** — Resolver el problema actual, no sobreingeniear
-4. **Independencia** — Mínimas dependencias externas, sin servicios cloud obligatorios
-5. **Interfaz en español** — Impulsando el open source latino
-
----
-
-## Estado actual
-
-🟡 **En desarrollo activo — Fase POC**
-
-El proyecto está funcional localmente con:
-- Editor completo con formateo rico (markdown nativo via tiptap-markdown)
-- Navegación por carpetas y tags
-- Gestión de carpetas (crear, renombrar, eliminar, favoritos)
-- Persistencia en IndexedDB y sistema de archivos (Tauri)
-- Vinculación de carpetas existentes con archivos `.md`
-- Metadata distribuida por carpeta (`.glosa/meta.json`)
-- Sistema de diseño Liquid Glass (light/dark)
-- Activity tracking para home personalizado
-- Compilación para Android (tablets)
-- DeviceGuard para pantallas menores a 7"
-
-Próximos pasos:
-- [ ] Integración con backend Python
-- [ ] Storage en S3
-- [ ] Cifrado end-to-end
-- [ ] PWA / offline
-- [ ] Integración con Ollama
-
----
-
-## Contribuciones
-
-Este es un proyecto de [Bendito Código](https://benditocodigo.com). El código es público para que cualquier persona pueda auditarlo, aprender de él y crear forks para uso propio no comercial.
-
-**No se aceptan merge requests ni pull requests.** El desarrollo se gestiona internamente. Si quieres construir algo a partir de este código, eres libre de hacer un fork respetando los términos de la [licencia](./LICENSE).
+La aplicación es funcional para uso personal. Se trabaja activamente en nuevas funcionalidades como sincronización cifrada entre dispositivos y asistencia de escritura con inteligencia artificial local.
 
 ---
 
 ## Licencia
 
-**Código Libre No Comercial** — Puedes usar, estudiar, modificar y redistribuir el código libremente para cualquier propósito no comercial. Los forks deben mantener la misma licencia y atribución. No se aceptan contribuciones directas (MRs/PRs) al repositorio original.
+**Código Libre No Comercial** — Puedes usar, estudiar, modificar y redistribuir este software libremente para cualquier propósito que no sea de lucro. Los forks deben mantener la misma licencia y dar atribución al proyecto original.
+
+No se aceptan contribuciones directas (merge requests) a este repositorio. Si deseas construir algo a partir de este código, eres libre de crear un fork.
 
 Ver [LICENSE](./LICENSE) para los términos completos.
 

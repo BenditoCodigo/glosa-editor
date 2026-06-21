@@ -96,7 +96,7 @@ El APK se genera en `src-tauri/gen/android/app/build/outputs/apk/universal/debug
 ```
 ├── src/                    # Código fuente del frontend (Vue)
 ├── src-tauri/              # Código fuente del shell nativo (Rust)
-├── colaboracion/           # Documentación del proyecto
+├── documentacion/           # Documentación del proyecto
 ├── package.json            # Dependencias y scripts de npm
 ├── vite.config.ts          # Configuración de Vite
 ├── tsconfig.json           # Configuración de TypeScript
