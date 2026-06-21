@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '@/stores/settings'
+import { testConnection } from '@/services/ai'
+import type { AIConnectionResult } from '@/services/ai'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -21,6 +23,12 @@ const isSelectingFolder = ref(false)
 // AI settings local state
 const showApiKey = ref(false)
 const showHeaderValues = ref<Record<number, boolean>>({})
+
+// Connection test state
+const isTestingConnection = ref(false)
+const connectionResult = ref<AIConnectionResult | null>(null)
+
+const canTestConnection = computed(() => ai.value.baseUrl.trim() !== '' && ai.value.model.trim() !== '')
 
 // Migration modal state
 const showMigrationModal = ref(false)
@@ -131,6 +139,33 @@ async function confirmDeleteAll() {
 
 function toggleHeaderValueVisibility(index: number) {
   showHeaderValues.value = { ...showHeaderValues.value, [index]: !showHeaderValues.value[index] }
+}
+
+async function handleTestConnection() {
+  if (isTestingConnection.value || !canTestConnection.value) return
+
+  isTestingConnection.value = true
+  connectionResult.value = null
+
+  try {
+    connectionResult.value = await testConnection()
+  } catch (error) {
+    connectionResult.value = {
+      success: false,
+      message: `Error inesperado: ${String(error)}`,
+    }
+  } finally {
+    isTestingConnection.value = false
+  }
+
+  // Auto-hide success message after 5 seconds
+  if (connectionResult.value?.success) {
+    setTimeout(() => {
+      if (connectionResult.value?.success) {
+        connectionResult.value = null
+      }
+    }, 5000)
+  }
 }
 </script>
 
@@ -541,6 +576,45 @@ function toggleHeaderValueVisibility(index: number) {
                     <UiIcon name="add" size="sm" />
                     <span>Agregar header</span>
                   </button>
+                </div>
+
+                <!-- Connection test -->
+                <div class="flex items-center gap-3 pt-2">
+                  <button
+                    class="
+                      inline-flex items-center gap-2
+                      px-4 py-2 rounded-xl
+                      text-sm font-medium
+                      border border-primary/30 text-primary
+                      hover:bg-primary/10
+                      transition-all duration-200
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    "
+                    type="button"
+                    :disabled="!canTestConnection || isTestingConnection"
+                    @click="handleTestConnection"
+                  >
+                    <UiIcon v-if="!isTestingConnection" name="power" size="sm" />
+                    <span v-else class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <span>{{ isTestingConnection ? 'Probando...' : 'Probar conexión' }}</span>
+                  </button>
+
+                  <!-- Success indicator -->
+                  <Transition name="fade">
+                    <div v-if="connectionResult?.success" class="flex items-center gap-2 text-sm">
+                      <UiIcon name="check_circle" size="sm" class="text-green-600 dark:text-green-400" />
+                      <span class="text-green-700 dark:text-green-300">{{ connectionResult.message }}</span>
+                      <span v-if="connectionResult.latencyMs" class="text-xs text-secondary/60">({{ connectionResult.latencyMs }}ms)</span>
+                    </div>
+                  </Transition>
+
+                  <!-- Error indicator -->
+                  <Transition name="fade">
+                    <div v-if="connectionResult && !connectionResult.success" class="flex items-center gap-2 text-sm">
+                      <UiIcon name="error" size="sm" class="text-error" />
+                      <span class="text-error">{{ connectionResult.message }}</span>
+                    </div>
+                  </Transition>
                 </div>
               </div>
             </Transition>
