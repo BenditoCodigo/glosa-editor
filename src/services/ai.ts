@@ -1,5 +1,6 @@
 import type { AISettings, AIModelParameters } from '@/types/settings'
 import { DEFAULT_SYSTEM_PROMPT } from '@/types/settings'
+import { useSettingsStore } from '@/stores/settings'
 
 // --- Exported Types ---
 
@@ -32,6 +33,14 @@ export interface AIConnectionResult {
   message: string
   models?: string[]
   latencyMs?: number
+}
+
+// --- Exported Functions ---
+
+export function isConfigured(): boolean {
+  const store = useSettingsStore()
+  const { ai } = store.settings
+  return ai.enabled && ai.baseUrl.trim() !== '' && ai.model.trim() !== ''
 }
 
 // --- Internal Helper Functions ---
@@ -69,8 +78,9 @@ function mergeParameters(defaults: AIModelParameters, overrides?: ChatOptions): 
 }
 
 function assertConfigured(): void {
-  // Will be properly implemented in task 2.2
-  throw new Error('La IA no está configurada. Ve a Configuración para establecer la conexión.')
+  if (!isConfigured()) {
+    throw new Error('La IA no está configurada. Ve a Configuración para establecer la conexión.')
+  }
 }
 
 function parseErrorMessage(status: number, body: string): string {
