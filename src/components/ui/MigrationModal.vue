@@ -108,9 +108,14 @@ async function handleImport() {
     await activateFilesystemAdapter(folderPath)
     emit('complete', 'import')
   } catch (err: unknown) {
-    errorMessage.value = err instanceof Error
-      ? err.message
-      : 'Error al leer la carpeta seleccionada.'
+    console.error('[Glosa] Error en handleImport:', err)
+    if (err instanceof Error) {
+      errorMessage.value = err.message
+    } else if (typeof err === 'string') {
+      errorMessage.value = err
+    } else {
+      errorMessage.value = `Error al leer la carpeta seleccionada: ${JSON.stringify(err)}`
+    }
     step.value = 'error'
   }
 }
