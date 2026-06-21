@@ -52,6 +52,7 @@ const isLoading = computed(() => notesLoading.value || foldersLoading.value)
 const showFolderModal = ref(false)
 const showRenameModal = ref(false)
 const showDeleteConfirm = ref(false)
+const showNoteRenameModal = ref(false)
 
 // Context menu state
 const contextMenu = ref<{ x: number; y: number } | null>(null)
@@ -81,6 +82,7 @@ const noteMenuItems = computed<ContextMenuItem[]>(() => {
       label: targetNote.value.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
       icon: targetNote.value.isFavorite ? 'star' : 'star_outline',
     },
+    { id: 'rename', label: 'Renombrar', icon: 'edit' },
     { id: 'divider', label: '', divider: true },
     { id: 'delete', label: 'Eliminar', icon: 'delete', danger: true },
   ]
@@ -121,6 +123,11 @@ function handleContextMenuSelect(id: string) {
       case 'favorite':
         notesStore.toggleFavorite(targetNote.value.id)
         break
+      case 'rename':
+        showNoteRenameModal.value = true
+        contextMenu.value = null
+        contextMenuTarget.value = null
+        return
       case 'delete':
         notesStore.removeNote(targetNote.value.id)
         break
@@ -194,6 +201,15 @@ async function confirmRenameFolder(name: string) {
     await foldersStore.renameFolder(targetFolder.value.id, name.trim())
   }
   targetFolder.value = null
+}
+
+async function confirmRenameNote(name: string) {
+  showNoteRenameModal.value = false
+  if (name.trim() && targetNote.value) {
+    const updated = { ...targetNote.value, title: name.trim(), updatedAt: new Date().toISOString() }
+    await notesStore.updateNote(updated)
+  }
+  targetNote.value = null
 }
 
 async function confirmDeleteFolder() {
@@ -367,6 +383,17 @@ async function confirmDeleteFolder() {
     confirm-label="Renombrar"
     @confirm="confirmRenameFolder"
     @cancel="showRenameModal = false; targetFolder = null"
+  />
+
+  <!-- Modal: Renombrar nota -->
+  <UiPromptModal
+    :open="showNoteRenameModal"
+    title="Renombrar nota"
+    placeholder="Nuevo título"
+    :initial-value="targetNote?.title ?? ''"
+    confirm-label="Renombrar"
+    @confirm="confirmRenameNote"
+    @cancel="showNoteRenameModal = false; targetNote = null"
   />
 
   <!-- Modal: Confirmar eliminación -->

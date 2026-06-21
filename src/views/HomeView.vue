@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { getMostActiveNote, getMostActiveFolder, getRecentlyActiveNotes } from '@/services/activity'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiContextMenu from '@/components/ui/UiContextMenu.vue'
+import UiPromptModal from '@/components/ui/UiPromptModal.vue'
 import type { ContextMenuItem } from '@/components/ui/UiContextMenu.vue'
 import NoteCard from '@/components/explorer/NoteCard.vue'
 import type { Note, Folder } from '@/types'
@@ -136,10 +137,13 @@ const noteMenuItems = computed<ContextMenuItem[]>(() => {
       label: targetNote.value.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
       icon: targetNote.value.isFavorite ? 'star' : 'star_outline',
     },
+    { id: 'rename', label: 'Renombrar', icon: 'edit' },
     { id: 'divider', label: '', divider: true },
     { id: 'delete', label: 'Eliminar', icon: 'delete', danger: true },
   ]
 })
+
+const showNoteRenameModal = ref(false)
 
 function handleNoteContextMenu(note: Note, event: { x: number; y: number }) {
   targetNote.value = note
@@ -152,11 +156,24 @@ function handleNoteMenuSelect(id: string) {
     case 'favorite':
       notesStore.toggleFavorite(targetNote.value.id)
       break
+    case 'rename':
+      showNoteRenameModal.value = true
+      noteContextMenu.value = null
+      return
     case 'delete':
       notesStore.removeNote(targetNote.value.id)
       break
   }
   noteContextMenu.value = null
+  targetNote.value = null
+}
+
+async function confirmRenameNote(name: string) {
+  showNoteRenameModal.value = false
+  if (name.trim() && targetNote.value) {
+    const updated = { ...targetNote.value, title: name.trim(), updatedAt: new Date().toISOString() }
+    await notesStore.updateNote(updated)
+  }
   targetNote.value = null
 }
 
@@ -315,5 +332,16 @@ function closeNoteContextMenu() {
     :y="noteContextMenu.y"
     @select="handleNoteMenuSelect"
     @close="closeNoteContextMenu"
+  />
+
+  <!-- Modal: Renombrar nota -->
+  <UiPromptModal
+    :open="showNoteRenameModal"
+    title="Renombrar nota"
+    placeholder="Nuevo título"
+    :initial-value="targetNote?.title ?? ''"
+    confirm-label="Renombrar"
+    @confirm="confirmRenameNote"
+    @cancel="showNoteRenameModal = false; targetNote = null"
   />
 </template>
