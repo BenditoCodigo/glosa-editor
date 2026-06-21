@@ -198,7 +198,16 @@ async function confirmCreateFolder(name: string) {
 async function confirmRenameFolder(name: string) {
   showRenameModal.value = false
   if (name.trim() && targetFolder.value) {
-    await foldersStore.renameFolder(targetFolder.value.id, name.trim())
+    const oldId = targetFolder.value.id
+    await foldersStore.renameFolder(oldId, name.trim())
+
+    // If we're inside the renamed folder, navigate to its new ID
+    if (currentFolderId.value === oldId) {
+      const renamed = foldersStore.folders.find((f) => f.name === name.trim() && f.parentFolder === targetFolder.value!.parentFolder)
+      if (renamed && renamed.id !== oldId) {
+        router.replace({ name: 'explorer-folder', params: { path: renamed.id } })
+      }
+    }
   }
   targetFolder.value = null
 }

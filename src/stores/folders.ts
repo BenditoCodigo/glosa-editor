@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Folder } from '@/types'
 import * as storage from '@/services/storage'
+import { useNotesStore } from './notes'
 
 export const useFoldersStore = defineStore('folders', () => {
   const folders = ref<Folder[]>([])
@@ -85,7 +86,6 @@ export const useFoldersStore = defineStore('folders', () => {
 
     // If the folder id changed, update note references in the notes store
     if (saved.id !== id) {
-      const { useNotesStore } = await import('./notes')
       const notesStore = useNotesStore()
       notesStore.updateFolderReferences(id, saved.id)
 
