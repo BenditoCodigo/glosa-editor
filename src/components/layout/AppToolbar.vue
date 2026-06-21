@@ -165,8 +165,6 @@ onUnmounted(() => {
 
       <UiIconButton icon="search" ariaLabel="Search" size="sm" class="md:hidden" />
 
-      <UiIconButton icon="more_vert" ariaLabel="More options" size="sm" />
-
       <!-- User avatar -->
       <button
         class="flex items-center justify-center w-8 h-8 ml-1 text-xs font-bold rounded-full bg-primary-container text-on-primary-container transition-opacity overflow-hidden hover:opacity-80"
