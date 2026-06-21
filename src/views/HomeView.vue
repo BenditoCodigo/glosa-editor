@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
@@ -83,14 +83,22 @@ function folderNoteCount(folderId: string): number {
   return notesStore.notesByFolder(folderId).length
 }
 
-onMounted(async () => {
+// Load featured content when notes are available
+watch(notes, async (currentNotes) => {
+  if (currentNotes.length === 0) {
+    featuredNote.value = null
+    featuredFolder.value = null
+    recentNotes.value = []
+    return
+  }
+
   // Featured note
   const mostActiveNoteId = await getMostActiveNote(7)
   if (mostActiveNoteId) {
-    featuredNote.value = notes.value.find((n) => n.id === mostActiveNoteId) || null
+    featuredNote.value = currentNotes.find((n) => n.id === mostActiveNoteId) || null
   }
-  if (!featuredNote.value && notes.value.length > 0) {
-    const sorted = [...notes.value].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  if (!featuredNote.value && currentNotes.length > 0) {
+    const sorted = [...currentNotes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     featuredNote.value = sorted[0] || null
   }
 
@@ -106,16 +114,16 @@ onMounted(async () => {
   // Recent notes
   const recentIds = await getRecentlyActiveNotes(3)
   const recentFromActivity = recentIds
-    .map((id) => notes.value.find((n) => n.id === id))
+    .map((id) => currentNotes.find((n) => n.id === id))
     .filter((n): n is Note => !!n)
 
   if (recentFromActivity.length >= 3) {
     recentNotes.value = recentFromActivity
   } else {
-    const sorted = [...notes.value].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    const sorted = [...currentNotes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     recentNotes.value = sorted.slice(0, 3)
   }
-})
+}, { immediate: true })
 
 function openNote(noteId: string) {
   router.push({ name: 'editor', params: { id: noteId } })
