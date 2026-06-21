@@ -46,7 +46,7 @@ function handleHover(flatIndex: number) {
       role="listbox"
       class="
         glass-panel-md
-        absolute z-50
+        absolute right-0 z-50
         min-w-80 max-w-[480px] w-full
         mt-2 p-2
         rounded-xl
