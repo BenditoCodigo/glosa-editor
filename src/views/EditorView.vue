@@ -215,7 +215,24 @@ onUnmounted(() => {
 
       <!-- Editor area -->
       <div class="flex-1 overflow-y-auto px-4 md:px-12 py-8">
-        <div class="max-w-[720px] mx-auto glass-panel-md rounded-2xl p-8 md:p-12">
+        <div class="max-w-[720px] mx-auto relative">
+          <!-- Cover image header -->
+          <div
+            v-if="coverImage"
+            class="relative -mx-6 max-h-[320px] -mb-12 rounded-t-2xl overflow-hidden"
+          >
+            <img
+              :src="coverImage"
+              alt=""
+              class="w-full h-[320px] object-cover"
+            >
+            <!-- Bottom fade so the glass panel blends smoothly -->
+            <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white/80 to-transparent dark:hidden"></div>
+            <div class="absolute inset-x-0 bottom-0 h-20 hidden dark:block bg-gradient-to-t from-black/60 to-transparent"></div>
+          </div>
+
+          <!-- Glass editor panel -->
+          <div class="relative z-10 glass-panel-md rounded-2xl p-8 md:p-12">
           <!-- Emoji + Tags editor -->
           <div class="flex items-center gap-3 mb-4">
             <!-- Emoji picker -->
@@ -273,6 +290,7 @@ onUnmounted(() => {
             :content="content"
             @update:content="handleContentUpdate"
           />
+          </div>
         </div>
       </div>
 
