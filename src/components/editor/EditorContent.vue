@@ -11,6 +11,7 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
 import CodeBlockNode from './CodeBlockNode.vue'
 
@@ -40,6 +41,13 @@ const editor = useEditor({
         return VueNodeViewRenderer(CodeBlockNode)
       },
     }),
+    Markdown.configure({
+      html: true,
+      tightLists: true,
+      bulletListMarker: '-',
+      transformPastedText: true,
+      transformCopiedText: true,
+    }),
     Placeholder.configure({
       placeholder: 'Comienza a escribir...',
     }),
@@ -68,14 +76,15 @@ const editor = useEditor({
     },
   },
   onUpdate: ({ editor: e }) => {
-    emit('update:content', e.getHTML())
+    const md = (e.storage as Record<string, any>).markdown.getMarkdown()
+    emit('update:content', md)
   },
 })
 
 // Update editor content when prop changes externally (e.g. loading a different note)
 watch(() => content, (newContent) => {
   if (!editor.value) return
-  const currentContent = editor.value.getHTML()
+  const currentContent = (editor.value.storage as Record<string, any>).markdown.getMarkdown()
   if (currentContent !== newContent) {
     editor.value.commands.setContent(newContent, { emitUpdate: false })
   }
