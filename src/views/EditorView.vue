@@ -248,7 +248,7 @@ onUnmounted(() => {
           <!-- Cover image header -->
           <div
             v-if="coverImage"
-            class="relative -mx-6 h-[280px] -mb-16 rounded-2xl overflow-hidden z-0"
+            class="relative -mx-6 h-[320px] -mb-28 rounded-2xl overflow-hidden z-0"
           >
             <img
               :src="coverImage"
