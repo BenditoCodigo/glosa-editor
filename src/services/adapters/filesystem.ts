@@ -52,11 +52,8 @@ export class FilesystemAdapter implements StorageAdapter {
     this.extraFieldsMap.clear()
     this.skippedFiles = []
 
-    console.log('[FilesystemAdapter] Initializing with rootPath:', this.rootPath)
     await this.scanDirectory(this.rootPath, 0)
-    console.log('[FilesystemAdapter] Scan complete. Notes:', this.noteCache.size, 'Folders:', this.folderCache.size)
     await this.loadMetadata()
-    console.log('[FilesystemAdapter] Metadata loaded.')
 
     // Apply folder favorites from metadata
     for (const folderId of this.metadata.folderFavorites) {
@@ -546,8 +543,8 @@ export class FilesystemAdapter implements StorageAdapter {
     let entries: Awaited<ReturnType<typeof readDir>>
     try {
       entries = await readDir(dirPath)
-    } catch (err) {
-      console.warn('[FilesystemAdapter] readDir failed for:', dirPath, err)
+    } catch {
+      // Cannot read directory — skip silently
       return
     }
 
@@ -638,8 +635,7 @@ export class FilesystemAdapter implements StorageAdapter {
     let metaExists: boolean
     try {
       metaExists = await exists(metaPath)
-    } catch (err) {
-      console.warn('[FilesystemAdapter] exists() failed for metadata path:', metaPath, err)
+    } catch {
       this.metadata = defaultMetadata()
       return
     }

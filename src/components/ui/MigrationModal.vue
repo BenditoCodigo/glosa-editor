@@ -109,13 +109,11 @@ async function handleImport() {
     emit('complete', 'import')
   } catch (err: unknown) {
     console.error('[Glosa] Error en handleImport:', err)
-    if (err instanceof Error) {
-      errorMessage.value = err.message
-    } else if (typeof err === 'string') {
-      errorMessage.value = err
-    } else {
-      errorMessage.value = `Error al leer la carpeta seleccionada: ${JSON.stringify(err)}`
-    }
+    errorMessage.value = err instanceof Error
+      ? err.message
+      : typeof err === 'string'
+        ? err
+        : 'Error al leer la carpeta seleccionada.'
     step.value = 'error'
   }
 }
