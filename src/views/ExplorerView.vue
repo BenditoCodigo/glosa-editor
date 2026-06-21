@@ -13,7 +13,7 @@ import UiPromptModal from '@/components/ui/UiPromptModal.vue'
 import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
 import UiContextMenu from '@/components/ui/UiContextMenu.vue'
 import type { ContextMenuItem } from '@/components/ui/UiContextMenu.vue'
-import type { Folder } from '@/types'
+import type { Folder, Note } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +55,9 @@ const showDeleteConfirm = ref(false)
 
 // Context menu state
 const contextMenu = ref<{ x: number; y: number } | null>(null)
+const contextMenuTarget = ref<'folder' | 'note' | null>(null)
 const targetFolder = ref<Folder | null>(null)
+const targetNote = ref<Note | null>(null)
 
 const folderMenuItems = computed<ContextMenuItem[]>(() => {
   if (!targetFolder.value) return []
@@ -71,6 +73,24 @@ const folderMenuItems = computed<ContextMenuItem[]>(() => {
   ]
 })
 
+const noteMenuItems = computed<ContextMenuItem[]>(() => {
+  if (!targetNote.value) return []
+  return [
+    {
+      id: 'favorite',
+      label: targetNote.value.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
+      icon: targetNote.value.isFavorite ? 'star' : 'star_outline',
+    },
+    { id: 'divider', label: '', divider: true },
+    { id: 'delete', label: 'Eliminar', icon: 'delete', danger: true },
+  ]
+})
+
+const activeMenuItems = computed<ContextMenuItem[]>(() => {
+  if (contextMenuTarget.value === 'note') return noteMenuItems.value
+  return folderMenuItems.value
+})
+
 // Navigation
 function openFolder(folderId: string) {
   trackActivity(folderId, 'folder', 'open')
@@ -84,10 +104,33 @@ function openNote(noteId: string) {
 // Folder context menu
 function handleFolderContextMenu(folder: Folder, event: { x: number; y: number }) {
   targetFolder.value = folder
+  contextMenuTarget.value = 'folder'
+  contextMenu.value = event
+}
+
+// Note context menu
+function handleNoteContextMenu(note: Note, event: { x: number; y: number }) {
+  targetNote.value = note
+  contextMenuTarget.value = 'note'
   contextMenu.value = event
 }
 
 function handleContextMenuSelect(id: string) {
+  if (contextMenuTarget.value === 'note' && targetNote.value) {
+    switch (id) {
+      case 'favorite':
+        notesStore.toggleFavorite(targetNote.value.id)
+        break
+      case 'delete':
+        notesStore.removeNote(targetNote.value.id)
+        break
+    }
+    contextMenu.value = null
+    targetNote.value = null
+    contextMenuTarget.value = null
+    return
+  }
+
   if (!targetFolder.value) return
 
   switch (id) {
@@ -102,10 +145,12 @@ function handleContextMenuSelect(id: string) {
       break
   }
   contextMenu.value = null
+  contextMenuTarget.value = null
 }
 
 function closeContextMenu() {
   contextMenu.value = null
+  contextMenuTarget.value = null
 }
 
 // Actions
@@ -170,9 +215,6 @@ async function confirmDeleteFolder() {
   targetFolder.value = null
 }
 
-function handleToggleFavorite(noteId: string) {
-  notesStore.toggleFavorite(noteId)
-}
 </script>
 
 <template>
@@ -272,7 +314,7 @@ function handleToggleFavorite(noteId: string) {
               :key="note.id"
               :note="note"
               @dblclick="openNote(note.id)"
-              @toggle-favorite="handleToggleFavorite(note.id)"
+              @contextmenu="handleNoteContextMenu(note, $event)"
             />
           </div>
         </section>
@@ -299,7 +341,7 @@ function handleToggleFavorite(noteId: string) {
   <!-- Context menu -->
   <UiContextMenu
     v-if="contextMenu"
-    :items="folderMenuItems"
+    :items="activeMenuItems"
     :x="contextMenu.x"
     :y="contextMenu.y"
     @select="handleContextMenuSelect"

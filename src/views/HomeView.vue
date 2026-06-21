@@ -7,6 +7,8 @@ import { useFoldersStore } from '@/stores/folders'
 import { useSettingsStore } from '@/stores/settings'
 import { getMostActiveNote, getMostActiveFolder, getRecentlyActiveNotes } from '@/services/activity'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiContextMenu from '@/components/ui/UiContextMenu.vue'
+import type { ContextMenuItem } from '@/components/ui/UiContextMenu.vue'
 import NoteCard from '@/components/explorer/NoteCard.vue'
 import type { Note, Folder } from '@/types'
 
@@ -122,8 +124,45 @@ function openFolder(folderId: string) {
   router.push({ name: 'explorer-folder', params: { path: folderId } })
 }
 
-function handleToggleFavorite(noteId: string) {
-  notesStore.toggleFavorite(noteId)
+// Note context menu
+const noteContextMenu = ref<{ x: number; y: number } | null>(null)
+const targetNote = ref<Note | null>(null)
+
+const noteMenuItems = computed<ContextMenuItem[]>(() => {
+  if (!targetNote.value) return []
+  return [
+    {
+      id: 'favorite',
+      label: targetNote.value.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
+      icon: targetNote.value.isFavorite ? 'star' : 'star_outline',
+    },
+    { id: 'divider', label: '', divider: true },
+    { id: 'delete', label: 'Eliminar', icon: 'delete', danger: true },
+  ]
+})
+
+function handleNoteContextMenu(note: Note, event: { x: number; y: number }) {
+  targetNote.value = note
+  noteContextMenu.value = event
+}
+
+function handleNoteMenuSelect(id: string) {
+  if (!targetNote.value) return
+  switch (id) {
+    case 'favorite':
+      notesStore.toggleFavorite(targetNote.value.id)
+      break
+    case 'delete':
+      notesStore.removeNote(targetNote.value.id)
+      break
+  }
+  noteContextMenu.value = null
+  targetNote.value = null
+}
+
+function closeNoteContextMenu() {
+  noteContextMenu.value = null
+  targetNote.value = null
 }
 </script>
 
@@ -261,10 +300,20 @@ function handleToggleFavorite(noteId: string) {
             :key="note.id"
             :note="note"
             @dblclick="openNote(note.id)"
-            @toggle-favorite="handleToggleFavorite(note.id)"
+            @contextmenu="handleNoteContextMenu(note, $event)"
           />
         </div>
       </section>
     </div>
   </div>
+
+  <!-- Note context menu -->
+  <UiContextMenu
+    v-if="noteContextMenu"
+    :items="noteMenuItems"
+    :x="noteContextMenu.x"
+    :y="noteContextMenu.y"
+    @select="handleNoteMenuSelect"
+    @close="closeNoteContextMenu"
+  />
 </template>

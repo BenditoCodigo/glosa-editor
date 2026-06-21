@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 import type { Note } from '@/types'
 
 interface Props {
@@ -9,10 +10,22 @@ interface Props {
 
 const { note } = defineProps<Props>()
 
-defineEmits<{
+const emit = defineEmits<{
   dblclick: []
-  toggleFavorite: []
+  contextmenu: [event: { x: number; y: number }]
 }>()
+
+function handleContextMenu(event: MouseEvent) {
+  event.preventDefault()
+  emit('contextmenu', { x: event.clientX, y: event.clientY })
+}
+
+function handleMenuClick(event: MouseEvent) {
+  event.stopPropagation()
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  emit('contextmenu', { x: rect.left, y: rect.bottom + 4 })
+}
 
 const contentPreview = computed(() => {
   const div = document.createElement('div')
@@ -49,6 +62,7 @@ const relativeDate = computed(() => {
       will-change-transform
     "
     @dblclick="$emit('dblclick')"
+    @contextmenu="handleContextMenu"
   >
     <!-- Header -->
     <div class="flex justify-between items-start">
@@ -58,10 +72,15 @@ const relativeDate = computed(() => {
         name="description"
         class="text-secondary group-hover:text-primary transition-colors"
       />
-      <UiIcon
-        name="more_horiz"
+
+      <!-- 3-dot menu button -->
+      <UiIconButton
+        icon="more_vert"
         size="sm"
-        class="text-secondary opacity-0 group-hover:opacity-100 transition-opacity"
+        variant="ghost"
+        ariaLabel="Opciones de nota"
+        class="opacity-0 group-hover:opacity-100 transition-opacity -mr-2 -mt-1"
+        @click="handleMenuClick"
       />
     </div>
 
@@ -81,7 +100,7 @@ const relativeDate = computed(() => {
     </p>
 
     <!-- Footer -->
-    <div class="flex items-center justify-between mt-auto pt-2">
+    <div class="flex items-center mt-auto pt-2">
       <div class="flex gap-1">
         <router-link
           v-for="tag in note.tags.slice(0, 2)"
@@ -93,13 +112,6 @@ const relativeDate = computed(() => {
           {{ tag }}
         </router-link>
       </div>
-      <button
-        class="transition-colors"
-        :class="note.isFavorite ? 'text-primary' : 'text-secondary/30 group-hover:text-primary/40'"
-        @click.stop="$emit('toggleFavorite')"
-      >
-        <UiIcon name="star" size="sm" :filled="note.isFavorite" />
-      </button>
     </div>
   </div>
 </template>

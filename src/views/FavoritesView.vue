@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
@@ -7,6 +7,9 @@ import NoteCard from '@/components/explorer/NoteCard.vue'
 import FolderCard from '@/components/explorer/FolderCard.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiContextMenu from '@/components/ui/UiContextMenu.vue'
+import type { ContextMenuItem } from '@/components/ui/UiContextMenu.vue'
+import type { Note } from '@/types'
 
 const router = useRouter()
 const notesStore = useNotesStore()
@@ -28,8 +31,45 @@ function openNote(noteId: string) {
   router.push({ name: 'editor', params: { id: noteId } })
 }
 
-function handleToggleFavorite(noteId: string) {
-  notesStore.toggleFavorite(noteId)
+// Note context menu
+const noteContextMenu = ref<{ x: number; y: number } | null>(null)
+const targetNote = ref<Note | null>(null)
+
+const noteMenuItems = computed<ContextMenuItem[]>(() => {
+  if (!targetNote.value) return []
+  return [
+    {
+      id: 'favorite',
+      label: targetNote.value.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
+      icon: targetNote.value.isFavorite ? 'star' : 'star_outline',
+    },
+    { id: 'divider', label: '', divider: true },
+    { id: 'delete', label: 'Eliminar', icon: 'delete', danger: true },
+  ]
+})
+
+function handleNoteContextMenu(note: Note, event: { x: number; y: number }) {
+  targetNote.value = note
+  noteContextMenu.value = event
+}
+
+function handleNoteMenuSelect(id: string) {
+  if (!targetNote.value) return
+  switch (id) {
+    case 'favorite':
+      notesStore.toggleFavorite(targetNote.value.id)
+      break
+    case 'delete':
+      notesStore.removeNote(targetNote.value.id)
+      break
+  }
+  noteContextMenu.value = null
+  targetNote.value = null
+}
+
+function closeNoteContextMenu() {
+  noteContextMenu.value = null
+  targetNote.value = null
 }
 </script>
 
@@ -75,7 +115,7 @@ function handleToggleFavorite(noteId: string) {
             :key="note.id"
             :note="note"
             @dblclick="openNote(note.id)"
-            @toggle-favorite="handleToggleFavorite(note.id)"
+            @contextmenu="handleNoteContextMenu(note, $event)"
           />
         </div>
       </section>
@@ -91,4 +131,14 @@ function handleToggleFavorite(noteId: string) {
       </div>
     </div>
   </div>
+
+  <!-- Note context menu -->
+  <UiContextMenu
+    v-if="noteContextMenu"
+    :items="noteMenuItems"
+    :x="noteContextMenu.x"
+    :y="noteContextMenu.y"
+    @select="handleNoteMenuSelect"
+    @close="closeNoteContextMenu"
+  />
 </template>
