@@ -17,7 +17,11 @@ function toggle() {
 }
 
 function handleSelect(action: 'export-md' | 'copy-md') {
-  emit(action)
+  if (action === 'export-md') {
+    emit('export-md')
+  } else {
+    emit('copy-md')
+  }
   isOpen.value = false
 }
 
