@@ -96,9 +96,12 @@ describe('Settings Store - AI Settings', () => {
     expect(store.ai.headers[0]).toEqual({ key: 'X-Second', value: '2' })
   })
 
-  it('persists AI settings changes to localStorage', () => {
+  it('persists AI settings changes to localStorage', async () => {
     const store = useSettingsStore()
     store.updateAI({ enabled: true, baseUrl: 'http://localhost:11434/v1', model: 'llama3.1:8b' })
+
+    // Wait for the watcher to flush
+    await new Promise(resolve => setTimeout(resolve, 0))
 
     const stored = JSON.parse(localStorage.getItem('glosa-settings')!)
     expect(stored.ai.enabled).toBe(true)
