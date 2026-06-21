@@ -72,6 +72,18 @@ export const useFoldersStore = defineStore('folders', () => {
     folders.value = folders.value.filter((f) => f.id !== id)
   }
 
+  async function renameFolder(id: string, newName: string) {
+    const folder = folders.value.find((f) => f.id === id)
+    if (!folder) return
+    const plain = JSON.parse(JSON.stringify(folder)) as Folder
+    plain.name = newName
+    plain.updatedAt = new Date().toISOString()
+    const saved = await storage.saveFolder(plain)
+    // The id may have changed (filesystem adapter renames the directory)
+    const index = folders.value.findIndex((f) => f.id === id)
+    if (index !== -1) folders.value[index] = saved
+  }
+
   return {
     folders,
     isLoading,
@@ -82,6 +94,7 @@ export const useFoldersStore = defineStore('folders', () => {
     loadAll,
     createFolder,
     toggleFavorite,
+    renameFolder,
     removeFolder,
   }
 })

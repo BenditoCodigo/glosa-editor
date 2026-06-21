@@ -10,6 +10,10 @@ import NoteCard from '@/components/explorer/NoteCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPromptModal from '@/components/ui/UiPromptModal.vue'
+import UiConfirmModal from '@/components/ui/UiConfirmModal.vue'
+import UiContextMenu from '@/components/ui/UiContextMenu.vue'
+import type { ContextMenuItem } from '@/components/ui/UiContextMenu.vue'
+import type { Folder } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,6 +44,26 @@ const isLoading = computed(() => notesLoading.value || foldersLoading.value)
 
 // Modal state
 const showFolderModal = ref(false)
+const showRenameModal = ref(false)
+const showDeleteConfirm = ref(false)
+
+// Context menu state
+const contextMenu = ref<{ x: number; y: number } | null>(null)
+const targetFolder = ref<Folder | null>(null)
+
+const folderMenuItems = computed<ContextMenuItem[]>(() => {
+  if (!targetFolder.value) return []
+  return [
+    {
+      id: 'favorite',
+      label: targetFolder.value.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos',
+      icon: targetFolder.value.isFavorite ? 'star' : 'star_outline',
+    },
+    { id: 'rename', label: 'Renombrar', icon: 'edit' },
+    { id: 'divider', label: '', divider: true },
+    { id: 'delete', label: 'Eliminar', icon: 'delete', danger: true },
+  ]
+})
 
 // Navigation
 function openFolder(folderId: string) {
@@ -49,6 +73,33 @@ function openFolder(folderId: string) {
 
 function openNote(noteId: string) {
   router.push({ name: 'editor', params: { id: noteId } })
+}
+
+// Folder context menu
+function handleFolderContextMenu(folder: Folder, event: { x: number; y: number }) {
+  targetFolder.value = folder
+  contextMenu.value = event
+}
+
+function handleContextMenuSelect(id: string) {
+  if (!targetFolder.value) return
+
+  switch (id) {
+    case 'favorite':
+      foldersStore.toggleFavorite(targetFolder.value.id)
+      break
+    case 'rename':
+      showRenameModal.value = true
+      break
+    case 'delete':
+      showDeleteConfirm.value = true
+      break
+  }
+  contextMenu.value = null
+}
+
+function closeContextMenu() {
+  contextMenu.value = null
 }
 
 // Actions
@@ -66,6 +117,22 @@ async function confirmCreateFolder(name: string) {
   if (name.trim()) {
     await foldersStore.createFolder(name.trim(), currentFolderId.value)
   }
+}
+
+async function confirmRenameFolder(name: string) {
+  showRenameModal.value = false
+  if (name.trim() && targetFolder.value) {
+    await foldersStore.renameFolder(targetFolder.value.id, name.trim())
+  }
+  targetFolder.value = null
+}
+
+async function confirmDeleteFolder() {
+  showDeleteConfirm.value = false
+  if (targetFolder.value) {
+    await foldersStore.removeFolder(targetFolder.value.id)
+  }
+  targetFolder.value = null
 }
 
 function handleToggleFavorite(noteId: string) {
@@ -111,6 +178,7 @@ function handleToggleFavorite(noteId: string) {
               :key="folder.id"
               :folder="folder"
               @dblclick="openFolder(folder.id)"
+              @contextmenu="handleFolderContextMenu(folder, $event)"
             />
           </div>
         </section>
@@ -154,13 +222,45 @@ function handleToggleFavorite(noteId: string) {
     </div>
   </div>
 
+  <!-- Context menu -->
+  <UiContextMenu
+    v-if="contextMenu"
+    :items="folderMenuItems"
+    :x="contextMenu.x"
+    :y="contextMenu.y"
+    @select="handleContextMenuSelect"
+    @close="closeContextMenu"
+  />
+
   <!-- Modal: Nueva carpeta -->
   <UiPromptModal
     :open="showFolderModal"
     title="Nueva carpeta"
     placeholder="Nombre de la carpeta"
-    confirmLabel="Crear"
+    confirm-label="Crear"
     @confirm="confirmCreateFolder"
     @cancel="showFolderModal = false"
+  />
+
+  <!-- Modal: Renombrar carpeta -->
+  <UiPromptModal
+    :open="showRenameModal"
+    title="Renombrar carpeta"
+    placeholder="Nuevo nombre"
+    :initial-value="targetFolder?.name ?? ''"
+    confirm-label="Renombrar"
+    @confirm="confirmRenameFolder"
+    @cancel="showRenameModal = false; targetFolder = null"
+  />
+
+  <!-- Modal: Confirmar eliminación -->
+  <UiConfirmModal
+    :open="showDeleteConfirm"
+    title="Eliminar carpeta"
+    :message="`¿Estás seguro de que deseas eliminar la carpeta '${targetFolder?.name ?? ''}'? Las notas dentro de ella también se eliminarán. Esta acción no se puede deshacer.`"
+    confirm-label="Eliminar"
+    :danger="true"
+    @confirm="confirmDeleteFolder"
+    @cancel="showDeleteConfirm = false; targetFolder = null"
   />
 </template>
