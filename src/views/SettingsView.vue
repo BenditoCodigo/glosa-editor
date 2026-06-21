@@ -24,6 +24,7 @@ const isSelectingFolder = ref(false)
 // AI settings local state
 const showApiKey = ref(false)
 const showHeaderValues = ref<Record<number, boolean>>({})
+const showConfigGuide = ref(false)
 
 // Connection test state
 const isTestingConnection = ref(false)
@@ -775,6 +776,72 @@ function handleMaxTokensInput(event: Event) {
                     <UiIcon name="restart_alt" size="sm" />
                     <span>Restablecer valores por defecto</span>
                   </button>
+                </div>
+
+                <!-- Configuration Guide (collapsible) -->
+                <div class="pt-3">
+                  <button
+                    class="flex items-center gap-2 w-full text-left group"
+                    type="button"
+                    @click="showConfigGuide = !showConfigGuide"
+                  >
+                    <UiIcon
+                      name="chevron_right"
+                      size="sm"
+                      class="text-secondary/60 transition-transform duration-200"
+                      :class="showConfigGuide && 'rotate-90'"
+                    />
+                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest group-hover:text-on-surface transition-colors">
+                      Guía de configuración
+                    </span>
+                    <div class="h-px flex-1 bg-outline-variant/20"></div>
+                  </button>
+
+                  <Transition name="fade-up">
+                    <div v-if="showConfigGuide" class="mt-4 space-y-5 text-sm text-secondary leading-relaxed">
+                      <!-- Ollama -->
+                      <div>
+                        <h4 class="font-medium text-on-surface mb-2">Ollama (recomendado para uso local)</h4>
+                        <ol class="list-decimal list-inside space-y-1 text-xs">
+                          <li>Instala Ollama desde <span class="font-mono text-primary">ollama.com</span></li>
+                          <li>Ejecuta: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">ollama pull llama3.1:8b</code></li>
+                          <li>Ollama corre automáticamente en <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:11434</code></li>
+                          <li>URL Base: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:11434/v1</code></li>
+                          <li>Modelo: el nombre que descargaste (ej: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">llama3.1:8b</code>)</li>
+                        </ol>
+                        <p class="mt-1.5 text-xs text-secondary/60 italic">Ollama debe estar corriendo antes de probar la conexión.</p>
+                      </div>
+
+                      <!-- llama.cpp -->
+                      <div>
+                        <h4 class="font-medium text-on-surface mb-2">llama.cpp</h4>
+                        <ol class="list-decimal list-inside space-y-1 text-xs">
+                          <li>Descarga e inicia llama-server con tu modelo GGUF</li>
+                          <li>URL Base: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:8080/v1</code></li>
+                          <li>Modelo: el nombre que configuraste al iniciar el servidor</li>
+                        </ol>
+                      </div>
+
+                      <!-- LM Studio -->
+                      <div>
+                        <h4 class="font-medium text-on-surface mb-2">LM Studio</h4>
+                        <ol class="list-decimal list-inside space-y-1 text-xs">
+                          <li>Descarga un modelo desde la interfaz de LM Studio</li>
+                          <li>Activa el servidor local en la pestaña "Local Server"</li>
+                          <li>URL Base: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:1234/v1</code></li>
+                          <li>Modelo: el que tengas cargado</li>
+                        </ol>
+                      </div>
+
+                      <!-- Generic -->
+                      <div>
+                        <h4 class="font-medium text-on-surface mb-2">Cualquier endpoint OpenAI-compatible</h4>
+                        <p class="text-xs">
+                          Si usas un proxy (LiteLLM, custom gateway) o servicio cloud, configura la URL base y API Key según la documentación del proveedor. Cualquier servidor que exponga el formato <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">/v1/chat/completions</code> es compatible.
+                        </p>
+                      </div>
+                    </div>
+                  </Transition>
                 </div>
               </div>
             </Transition>
