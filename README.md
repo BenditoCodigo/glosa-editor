@@ -25,14 +25,17 @@ Glosa existe para quienes tienen la capacidad técnica de mantener sus propias h
 
 ## Características
 
-- ✍️ Editor rico en markdown (Tiptap) con formateo, tablas, listas de tareas, imágenes y bloques de código con syntax highlighting
-- 📁 Organización por carpetas con navegación tipo Google Drive
+- ✍️ Editor rico en markdown (Tiptap + tiptap-markdown) con formateo, tablas, listas de tareas, imágenes y bloques de código con syntax highlighting
+- 📁 Organización por carpetas con navegación tipo Google Drive (renombrar, eliminar, favoritos)
 - 🏷️ Sistema de tags navegables
-- ⭐ Favoritos con acceso rápido
+- ⭐ Favoritos con acceso rápido desde el sidebar
 - 🌙 Tema claro y oscuro (Liquid Glass design system)
 - 🏠 Vista de inicio con actividad reciente y nota destacada
-- 💾 Autosave con persistencia local (IndexedDB)
+- 💾 Autosave con persistencia local (IndexedDB o sistema de archivos)
+- 📂 Vinculación de carpetas del sistema de archivos — trabaja directamente con archivos `.md`
 - 📝 Formato portable: archivos markdown con frontmatter YAML — legibles por cualquier editor
+- 🖥️ App de escritorio nativa (macOS, Windows, Linux) via Tauri 2
+- 📱 App para tablets Android (pantalla mínima 7")
 - 🔒 Zero datos enviados a terceros. Nunca.
 
 ---
@@ -47,7 +50,7 @@ Glosa existe para quienes tienen la capacidad técnica de mantener sus propias h
 | Router | Vue Router 4 |
 | Editor | Tiptap + extensiones (tablas, tasks, code highlight, imágenes) |
 | Estilos | Tailwind CSS 4 (CSS-first, sin config JS) |
-| Almacenamiento | IndexedDB (Dexie.js) — migrable a S3/NAS |
+| Almacenamiento | IndexedDB (Dexie.js) + Filesystem adapter (Tauri) |
 | Testing | Vitest + happy-dom + fake-indexeddb |
 | Lenguaje | TypeScript (strict mode) |
 | Desktop | Tauri 2 (app nativa multiplataforma) |
@@ -100,6 +103,24 @@ Los binarios se generan en `src-tauri/target/release/bundle/`:
 - **Windows**: `.exe` + `.msi`
 - **Linux**: `.AppImage` + `.deb`
 
+### Android (tablet)
+
+La app compilada para tablets Android (pantalla mínima 600dp / ~7"). No se distribuye en Play Store — se descarga directamente como APK.
+
+```bash
+# Requisitos: Android SDK, NDK r28, JDK 21
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export ANDROID_HOME=~/Library/Android/sdk
+export NDK_HOME=$ANDROID_HOME/ndk/28.0.13004108
+
+# Build debug APK
+npm run tauri android build -- --debug
+```
+
+El APK se genera en `src-tauri/gen/android/app/build/outputs/apk/universal/debug/`.
+
+> En dispositivos con pantalla menor a 7" se muestra un mensaje indicando que la app está diseñada para tablets y escritorio.
+
 ---
 
 ## Estructura del proyecto
@@ -114,15 +135,17 @@ src/                        # Frontend Vue
 │   └── layout/             # Layout (Toolbar, Sidebar, Breadcrumbs)
 ├── composables/            # Lógica reutilizable
 ├── router/                 # Definición de rutas
-├── services/               # Capa de storage y actividad (IndexedDB)
+├── services/               # Capa de storage (IndexedDB + Filesystem adapters) y actividad
 ├── stores/                 # Pinia stores (notas, carpetas, UI)
 ├── types/                  # Interfaces TypeScript
 └── views/                  # Vistas/páginas
 
-src-tauri/                  # App de escritorio (Tauri/Rust)
-├── tauri.conf.json         # Configuración de la ventana y build
+src-tauri/                  # App de escritorio y móvil (Tauri/Rust)
+├── tauri.conf.json         # Configuración de la ventana, plugins y build
 ├── Cargo.toml              # Dependencias Rust
-├── src/main.rs             # Entry point (~10 líneas)
+├── capabilities/           # Permisos de acceso (fs, dialog)
+├── gen/android/            # Proyecto Android generado
+├── src/lib.rs              # Entry point (~15 líneas)
 └── icons/                  # Íconos de la app por plataforma
 ```
 
@@ -208,11 +231,16 @@ Glosa sigue el modelo de [Bitwarden](https://bitwarden.com/): código abierto co
 🟡 **En desarrollo activo — Fase POC**
 
 El proyecto está funcional localmente con:
-- Editor completo con formateo rico
+- Editor completo con formateo rico (markdown nativo via tiptap-markdown)
 - Navegación por carpetas y tags
-- Persistencia en IndexedDB
+- Gestión de carpetas (crear, renombrar, eliminar, favoritos)
+- Persistencia en IndexedDB y sistema de archivos (Tauri)
+- Vinculación de carpetas existentes con archivos `.md`
+- Metadata distribuida por carpeta (`.glosa/meta.json`)
 - Sistema de diseño Liquid Glass (light/dark)
 - Activity tracking para home personalizado
+- Compilación para Android (tablets)
+- DeviceGuard para pantallas menores a 7"
 
 Próximos pasos:
 - [ ] Integración con backend Python
