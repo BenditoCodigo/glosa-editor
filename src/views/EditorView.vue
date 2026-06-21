@@ -27,8 +27,37 @@ const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const isLoading = ref(true)
 const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
 const titleRef = ref<HTMLTextAreaElement | null>(null)
+const coverScale = ref(1)
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+
+// Zoom cover image on scroll (max 1.4x)
+// The actual scroll container is in App.vue (flex-1 overflow-y-auto), not in this component.
+// We find the nearest scrollable ancestor and listen on it.
+const editorAreaRef = ref<HTMLElement | null>(null)
+
+function handleCoverZoom(event: Event) {
+  if (!coverImage.value) return
+  const target = event.target as HTMLElement
+  const viewportHeight = target.clientHeight
+  // Scale from 1 to 1.4 over one full viewport height of scroll
+  const progress = Math.min(target.scrollTop / viewportHeight, 1)
+  coverScale.value = 1 + progress * 0.2
+}
+
+watch(editorAreaRef, (el) => {
+  if (!el) return
+  // Walk up to find the scrolling ancestor
+  let scrollParent: HTMLElement | null = el.parentElement
+  while (scrollParent) {
+    const style = getComputedStyle(scrollParent)
+    if (style.overflowY === 'auto' || style.overflowY === 'scroll') break
+    scrollParent = scrollParent.parentElement
+  }
+  if (scrollParent) {
+    scrollParent.addEventListener('scroll', handleCoverZoom, { passive: true })
+  }
+}, { flush: 'post' })
 
 // Load note when route changes
 watch(
@@ -214,17 +243,18 @@ onUnmounted(() => {
       </div>
 
       <!-- Editor area -->
-      <div class="flex-1 overflow-y-auto px-4 md:px-12 py-8">
+      <div ref="editorAreaRef" class="flex-1 overflow-y-auto px-4 md:px-12 py-8">
         <div class="max-w-[720px] mx-auto relative">
-          <!-- Cover image header with parallax (sticky stays behind while content scrolls over) -->
+          <!-- Cover image header -->
           <div
             v-if="coverImage"
-            class="sticky top-0 -mx-6 h-[280px] -mb-16 rounded-t-2xl overflow-hidden z-0"
+            class="relative -mx-6 h-[280px] -mb-16 rounded-2xl overflow-hidden z-0"
           >
             <img
               :src="coverImage"
               alt=""
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover will-change-transform transform-gpu"
+              :style="{ transform: `scale(${coverScale})` }"
             >
             <!-- Bottom fade so the glass panel blends smoothly -->
             <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/90 to-transparent dark:hidden"></div>
