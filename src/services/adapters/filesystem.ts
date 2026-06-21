@@ -260,6 +260,7 @@ export class FilesystemAdapter implements StorageAdapter {
         }
       }
 
+      await this.syncFolderMetadata()
       return updatedFolder
     } else if (!existingFolder) {
       // New folder — create directory with slugified name
