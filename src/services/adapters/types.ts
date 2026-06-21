@@ -32,6 +32,9 @@ export interface ActivityEvent {
 export interface FilesystemMetadata {
   version: 1
   activity: ActivityEvent[]
-  folderFavorites: string[]
-  folderNames: Record<string, string>
+}
+
+export interface FolderMeta {
+  name?: string
+  isFavorite?: boolean
 }

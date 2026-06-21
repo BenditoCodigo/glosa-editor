@@ -2,7 +2,7 @@ import { readDir, readTextFile, writeTextFile, remove, mkdir, exists, watch } fr
 import type { WatchEvent, UnwatchFn } from '@tauri-apps/plugin-fs'
 import type { Note } from '@/types/note'
 import type { Folder } from '@/types/folder'
-import type { StorageAdapter, FileEntry, FilesystemMetadata, ActivityEvent } from './types'
+import type { StorageAdapter, FileEntry, FilesystemMetadata, FolderMeta, ActivityEvent } from './types'
 import { parseMarkdownFile, frontmatterToNote, serializeNote } from '@/services/frontmatter'
 import { slugify, resolveFilename } from '@/services/slug'
 
@@ -13,7 +13,7 @@ const MAX_ACTIVITY_EVENTS = 500
 const WATCH_DEBOUNCE_MS = 300
 
 function defaultMetadata(): FilesystemMetadata {
-  return { version: 1, activity: [], folderFavorites: [], folderNames: {} }
+  return { version: 1, activity: [] }
 }
 
 /**
@@ -55,19 +55,12 @@ export class FilesystemAdapter implements StorageAdapter {
     await this.scanDirectory(this.rootPath, 0)
     await this.loadMetadata()
 
-    // Apply folder favorites from metadata
-    for (const folderId of this.metadata.folderFavorites) {
-      const folder = this.folderCache.get(folderId)
-      if (folder) {
-        folder.isFavorite = true
-      }
-    }
-
-    // Apply saved folder names from metadata
-    for (const [folderId, name] of Object.entries(this.metadata.folderNames)) {
-      const folder = this.folderCache.get(folderId)
-      if (folder) {
-        folder.name = name
+    // Load per-folder metadata (name, isFavorite)
+    for (const [folderId, folder] of this.folderCache.entries()) {
+      const folderMeta = await this.loadFolderMeta(folderId)
+      if (folderMeta) {
+        if (folderMeta.name) folder.name = folderMeta.name
+        if (folderMeta.isFavorite) folder.isFavorite = true
       }
     }
   }
@@ -260,7 +253,7 @@ export class FilesystemAdapter implements StorageAdapter {
         }
       }
 
-      await this.syncFolderMetadata()
+      await this.saveFolderMeta(updatedFolder.id)
       return updatedFolder
     } else if (!existingFolder) {
       // New folder — create directory with slugified name
@@ -276,13 +269,12 @@ export class FilesystemAdapter implements StorageAdapter {
       // Store with the relative path as id
       const updatedFolder: Folder = { ...folder, id: relativePath }
       this.folderCache.set(relativePath, updatedFolder)
-      await this.syncFolderMetadata()
+      await this.saveFolderMeta(relativePath)
       return updatedFolder
     } else {
       // No name change, folder already exists — just update cache
       this.folderCache.set(folder.id, folder)
-      // Sync folder favorites in metadata
-      await this.syncFolderMetadata()
+      await this.saveFolderMeta(folder.id)
       return folder
     }
   }
@@ -352,9 +344,6 @@ export class FilesystemAdapter implements StorageAdapter {
         this.extraFieldsMap.delete(noteId)
       }
     }
-
-    // Sync metadata to remove deleted folder from favorites/names
-    await this.syncFolderMetadata()
   }
 
   // --- File watching ---
@@ -641,25 +630,68 @@ export class FilesystemAdapter implements StorageAdapter {
   }
 
   /**
-   * Rebuilds the folderFavorites and folderNames from the current cache and persists.
+   * Saves metadata for a specific folder to its own .glosa/meta.json.
    */
-  private async syncFolderMetadata(): Promise<void> {
-    this.metadata.folderFavorites = Array.from(this.folderCache.values())
-      .filter(f => f.isFavorite)
-      .map(f => f.id)
+  private async saveFolderMeta(folderId: string): Promise<void> {
+    const folder = this.folderCache.get(folderId)
+    if (!folder) return
 
-    // Save names for all folders (so they survive re-linking)
-    const names: Record<string, string> = {}
-    for (const [id, folder] of this.folderCache.entries()) {
-      // Only store if name differs from directory name (slug)
-      const dirName = id.includes('/') ? id.split('/').pop()! : id
-      if (folder.name !== dirName) {
-        names[id] = folder.name
+    const folderAbsolutePath = `${this.rootPath}/${folderId}`
+    const glosaDir = `${folderAbsolutePath}/${GLOSA_DIR}`
+    const metaPath = `${glosaDir}/${META_FILE}`
+
+    // Determine if name differs from directory name
+    const dirName = folderId.includes('/') ? folderId.split('/').pop()! : folderId
+    const meta: FolderMeta = {}
+
+    if (folder.name !== dirName) {
+      meta.name = folder.name
+    }
+    if (folder.isFavorite) {
+      meta.isFavorite = true
+    }
+
+    // Only write if there's something to persist
+    if (Object.keys(meta).length > 0) {
+      try {
+        await mkdir(glosaDir, { recursive: true })
+        await writeTextFile(metaPath, JSON.stringify(meta, null, 2))
+      } catch {
+        // Best-effort
+      }
+    } else {
+      // Clean up meta.json if no data to store
+      try {
+        const metaFileExists = await exists(metaPath)
+        if (metaFileExists) {
+          await remove(metaPath)
+        }
+      } catch {
+        // Best-effort cleanup
       }
     }
-    this.metadata.folderNames = names
+  }
 
-    await this.saveMetadata()
+  /**
+   * Loads metadata for a specific folder from its .glosa/meta.json.
+   */
+  private async loadFolderMeta(folderId: string): Promise<FolderMeta | null> {
+    const folderAbsolutePath = `${this.rootPath}/${folderId}`
+    const metaPath = `${folderAbsolutePath}/${GLOSA_DIR}/${META_FILE}`
+
+    try {
+      const metaExists = await exists(metaPath)
+      if (!metaExists) return null
+
+      const raw = await readTextFile(metaPath)
+      const parsed = JSON.parse(raw) as unknown
+      if (parsed && typeof parsed === 'object') {
+        return parsed as FolderMeta
+      }
+    } catch {
+      // Can't read — skip
+    }
+    return null
   }
 
   // --- Private helpers ---
@@ -793,10 +825,6 @@ export class FilesystemAdapter implements StorageAdapter {
         this.metadata = {
           version: 1,
           activity: Array.isArray(obj.activity) ? obj.activity.slice(0, MAX_ACTIVITY_EVENTS) : [],
-          folderFavorites: Array.isArray(obj.folderFavorites) ? obj.folderFavorites : [],
-          folderNames: (obj.folderNames && typeof obj.folderNames === 'object' && !Array.isArray(obj.folderNames))
-            ? obj.folderNames as Record<string, string>
-            : {},
         }
       } else {
         this.metadata = defaultMetadata()
