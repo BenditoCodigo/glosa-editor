@@ -50,9 +50,20 @@ async function handleExport() {
     const { serializeNote } = await import('@/services/frontmatter')
     const { slugify, resolveFilename } = await import('@/services/slug')
 
-    // Create subdirectories for folders
+    // Create subdirectories for folders using slugified names
+    // Build a map from old folder id (UUID) to new directory name
+    const folderIdToPath = new Map<string, string>()
     for (const folder of folders) {
-      const dirPath = `${folderPath}/${folder.id}`
+      const slug = slugify(folder.name)
+      // For nested folders, use the parent's resolved path
+      const parentDir = folder.parentFolder
+        ? `${folderPath}/${folderIdToPath.get(folder.parentFolder) ?? folder.parentFolder}`
+        : folderPath
+      const dirPath = `${parentDir}/${slug}`
+      const relativePath = folder.parentFolder
+        ? `${folderIdToPath.get(folder.parentFolder) ?? folder.parentFolder}/${slug}`
+        : slug
+      folderIdToPath.set(folder.id, relativePath)
       await mkdir(dirPath, { recursive: true })
     }
 
@@ -62,7 +73,7 @@ async function handleExport() {
     for (const note of notes) {
       try {
         const dirPath = note.folder
-          ? `${folderPath}/${note.folder}`
+          ? `${folderPath}/${folderIdToPath.get(note.folder) ?? note.folder}`
           : folderPath
 
         // Ensure directory exists (might be a subfolder not in the folders table)

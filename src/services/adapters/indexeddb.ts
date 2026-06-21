@@ -38,8 +38,9 @@ export class IndexedDBAdapter implements StorageAdapter {
     return all.filter((f) => f.parentFolder === parentId)
   }
 
-  async saveFolder(folder: Folder): Promise<void> {
+  async saveFolder(folder: Folder): Promise<Folder> {
     await db.folders.put(folder)
+    return folder
   }
 
   async deleteFolder(id: string): Promise<void> {

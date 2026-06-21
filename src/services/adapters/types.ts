@@ -10,7 +10,7 @@ export interface StorageAdapter {
   getAllFolders(): Promise<Folder[]>
   getFolderById(id: string): Promise<Folder | undefined>
   getFoldersByParent(parentId: string | null): Promise<Folder[]>
-  saveFolder(folder: Folder): Promise<void>
+  saveFolder(folder: Folder): Promise<Folder>
   deleteFolder(id: string): Promise<void>
 }
 

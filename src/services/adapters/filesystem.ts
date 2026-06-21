@@ -196,14 +196,116 @@ export class FilesystemAdapter implements StorageAdapter {
     this.extraFieldsMap.delete(id)
   }
 
-  async saveFolder(folder: Folder): Promise<void> {
-    const absolutePath = `${this.rootPath}/${folder.id}`
+  async saveFolder(folder: Folder): Promise<Folder> {
+    // Determine the directory name on disk using the slugified folder name
+    const slug = slugify(folder.name)
+    const parentPath = folder.parentFolder
+      ? `${this.rootPath}/${folder.parentFolder}`
+      : this.rootPath
 
-    // Create directory (idempotent — mkdir recursive doesn't error on existing)
-    await mkdir(absolutePath, { recursive: true })
+    // Check if this folder already exists in cache (rename scenario)
+    const existingFolder = this.folderCache.get(folder.id)
 
-    // Update in-memory state
-    this.folderCache.set(folder.id, folder)
+    if (existingFolder && existingFolder.name !== folder.name) {
+      // Name changed — need to rename directory on disk
+      const oldAbsolutePath = `${this.rootPath}/${folder.id}`
+      const existingDirNames = this.getExistingDirNamesInParent(parentPath, folder.id)
+      const newDirName = this.resolveDirectoryName(slug, existingDirNames)
+      const newRelativePath = folder.parentFolder
+        ? `${folder.parentFolder}/${newDirName}`
+        : newDirName
+      const newAbsolutePath = `${this.rootPath}/${newRelativePath}`
+
+      try {
+        const { rename } = await import('@tauri-apps/plugin-fs')
+        await rename(oldAbsolutePath, newAbsolutePath)
+      } catch {
+        // If rename fails, just create the new directory
+        await mkdir(newAbsolutePath, { recursive: true })
+      }
+
+      // Update cache: remove old, add new
+      this.folderCache.delete(folder.id)
+      const updatedFolder: Folder = { ...folder, id: newRelativePath }
+      this.folderCache.set(newRelativePath, updatedFolder)
+
+      // Update child notes' folder references
+      for (const [noteId, entry] of Array.from(this.fileMap.entries())) {
+        if (entry.folderPath === folder.id) {
+          entry.folderPath = newRelativePath
+          const note = this.noteCache.get(noteId)
+          if (note) note.folder = newRelativePath
+        }
+      }
+
+      // Update child folders
+      const oldPrefix = `${folder.id}/`
+      for (const [fId, f] of Array.from(this.folderCache.entries())) {
+        if (f.parentFolder === folder.id) {
+          f.parentFolder = newRelativePath
+        }
+        if (fId.startsWith(oldPrefix)) {
+          const newFId = newRelativePath + fId.slice(folder.id.length)
+          this.folderCache.delete(fId)
+          f.parentFolder = newRelativePath
+          this.folderCache.set(newFId, { ...f, id: newFId })
+        }
+      }
+
+      return updatedFolder
+    } else if (!existingFolder) {
+      // New folder — create directory with slugified name
+      const existingDirNames = this.getExistingDirNamesInParent(parentPath, null)
+      const dirName = this.resolveDirectoryName(slug, existingDirNames)
+      const relativePath = folder.parentFolder
+        ? `${folder.parentFolder}/${dirName}`
+        : dirName
+      const absolutePath = `${this.rootPath}/${relativePath}`
+
+      await mkdir(absolutePath, { recursive: true })
+
+      // Store with the relative path as id
+      const updatedFolder: Folder = { ...folder, id: relativePath }
+      this.folderCache.set(relativePath, updatedFolder)
+      return updatedFolder
+    } else {
+      // No name change, folder already exists — just update cache
+      this.folderCache.set(folder.id, folder)
+      return folder
+    }
+  }
+
+  /**
+   * Gets existing directory names in a parent directory from the folder cache,
+   * excluding the specified folderId.
+   */
+  private getExistingDirNamesInParent(parentAbsolutePath: string, excludeFolderId: string | null): string[] {
+    const parentRelative = this.relativize(parentAbsolutePath)
+    const normalizedParent = parentRelative === '' ? null : parentRelative
+
+    const names: string[] = []
+    for (const [fId, f] of this.folderCache.entries()) {
+      if (fId === excludeFolderId) continue
+      if (f.parentFolder === normalizedParent) {
+        // Extract the directory name (last segment of the id)
+        const dirName = fId.includes('/') ? fId.split('/').pop()! : fId
+        names.push(dirName)
+      }
+    }
+    return names
+  }
+
+  /**
+   * Resolves a unique directory name by appending a numeric suffix if needed.
+   */
+  private resolveDirectoryName(slug: string, existingNames: string[]): string {
+    if (!existingNames.includes(slug)) return slug
+
+    let counter = 2
+    while (existingNames.includes(`${slug}-${counter}`)) {
+      counter++
+    }
+    return `${slug}-${counter}`
   }
 
   async deleteFolder(id: string): Promise<void> {

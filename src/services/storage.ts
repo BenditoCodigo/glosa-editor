@@ -51,7 +51,7 @@ export async function getFoldersByParent(parentId: string | null): Promise<Folde
   return activeAdapter.getFoldersByParent(parentId)
 }
 
-export async function saveFolder(folder: Folder): Promise<void> {
+export async function saveFolder(folder: Folder): Promise<Folder> {
   return activeAdapter.saveFolder(folder)
 }
 

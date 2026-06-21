@@ -50,9 +50,9 @@ export const useFoldersStore = defineStore('folders', () => {
       createdAt: now,
       updatedAt: now,
     }
-    await storage.saveFolder(folder)
-    folders.value.push(folder)
-    return folder
+    const saved = await storage.saveFolder(folder)
+    folders.value.push(saved)
+    return saved
   }
 
   async function toggleFavorite(id: string) {
@@ -62,9 +62,9 @@ export const useFoldersStore = defineStore('folders', () => {
     const plain = JSON.parse(JSON.stringify(folder)) as Folder
     plain.isFavorite = !plain.isFavorite
     plain.updatedAt = new Date().toISOString()
-    await storage.saveFolder(plain)
+    const saved = await storage.saveFolder(plain)
     const index = folders.value.findIndex((f) => f.id === id)
-    if (index !== -1) folders.value[index] = plain
+    if (index !== -1) folders.value[index] = saved
   }
 
   async function removeFolder(id: string) {
