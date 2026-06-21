@@ -208,11 +208,11 @@ El backend y el almacenamiento en la nube son **opcionales**. Si los quieres, pu
 
 ## Modelo de uso
 
-Glosa sigue el modelo de [Bitwarden](https://bitwarden.com/): código abierto completo, sin features castrados.
+Glosa es **código libre no comercial**. Puedes usarlo, estudiarlo, modificarlo y redistribuirlo libremente — con la condición de que no sea para fines de lucro.
 
-**Self-hosted (gratuito):** La app completa en tu infraestructura. Sin cuenta, sin servidor central, sin limitaciones.
+**Self-hosted (gratuito):** La app completa en tu infraestructura. Sin cuenta, sin servidor central, sin limitaciones funcionales.
 
-**Servicio managed (próximamente):** Para quienes prefieren no gestionar infra — cuenta en la plataforma, storage cifrado en S3, sync entre dispositivos. Mismo software, alguien más se encarga del hosting.
+**Servicio gestionado (próximamente):** Para quienes prefieren no administrar infraestructura — una cuenta en la plataforma con almacenamiento cifrado y sincronización entre dispositivos. Mismo software, alguien más se encarga del hosting.
 
 ---
 
@@ -253,13 +253,17 @@ Próximos pasos:
 
 ## Contribuciones
 
-Por ahora este es un proyecto personal de [Bendito Código](https://benditocodigo.com). No está abierto a contribuciones externas en esta etapa, pero el código es público para que cualquier interesado pueda auditarlo, deployarlo y adaptarlo a sus necesidades.
+Este es un proyecto de [Bendito Código](https://benditocodigo.com). El código es público para que cualquier persona pueda auditarlo, aprender de él y crear forks para uso propio no comercial.
+
+**No se aceptan merge requests ni pull requests.** El desarrollo se gestiona internamente. Si quieres construir algo a partir de este código, eres libre de hacer un fork respetando los términos de la [licencia](./LICENSE).
 
 ---
 
 ## Licencia
 
-Por definir. Será una licencia permisiva (MIT o similar).
+**Código Libre No Comercial** — Puedes usar, estudiar, modificar y redistribuir el código libremente para cualquier propósito no comercial. Los forks deben mantener la misma licencia y atribución. No se aceptan contribuciones directas (MRs/PRs) al repositorio original.
+
+Ver [LICENSE](./LICENSE) para los términos completos.
 
 ---
 

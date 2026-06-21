@@ -7,10 +7,10 @@ orientada a colaboradores y público general en proyectos de código libre.
 
 ## Ubicación
 
-Toda la documentación reside en la carpeta `colaboracion/` en la raíz del repositorio.
+Toda la documentación reside en la carpeta `documentacion/` en la raíz del repositorio.
 
 ```
-colaboracion/
+documentacion/
 ├── README.md                    ← Overview e índice general
 ├── 01-vision.md                 ← Documentos generales (público general)
 ├── 02-mision.md
@@ -30,7 +30,7 @@ colaboracion/
 
 ### Jerarquía
 
-- Máximo **1 nivel de profundidad** de subcarpetas dentro de `colaboracion/`
+- Máximo **1 nivel de profundidad** de subcarpetas dentro de `documentacion/`
 - Cada carpeta y subcarpeta **debe** tener un `README.md` que funcione como overview e índice de su contenido
 - Las subcarpetas por defecto son:
   - `manuales-usuario/` — para público general
