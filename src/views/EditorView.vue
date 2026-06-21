@@ -216,19 +216,19 @@ onUnmounted(() => {
       <!-- Editor area -->
       <div class="flex-1 overflow-y-auto px-4 md:px-12 py-8">
         <div class="max-w-[720px] mx-auto relative">
-          <!-- Cover image header -->
+          <!-- Cover image header with parallax (sticky stays behind while content scrolls over) -->
           <div
             v-if="coverImage"
-            class="relative -mx-6 max-h-[320px] -mb-12 rounded-t-2xl overflow-hidden"
+            class="sticky top-0 -mx-6 h-[280px] -mb-16 rounded-t-2xl overflow-hidden z-0"
           >
             <img
               :src="coverImage"
               alt=""
-              class="w-full h-[320px] object-cover"
+              class="w-full h-full object-cover"
             >
             <!-- Bottom fade so the glass panel blends smoothly -->
-            <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white/80 to-transparent dark:hidden"></div>
-            <div class="absolute inset-x-0 bottom-0 h-20 hidden dark:block bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/90 to-transparent dark:hidden"></div>
+            <div class="absolute inset-x-0 bottom-0 h-24 hidden dark:block bg-gradient-to-t from-black/70 to-transparent"></div>
           </div>
 
           <!-- Glass editor panel -->
