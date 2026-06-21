@@ -12,9 +12,17 @@ import type {
   SearchResults,
 } from '@/types'
 
-/** Case-insensitive substring match */
+/** Normalize text: lowercase and strip diacritics (accents) */
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+/** Case-insensitive, accent-insensitive substring match */
 export function matches(text: string, query: string): boolean {
-  return text.toLowerCase().includes(query.toLowerCase())
+  return normalize(text).includes(normalize(query))
 }
 
 /** Filter notes where query matches title, content, or any tag */
@@ -90,9 +98,9 @@ export function filterTags(notes: Note[], query: string): SearchResultTag[] {
 export function extractSnippet(content: string, query: string, contextChars: number = 30): string {
   if (!content || !query) return ''
 
-  const lowerContent = content.toLowerCase()
-  const lowerQuery = query.toLowerCase()
-  const matchIndex = lowerContent.indexOf(lowerQuery)
+  const normalizedContent = normalize(content)
+  const normalizedQuery = normalize(query)
+  const matchIndex = normalizedContent.indexOf(normalizedQuery)
 
   if (matchIndex === -1) {
     return content.length > contextChars * 2 + query.length
