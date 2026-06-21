@@ -10,6 +10,7 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import MigrationModal from '@/components/ui/MigrationModal.vue'
 import type { ThemeMode, StorageProvider, AICustomHeader } from '@/types'
+import { DEFAULT_SYSTEM_PROMPT } from '@/types'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -166,6 +167,14 @@ async function handleTestConnection() {
       }
     }, 5000)
   }
+}
+
+function handleSystemPromptInput(event: Event) {
+  const textarea = event.target as HTMLTextAreaElement
+  settingsStore.updateAI({ systemPrompt: textarea.value })
+  // Auto-resize
+  textarea.style.height = 'auto'
+  textarea.style.height = `${textarea.scrollHeight}px`
 }
 </script>
 
@@ -615,6 +624,32 @@ async function handleTestConnection() {
                       <span class="text-error">{{ connectionResult.message }}</span>
                     </div>
                   </Transition>
+                </div>
+
+                <!-- System Prompt -->
+                <div class="pt-3">
+                  <div class="flex items-center gap-4 mb-3">
+                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Instrucciones del sistema</span>
+                    <div class="h-px flex-1 bg-outline-variant/20"></div>
+                  </div>
+                  <textarea
+                    :value="ai.systemPrompt"
+                    :placeholder="DEFAULT_SYSTEM_PROMPT"
+                    class="
+                      glass-input
+                      w-full px-4 py-3
+                      rounded-xl
+                      text-sm text-on-surface leading-relaxed
+                      placeholder:text-secondary/40
+                      focus:outline-none focus:ring-1 focus:ring-primary/40
+                      resize-none
+                    "
+                    style="min-height: 120px"
+                    @input="handleSystemPromptInput"
+                  />
+                  <p class="mt-2 text-xs text-secondary/60">
+                    Define el comportamiento del modelo. Puedes indicar idioma, tono, y tipo de asistencia que deseas.
+                  </p>
                 </div>
               </div>
             </Transition>
