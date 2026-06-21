@@ -271,6 +271,8 @@ export class FilesystemAdapter implements StorageAdapter {
     } else {
       // No name change, folder already exists — just update cache
       this.folderCache.set(folder.id, folder)
+      // Sync folder favorites in metadata
+      await this.syncFolderFavorites()
       return folder
     }
   }
@@ -622,6 +624,16 @@ export class FilesystemAdapter implements StorageAdapter {
       )
     }
 
+    await this.saveMetadata()
+  }
+
+  /**
+   * Rebuilds the folderFavorites list from the current cache and persists it.
+   */
+  private async syncFolderFavorites(): Promise<void> {
+    this.metadata.folderFavorites = Array.from(this.folderCache.values())
+      .filter(f => f.isFavorite)
+      .map(f => f.id)
     await this.saveMetadata()
   }
 

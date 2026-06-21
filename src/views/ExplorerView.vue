@@ -30,6 +30,12 @@ const currentFolderId = computed<string | null>(() => {
   return null
 })
 
+// Current folder object
+const currentFolder = computed<Folder | undefined>(() => {
+  if (!currentFolderId.value) return undefined
+  return foldersStore.folders.find(f => f.id === currentFolderId.value)
+})
+
 // Folders in current directory
 const currentFolders = computed(() =>
   foldersStore.foldersByParent(currentFolderId.value),
@@ -112,6 +118,24 @@ async function handleCreateFolder() {
   showFolderModal.value = true
 }
 
+// Current folder actions (header)
+function handleCurrentFolderFavorite() {
+  if (!currentFolder.value) return
+  foldersStore.toggleFavorite(currentFolder.value.id)
+}
+
+function handleCurrentFolderRename() {
+  if (!currentFolder.value) return
+  targetFolder.value = currentFolder.value
+  showRenameModal.value = true
+}
+
+function handleCurrentFolderDelete() {
+  if (!currentFolder.value) return
+  targetFolder.value = currentFolder.value
+  showDeleteConfirm.value = true
+}
+
 async function confirmCreateFolder(name: string) {
   showFolderModal.value = false
   if (name.trim()) {
@@ -130,7 +154,18 @@ async function confirmRenameFolder(name: string) {
 async function confirmDeleteFolder() {
   showDeleteConfirm.value = false
   if (targetFolder.value) {
-    await foldersStore.removeFolder(targetFolder.value.id)
+    const deletedId = targetFolder.value.id
+    const isCurrentFolder = deletedId === currentFolderId.value
+    const parentFolder = targetFolder.value.parentFolder
+    await foldersStore.removeFolder(deletedId)
+    // If we deleted the folder we're currently inside, navigate to parent
+    if (isCurrentFolder) {
+      if (parentFolder) {
+        router.push({ name: 'explorer-folder', params: { path: parentFolder } })
+      } else {
+        router.push({ name: 'explorer-root' })
+      }
+    }
   }
   targetFolder.value = null
 }
@@ -143,6 +178,45 @@ function handleToggleFavorite(noteId: string) {
 <template>
   <div class="p-6 lg:p-12 animate-fade-in">
     <div class="max-w-[1200px] mx-auto">
+      <!-- Folder header (when inside a folder) -->
+      <div v-if="currentFolder" class="flex items-center gap-4 mb-6">
+        <UiIcon
+          :name="currentFolder.isFavorite ? 'folder_special' : 'folder'"
+          size="lg"
+          :class="currentFolder.isFavorite ? 'text-amber-500' : 'text-secondary'"
+        />
+        <h1 class="font-display text-2xl font-semibold text-on-surface truncate">
+          {{ currentFolder.name }}
+        </h1>
+        <div class="flex items-center gap-0 shrink-0">
+          <button
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 hover:bg-white/20 dark:hover:bg-white/10"
+            :title="currentFolder.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+            @click="handleCurrentFolderFavorite"
+          >
+            <UiIcon
+              :name="currentFolder.isFavorite ? 'star' : 'star_outline'"
+              size="sm"
+              :class="currentFolder.isFavorite ? 'text-amber-500' : 'text-on-surface-variant'"
+            />
+          </button>
+          <button
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 text-on-surface-variant hover:bg-white/20 dark:hover:bg-white/10"
+            title="Renombrar carpeta"
+            @click="handleCurrentFolderRename"
+          >
+            <UiIcon name="edit" size="sm" />
+          </button>
+          <button
+            class="inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 text-error/70 hover:text-error hover:bg-error/10"
+            title="Eliminar carpeta"
+            @click="handleCurrentFolderDelete"
+          >
+            <UiIcon name="delete" size="sm" />
+          </button>
+        </div>
+      </div>
+
       <!-- Actions bar -->
       <div class="flex items-center justify-end gap-3 mb-8">
         <UiButton variant="ghost" size="sm" @click="handleCreateFolder">
