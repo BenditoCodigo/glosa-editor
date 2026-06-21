@@ -352,6 +352,9 @@ export class FilesystemAdapter implements StorageAdapter {
         this.extraFieldsMap.delete(noteId)
       }
     }
+
+    // Sync metadata to remove deleted folder from favorites/names
+    await this.syncFolderMetadata()
   }
 
   // --- File watching ---
