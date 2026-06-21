@@ -11,11 +11,30 @@ import UiPromptModal from '@/components/ui/UiPromptModal.vue'
 import EditorContentComponent from '@/components/editor/EditorContent.vue'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EmojiPicker from '@/components/editor/EmojiPicker.vue'
+import ExportMenu from '@/components/editor/ExportMenu.vue'
+import { useExport } from '@/composables/useExport'
 
 const route = useRoute()
 const router = useRouter()
 const notesStore = useNotesStore()
 const { activeNote } = storeToRefs(notesStore)
+const { downloadAsMarkdown, copyAsMarkdown } = useExport()
+
+const copyFeedback = ref(false)
+
+async function handleExportMd() {
+  if (!activeNote.value) return
+  downloadAsMarkdown(activeNote.value)
+}
+
+async function handleCopyMd() {
+  if (!activeNote.value) return
+  const ok = await copyAsMarkdown(activeNote.value)
+  if (ok) {
+    copyFeedback.value = true
+    setTimeout(() => { copyFeedback.value = false }, 2000)
+  }
+}
 
 const title = ref('')
 const content = ref('')
@@ -239,7 +258,18 @@ onUnmounted(() => {
             </template>
             Guardar
           </UiButton>
+          <ExportMenu @export-md="handleExportMd" @copy-md="handleCopyMd" />
         </div>
+
+        <!-- Copy feedback toast -->
+        <Transition name="fade">
+          <div
+            v-if="copyFeedback"
+            class="absolute right-6 lg:right-12 top-full mt-2 glass-panel-md rounded-lg px-3 py-2 text-xs text-on-surface shadow-md z-50"
+          >
+            Contenido copiado al portapapeles
+          </div>
+        </Transition>
       </div>
 
       <!-- Editor area -->
