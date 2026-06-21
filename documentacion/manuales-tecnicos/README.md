@@ -14,6 +14,7 @@ Está redactada para cualquier nivel de experiencia — un desarrollador junior 
 | 02 | [Entorno de desarrollo](./02-entorno-desarrollo.md) | Cómo configurar tu máquina para trabajar en el proyecto |
 | 03 | [Estructura del código](./03-estructura-codigo.md) | Cómo está organizado el código fuente |
 | 04 | [Almacenamiento](./04-almacenamiento.md) | Cómo funciona la persistencia de datos |
+| 05 | [Inteligencia Artificial](./05-inteligencia-artificial.md) | Servicio de IA: arquitectura, tipos e integración |
 
 ---
 
