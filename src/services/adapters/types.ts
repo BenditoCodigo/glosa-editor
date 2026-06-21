@@ -33,4 +33,5 @@ export interface FilesystemMetadata {
   version: 1
   activity: ActivityEvent[]
   folderFavorites: string[]
+  folderNames: Record<string, string>
 }

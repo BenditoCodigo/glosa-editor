@@ -13,7 +13,7 @@ const MAX_ACTIVITY_EVENTS = 500
 const WATCH_DEBOUNCE_MS = 300
 
 function defaultMetadata(): FilesystemMetadata {
-  return { version: 1, activity: [], folderFavorites: [] }
+  return { version: 1, activity: [], folderFavorites: [], folderNames: {} }
 }
 
 /**
@@ -60,6 +60,14 @@ export class FilesystemAdapter implements StorageAdapter {
       const folder = this.folderCache.get(folderId)
       if (folder) {
         folder.isFavorite = true
+      }
+    }
+
+    // Apply saved folder names from metadata
+    for (const [folderId, name] of Object.entries(this.metadata.folderNames)) {
+      const folder = this.folderCache.get(folderId)
+      if (folder) {
+        folder.name = name
       }
     }
   }
@@ -267,12 +275,13 @@ export class FilesystemAdapter implements StorageAdapter {
       // Store with the relative path as id
       const updatedFolder: Folder = { ...folder, id: relativePath }
       this.folderCache.set(relativePath, updatedFolder)
+      await this.syncFolderMetadata()
       return updatedFolder
     } else {
       // No name change, folder already exists — just update cache
       this.folderCache.set(folder.id, folder)
       // Sync folder favorites in metadata
-      await this.syncFolderFavorites()
+      await this.syncFolderMetadata()
       return folder
     }
   }
@@ -628,12 +637,24 @@ export class FilesystemAdapter implements StorageAdapter {
   }
 
   /**
-   * Rebuilds the folderFavorites list from the current cache and persists it.
+   * Rebuilds the folderFavorites and folderNames from the current cache and persists.
    */
-  private async syncFolderFavorites(): Promise<void> {
+  private async syncFolderMetadata(): Promise<void> {
     this.metadata.folderFavorites = Array.from(this.folderCache.values())
       .filter(f => f.isFavorite)
       .map(f => f.id)
+
+    // Save names for all folders (so they survive re-linking)
+    const names: Record<string, string> = {}
+    for (const [id, folder] of this.folderCache.entries()) {
+      // Only store if name differs from directory name (slug)
+      const dirName = id.includes('/') ? id.split('/').pop()! : id
+      if (folder.name !== dirName) {
+        names[id] = folder.name
+      }
+    }
+    this.metadata.folderNames = names
+
     await this.saveMetadata()
   }
 
@@ -769,6 +790,9 @@ export class FilesystemAdapter implements StorageAdapter {
           version: 1,
           activity: Array.isArray(obj.activity) ? obj.activity.slice(0, MAX_ACTIVITY_EVENTS) : [],
           folderFavorites: Array.isArray(obj.folderFavorites) ? obj.folderFavorites : [],
+          folderNames: (obj.folderNames && typeof obj.folderNames === 'object' && !Array.isArray(obj.folderNames))
+            ? obj.folderNames as Record<string, string>
+            : {},
         }
       } else {
         this.metadata = defaultMetadata()
