@@ -22,6 +22,12 @@ const recentFavorites = computed(() =>
     .slice(0, 5),
 )
 
+// Favorite folders
+const favoriteFolders = computed(() =>
+  [...foldersStore.favorites]
+    .sort((a, b) => a.name.localeCompare(b.name)),
+)
+
 // Current folder context for the folders section
 const currentFolderId = computed<string | null>(() => {
   if (route.name === 'explorer-folder') {
@@ -138,10 +144,19 @@ async function handleCreateNote() {
               </button>
             </div>
 
-            <div v-if="recentFavorites.length > 0" class="space-y-0.5">
+            <div v-if="favoriteFolders.length > 0 || recentFavorites.length > 0" class="space-y-0.5">
+              <button
+                v-for="folder in favoriteFolders"
+                :key="'f-' + folder.id"
+                class="w-full flex items-center gap-3 px-4 py-1.5 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200 text-left"
+                @click="openFolder(folder.id)"
+              >
+                <UiIcon name="folder" size="sm" class="text-primary" />
+                <span class="text-sm truncate">{{ folder.name }}</span>
+              </button>
               <button
                 v-for="note in recentFavorites"
-                :key="note.id"
+                :key="'n-' + note.id"
                 class="w-full flex items-center gap-3 px-4 py-1.5 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200 text-left"
                 @click="openFavoriteNote(note.id)"
               >
