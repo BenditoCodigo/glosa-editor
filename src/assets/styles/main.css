@@ -154,14 +154,28 @@
 }
 
 @utility glass-panel-md {
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(var(--bc-glass-blur-md));
   -webkit-backdrop-filter: blur(var(--bc-glass-blur-md));
   border: 1px solid var(--bc-glass-border-light);
   box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.8), 0 8px 32px 0 rgba(0, 0, 0, 0.05);
 
   @variant dark {
-    background: rgba(20, 20, 20, 0.82);
+    background: rgba(30, 30, 30, 0.6);
+    border-color: var(--bc-glass-border-dark);
+    box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+@utility glass-panel-opaque {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(var(--bc-glass-blur-lg));
+  -webkit-backdrop-filter: blur(var(--bc-glass-blur-lg));
+  border: 1px solid var(--bc-glass-border-light);
+  box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.8), 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+
+  @variant dark {
+    background: rgba(20, 20, 20, 0.92);
     border-color: var(--bc-glass-border-dark);
     box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   }

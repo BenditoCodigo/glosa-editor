@@ -45,7 +45,7 @@ function handleHover(flatIndex: number) {
       v-if="isVisible"
       role="listbox"
       class="
-        glass-panel-md
+        glass-panel-opaque
         absolute right-0 z-50
         min-w-80 max-w-[480px] w-full
         mt-2 p-2
