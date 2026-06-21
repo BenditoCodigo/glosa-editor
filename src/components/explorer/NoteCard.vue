@@ -66,12 +66,21 @@ const relativeDate = computed(() => {
   >
     <!-- Header -->
     <div class="flex justify-between items-start">
-      <span v-if="note.emoji" class="text-2xl leading-none">{{ note.emoji }}</span>
-      <UiIcon
-        v-else
-        name="description"
-        class="text-secondary group-hover:text-primary transition-colors"
-      />
+      <div class="flex items-center gap-1.5">
+        <UiIcon
+          v-if="note.isFavorite"
+          name="star"
+          size="sm"
+          :filled="true"
+          class="text-amber-400"
+        />
+        <span v-if="note.emoji" class="text-2xl leading-none">{{ note.emoji }}</span>
+        <UiIcon
+          v-else
+          name="description"
+          class="text-secondary group-hover:text-primary transition-colors"
+        />
+      </div>
 
       <!-- 3-dot menu button -->
       <UiIconButton
