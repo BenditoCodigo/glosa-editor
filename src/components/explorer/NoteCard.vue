@@ -54,6 +54,7 @@ const relativeDate = computed(() => {
   <div
     class="
       group glass-panel-md
+      relative overflow-hidden
       p-6 rounded-2xl
       cursor-pointer
       flex flex-col gap-3
@@ -64,8 +65,24 @@ const relativeDate = computed(() => {
     @dblclick="$emit('dblclick')"
     @contextmenu="handleContextMenu"
   >
+    <!-- Blurred cover image background -->
+    <div
+      v-if="note.coverImage"
+      class="absolute inset-0 z-0 pointer-events-none"
+    >
+      <img
+        :src="note.coverImage"
+        alt=""
+        class="absolute inset-0 w-full h-full object-cover blur-2xl scale-110"
+      >
+      <!-- Gradient fade: opaque left → transparent right (light) -->
+      <div class="absolute inset-0 bg-gradient-to-r from-white/95 via-white/70 to-transparent dark:hidden"></div>
+      <!-- Gradient fade: opaque left → transparent right (dark) -->
+      <div class="absolute inset-0 hidden dark:block bg-gradient-to-r from-black/90 via-black/60 to-transparent"></div>
+    </div>
+
     <!-- Header -->
-    <div class="flex justify-between items-start">
+    <div class="relative z-10 flex justify-between items-start">
       <div class="flex items-center gap-1.5">
         <UiIcon
           v-if="note.isFavorite"
@@ -94,7 +111,7 @@ const relativeDate = computed(() => {
     </div>
 
     <!-- Content -->
-    <div>
+    <div class="relative z-10">
       <h3 class="font-display text-on-surface text-lg font-semibold leading-tight">
         {{ note.title }}
       </h3>
@@ -104,12 +121,12 @@ const relativeDate = computed(() => {
     </div>
 
     <!-- Preview -->
-    <p class="text-sm text-secondary line-clamp-2">
+    <p class="relative z-10 text-sm text-secondary line-clamp-2">
       {{ contentPreview }}
     </p>
 
     <!-- Footer -->
-    <div class="flex items-center mt-auto pt-2">
+    <div class="relative z-10 flex items-center mt-auto pt-2">
       <div class="flex gap-1">
         <router-link
           v-for="tag in note.tags.slice(0, 2)"
