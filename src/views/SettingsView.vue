@@ -176,6 +176,22 @@ function handleSystemPromptInput(event: Event) {
   textarea.style.height = 'auto'
   textarea.style.height = `${textarea.scrollHeight}px`
 }
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+function handleSliderInput(param: string, event: Event) {
+  const value = parseFloat((event.target as HTMLInputElement).value)
+  settingsStore.updateAIModelParameters({ [param]: value })
+}
+
+function handleMaxTokensInput(event: Event) {
+  const raw = parseInt((event.target as HTMLInputElement).value, 10)
+  if (!isNaN(raw)) {
+    settingsStore.updateAIModelParameters({ maxTokens: clamp(raw, 256, 8192) })
+  }
+}
 </script>
 
 <template>
@@ -650,6 +666,115 @@ function handleSystemPromptInput(event: Event) {
                   <p class="mt-2 text-xs text-secondary/60">
                     Define el comportamiento del modelo. Puedes indicar idioma, tono, y tipo de asistencia que deseas.
                   </p>
+                </div>
+
+                <!-- Model Parameters -->
+                <div class="pt-3">
+                  <div class="flex items-center gap-4 mb-4">
+                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Parámetros del modelo</span>
+                    <div class="h-px flex-1 bg-outline-variant/20"></div>
+                  </div>
+
+                  <div class="space-y-5">
+                    <!-- Temperature -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-medium text-secondary">Temperature</label>
+                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.temperature.toFixed(1) }}</span>
+                      </div>
+                      <input
+                        type="range"
+                        :value="ai.modelParameters.temperature"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        class="w-full accent-primary"
+                        @input="handleSliderInput('temperature', $event)"
+                      >
+                    </div>
+
+                    <!-- Top P -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-medium text-secondary">Top P</label>
+                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.topP.toFixed(2) }}</span>
+                      </div>
+                      <input
+                        type="range"
+                        :value="ai.modelParameters.topP"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        class="w-full accent-primary"
+                        @input="handleSliderInput('topP', $event)"
+                      >
+                    </div>
+
+                    <!-- Max Tokens -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-medium text-secondary">Max Tokens</label>
+                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.maxTokens }}</span>
+                      </div>
+                      <input
+                        type="number"
+                        :value="ai.modelParameters.maxTokens"
+                        min="256"
+                        max="8192"
+                        class="glass-input w-full px-4 py-2 rounded-xl text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        @change="handleMaxTokensInput"
+                      >
+                    </div>
+
+                    <!-- Frequency Penalty -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-medium text-secondary">Frequency Penalty</label>
+                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.frequencyPenalty.toFixed(1) }}</span>
+                      </div>
+                      <input
+                        type="range"
+                        :value="ai.modelParameters.frequencyPenalty"
+                        min="-2"
+                        max="2"
+                        step="0.1"
+                        class="w-full accent-primary"
+                        @input="handleSliderInput('frequencyPenalty', $event)"
+                      >
+                    </div>
+
+                    <!-- Presence Penalty -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-medium text-secondary">Presence Penalty</label>
+                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.presencePenalty.toFixed(1) }}</span>
+                      </div>
+                      <input
+                        type="range"
+                        :value="ai.modelParameters.presencePenalty"
+                        min="-2"
+                        max="2"
+                        step="0.1"
+                        class="w-full accent-primary"
+                        @input="handleSliderInput('presencePenalty', $event)"
+                      >
+                    </div>
+                  </div>
+
+                  <!-- Reset button -->
+                  <button
+                    class="
+                      mt-5 flex items-center gap-1.5
+                      text-xs font-medium text-secondary
+                      hover:text-on-surface
+                      transition-colors
+                    "
+                    type="button"
+                    @click="settingsStore.resetAIModelParameters()"
+                  >
+                    <UiIcon name="restart_alt" size="sm" />
+                    <span>Restablecer valores por defecto</span>
+                  </button>
                 </div>
               </div>
             </Transition>
