@@ -12,6 +12,7 @@ Guías paso a paso para aprender a usar Glosa. No necesitas conocimientos técni
 | 02 | [Primeros pasos](./02-primeros-pasos.md) | Cómo empezar a usar la aplicación |
 | 03 | [Escribir y editar notas](./03-escribir-notas.md) | Cómo crear, editar y dar formato a tus notas |
 | 04 | [Organizar con carpetas](./04-carpetas.md) | Cómo crear carpetas y mantener todo ordenado |
+| 05 | [Inteligencia Artificial](./05-inteligencia-artificial.md) | Cómo conectar y configurar un asistente de IA |
 
 ---
 
