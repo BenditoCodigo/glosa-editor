@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { _internal } from './ai'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { _internal, isConfigured } from './ai'
 import { DEFAULT_SYSTEM_PROMPT } from '@/types/settings'
 import type { AISettings } from '@/types/settings'
 
@@ -162,10 +163,60 @@ describe('AI Service - Internal Helpers', () => {
   })
 
   describe('assertConfigured', () => {
-    it('throws error with configured message', () => {
+    beforeEach(() => {
+      setActivePinia(createPinia())
+    })
+
+    it('throws error with configured message when AI is not configured', () => {
       expect(() => assertConfigured()).toThrowError(
         'La IA no está configurada. Ve a Configuración para establecer la conexión.',
       )
+    })
+  })
+
+  describe('isConfigured', () => {
+    beforeEach(() => {
+      setActivePinia(createPinia())
+    })
+
+    it('returns false when AI is disabled (default settings)', () => {
+      expect(isConfigured()).toBe(false)
+    })
+
+    it('returns false when enabled but baseUrl is empty', async () => {
+      const { useSettingsStore } = await import('@/stores/settings')
+      const store = useSettingsStore()
+      store.settings.ai.enabled = true
+      store.settings.ai.model = 'llama3.1:8b'
+      store.settings.ai.baseUrl = ''
+      expect(isConfigured()).toBe(false)
+    })
+
+    it('returns false when enabled but model is empty', async () => {
+      const { useSettingsStore } = await import('@/stores/settings')
+      const store = useSettingsStore()
+      store.settings.ai.enabled = true
+      store.settings.ai.baseUrl = 'http://localhost:11434/v1'
+      store.settings.ai.model = ''
+      expect(isConfigured()).toBe(false)
+    })
+
+    it('returns false when enabled but baseUrl is only whitespace', async () => {
+      const { useSettingsStore } = await import('@/stores/settings')
+      const store = useSettingsStore()
+      store.settings.ai.enabled = true
+      store.settings.ai.baseUrl = '   '
+      store.settings.ai.model = 'llama3.1:8b'
+      expect(isConfigured()).toBe(false)
+    })
+
+    it('returns true when enabled with non-empty baseUrl and model', async () => {
+      const { useSettingsStore } = await import('@/stores/settings')
+      const store = useSettingsStore()
+      store.settings.ai.enabled = true
+      store.settings.ai.baseUrl = 'http://localhost:11434/v1'
+      store.settings.ai.model = 'llama3.1:8b'
+      expect(isConfigured()).toBe(true)
     })
   })
 
