@@ -45,9 +45,9 @@ function handleMenuClick(event: MouseEvent) {
   >
     <div class="flex items-start justify-between mb-3">
       <UiIcon
-        name="folder"
+        :name="folder.isFavorite ? 'folder_special' : 'folder'"
         size="lg"
-        :class="active ? 'text-primary' : 'text-secondary'"
+        :class="folder.isFavorite ? 'text-amber-500' : active ? 'text-primary' : 'text-secondary'"
       />
 
       <!-- 3-dot menu button -->
@@ -62,12 +62,6 @@ function handleMenuClick(event: MouseEvent) {
     </div>
 
     <div class="flex items-center gap-2">
-      <UiIcon
-        v-if="folder.isFavorite"
-        name="star"
-        size="sm"
-        class="text-primary shrink-0"
-      />
       <h3 class="font-display text-on-surface text-lg font-semibold leading-tight truncate">
         {{ folder.name }}
       </h3>

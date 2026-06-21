@@ -151,7 +151,7 @@ async function handleCreateNote() {
                 class="w-full flex items-center gap-3 px-4 py-1.5 text-secondary hover:bg-white/10 dark:hover:bg-black/5 rounded-xl transition-colors duration-200 text-left"
                 @click="openFolder(folder.id)"
               >
-                <UiIcon name="folder" size="sm" class="text-primary" />
+                <UiIcon name="folder_special" size="sm" class="text-amber-500" />
                 <span class="text-sm truncate">{{ folder.name }}</span>
               </button>
               <button
