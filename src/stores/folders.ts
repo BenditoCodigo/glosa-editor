@@ -82,6 +82,20 @@ export const useFoldersStore = defineStore('folders', () => {
     // The id may have changed (filesystem adapter renames the directory)
     const index = folders.value.findIndex((f) => f.id === id)
     if (index !== -1) folders.value[index] = saved
+
+    // If the folder id changed, update note references in the notes store
+    if (saved.id !== id) {
+      const { useNotesStore } = await import('./notes')
+      const notesStore = useNotesStore()
+      notesStore.updateFolderReferences(id, saved.id)
+
+      // Also update child folder parentFolder references
+      for (const f of folders.value) {
+        if (f.parentFolder === id) {
+          f.parentFolder = saved.id
+        }
+      }
+    }
   }
 
   return {

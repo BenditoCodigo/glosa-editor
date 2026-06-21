@@ -80,6 +80,20 @@ export const useNotesStore = defineStore('notes', () => {
     if (activeNote.value?.id === id) activeNote.value = null
   }
 
+  /** Update folder references when a folder is renamed (id changes) */
+  function updateFolderReferences(oldFolderId: string, newFolderId: string) {
+    for (const note of notes.value) {
+      if (note.folder === oldFolderId) {
+        note.folder = newFolderId
+      } else if (note.folder && note.folder.startsWith(`${oldFolderId}/`)) {
+        note.folder = newFolderId + note.folder.slice(oldFolderId.length)
+      }
+    }
+    if (activeNote.value?.folder === oldFolderId) {
+      activeNote.value.folder = newFolderId
+    }
+  }
+
   return {
     notes,
     activeNote,
@@ -93,5 +107,6 @@ export const useNotesStore = defineStore('notes', () => {
     updateNote,
     toggleFavorite,
     removeNote,
+    updateFolderReferences,
   }
 })

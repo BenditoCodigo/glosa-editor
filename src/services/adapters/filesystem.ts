@@ -230,10 +230,13 @@ export class FilesystemAdapter implements StorageAdapter {
       const updatedFolder: Folder = { ...folder, id: newRelativePath }
       this.folderCache.set(newRelativePath, updatedFolder)
 
-      // Update child notes' folder references
+      // Update child notes' folder references and file paths
       for (const [noteId, entry] of Array.from(this.fileMap.entries())) {
         if (entry.folderPath === folder.id) {
+          const oldAbsPath = entry.absolutePath
           entry.folderPath = newRelativePath
+          entry.relativePath = `${newRelativePath}/${entry.filename}`
+          entry.absolutePath = `${this.rootPath}/${entry.relativePath}`
           const note = this.noteCache.get(noteId)
           if (note) note.folder = newRelativePath
         }
@@ -250,6 +253,17 @@ export class FilesystemAdapter implements StorageAdapter {
           this.folderCache.delete(fId)
           f.parentFolder = newRelativePath
           this.folderCache.set(newFId, { ...f, id: newFId })
+
+          // Update notes in nested child folders
+          for (const [noteId, entry] of Array.from(this.fileMap.entries())) {
+            if (entry.folderPath === fId) {
+              entry.folderPath = newFId
+              entry.relativePath = `${newFId}/${entry.filename}`
+              entry.absolutePath = `${this.rootPath}/${entry.relativePath}`
+              const note = this.noteCache.get(noteId)
+              if (note) note.folder = newFId
+            }
+          }
         }
       }
 
