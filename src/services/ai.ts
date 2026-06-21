@@ -43,6 +43,178 @@ export function isConfigured(): boolean {
   return ai.enabled && ai.baseUrl.trim() !== '' && ai.model.trim() !== ''
 }
 
+export async function testConnection(): Promise<AIConnectionResult> {
+  const store = useSettingsStore()
+  const { ai } = store.settings
+  const headers = buildHeaders(ai)
+  const startTime = Date.now()
+
+  // Attempt 1: GET /models
+  try {
+    const modelsUrl = `${normalizeBaseUrl(ai.baseUrl)}/models`
+    const response = await fetch(modelsUrl, {
+      method: 'GET',
+      headers,
+      signal: AbortSignal.timeout(10000),
+    })
+    if (response.ok) {
+      const data = await response.json()
+      const models = data.data?.map((m: { id: string }) => m.id) ?? []
+      return {
+        success: true,
+        message: `Conexión exitosa. ${models.length} modelo(s) disponible(s).`,
+        models,
+        latencyMs: Date.now() - startTime,
+      }
+    }
+  } catch {
+    // Continue to attempt 2
+  }
+
+  // Attempt 2: POST chat/completions with minimal message
+  try {
+    const chatUrl = `${normalizeBaseUrl(ai.baseUrl)}/chat/completions`
+    const response = await fetch(chatUrl, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ai.model,
+        messages: [{ role: 'user', content: 'Hola' }],
+        max_tokens: 5,
+        stream: false,
+      }),
+      signal: AbortSignal.timeout(10000),
+    })
+
+    if (response.ok) {
+      return {
+        success: true,
+        message: 'Conexión exitosa. El modelo responde correctamente.',
+        latencyMs: Date.now() - startTime,
+      }
+    }
+
+    const errorBody = await response.text()
+    return {
+      success: false,
+      message: parseErrorMessage(response.status, errorBody),
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: parseNetworkError(error),
+    }
+  }
+}
+
+export async function chat(
+  messages: ChatMessage[],
+  options?: ChatOptions,
+): Promise<ChatResponse> {
+  assertConfigured()
+
+  const store = useSettingsStore()
+  const { ai } = store.settings
+  const headers = buildHeaders(ai)
+  const params = mergeParameters(ai.modelParameters, options)
+
+  const fullMessages = prependSystemPrompt(ai.systemPrompt, messages)
+
+  const response = await fetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: ai.model,
+      messages: fullMessages,
+      temperature: params.temperature,
+      top_p: params.topP,
+      max_tokens: params.maxTokens,
+      frequency_penalty: params.frequencyPenalty,
+      presence_penalty: params.presencePenalty,
+      stream: false,
+    }),
+    signal: options?.signal,
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(parseErrorMessage(response.status, errorBody))
+  }
+
+  const data = await response.json()
+  return {
+    content: data.choices[0]?.message?.content ?? '',
+    finishReason: data.choices[0]?.finish_reason ?? 'unknown',
+    usage: data.usage ? {
+      promptTokens: data.usage.prompt_tokens,
+      completionTokens: data.usage.completion_tokens,
+      totalTokens: data.usage.total_tokens,
+    } : undefined,
+  }
+}
+
+export async function* chatStream(
+  messages: ChatMessage[],
+  options?: ChatOptions,
+): AsyncGenerator<string> {
+  assertConfigured()
+
+  const store = useSettingsStore()
+  const { ai } = store.settings
+  const headers = buildHeaders(ai)
+  const params = mergeParameters(ai.modelParameters, options)
+  const fullMessages = prependSystemPrompt(ai.systemPrompt, messages)
+
+  const response = await fetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: ai.model,
+      messages: fullMessages,
+      temperature: params.temperature,
+      top_p: params.topP,
+      max_tokens: params.maxTokens,
+      frequency_penalty: params.frequencyPenalty,
+      presence_penalty: params.presencePenalty,
+      stream: true,
+    }),
+    signal: options?.signal,
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(parseErrorMessage(response.status, errorBody))
+  }
+
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || !trimmed.startsWith('data: ')) continue
+      const data = trimmed.slice(6)
+      if (data === '[DONE]') return
+
+      try {
+        const parsed = JSON.parse(data)
+        const content = parsed.choices?.[0]?.delta?.content
+        if (content) yield content
+      } catch {
+        // Malformed line, ignore
+      }
+    }
+  }
+}
+
 // --- Internal Helper Functions ---
 
 function normalizeBaseUrl(url: string): string {
