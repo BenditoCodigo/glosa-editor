@@ -1,7 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import type { AppSettings, UserProfile, EditorSettings, ThemeMode, StorageProvider } from '@/types'
-import { DEFAULT_SETTINGS } from '@/types'
+import type { AppSettings, UserProfile, EditorSettings, ThemeMode, StorageProvider, AISettings, AIModelParameters, AICustomHeader } from '@/types'
+import { DEFAULT_SETTINGS, DEFAULT_AI_SETTINGS, DEFAULT_AI_MODEL_PARAMETERS } from '@/types'
 import { isTauri } from '@/utils/tauri'
 
 const STORAGE_KEY = 'glosa-settings'
@@ -11,7 +11,11 @@ function loadFromStorage(): AppSettings {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<AppSettings>
-      return { ...DEFAULT_SETTINGS, ...parsed }
+      return {
+        ...DEFAULT_SETTINGS,
+        ...parsed,
+        ai: { ...DEFAULT_AI_SETTINGS, ...(parsed.ai ?? {}), modelParameters: { ...DEFAULT_AI_MODEL_PARAMETERS, ...(parsed.ai?.modelParameters ?? {}) } },
+      }
     }
   } catch {
     // Corrupted data, use defaults
@@ -48,6 +52,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const storageProvider = computed(() => settings.value.storageProvider)
   const editor = computed(() => settings.value.editor)
   const filesystemPath = computed(() => settings.value.filesystemPath)
+  const ai = computed(() => settings.value.ai)
 
   // Tauri detection — true only when running inside Tauri desktop app
   const isFileSystemSupported = computed(() => isTauri())
@@ -94,6 +99,60 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function updateEditor(partial: Partial<EditorSettings>) {
     settings.value.editor = { ...settings.value.editor, ...partial }
+  }
+
+  function updateAI(partial: Partial<AISettings>) {
+    settings.value = {
+      ...settings.value,
+      ai: { ...settings.value.ai, ...partial },
+    }
+  }
+
+  function updateAIModelParameters(partial: Partial<AIModelParameters>) {
+    settings.value = {
+      ...settings.value,
+      ai: {
+        ...settings.value.ai,
+        modelParameters: { ...settings.value.ai.modelParameters, ...partial },
+      },
+    }
+  }
+
+  function resetAIModelParameters() {
+    settings.value = {
+      ...settings.value,
+      ai: {
+        ...settings.value.ai,
+        modelParameters: { ...DEFAULT_AI_MODEL_PARAMETERS },
+      },
+    }
+  }
+
+  function addAIHeader() {
+    settings.value = {
+      ...settings.value,
+      ai: {
+        ...settings.value.ai,
+        headers: [...settings.value.ai.headers, { key: '', value: '' }],
+      },
+    }
+  }
+
+  function updateAIHeader(index: number, header: AICustomHeader) {
+    const headers = [...settings.value.ai.headers]
+    headers[index] = header
+    settings.value = {
+      ...settings.value,
+      ai: { ...settings.value.ai, headers },
+    }
+  }
+
+  function removeAIHeader(index: number) {
+    const headers = settings.value.ai.headers.filter((_, i) => i !== index)
+    settings.value = {
+      ...settings.value,
+      ai: { ...settings.value.ai, headers },
+    }
   }
 
   /**
@@ -258,12 +317,19 @@ export const useSettingsStore = defineStore('settings', () => {
     storageProvider,
     editor,
     filesystemPath,
+    ai,
     isFileSystemSupported,
     userInitial,
     updateProfile,
     setTheme,
     setStorageProvider,
     updateEditor,
+    updateAI,
+    updateAIModelParameters,
+    resetAIModelParameters,
+    addAIHeader,
+    updateAIHeader,
+    removeAIHeader,
     selectFilesystemFolder,
     completeMigration,
     cancelMigration,
