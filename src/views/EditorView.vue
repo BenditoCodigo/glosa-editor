@@ -197,7 +197,7 @@ onUnmounted(() => {
 
     <template v-else-if="activeNote">
       <!-- Editor header -->
-      <div class="flex items-center justify-between px-6 lg:px-12 py-2">
+      <div class="relative z-[1] flex items-center justify-between px-6 lg:px-12 py-2">
         <div class="flex items-center gap-3">
           <UiIconButton icon="arrow_back" ariaLabel="Back to explorer" tooltip="Volver" size="sm" @click="goBack" />
           <div class="flex items-center gap-2 text-secondary">
@@ -262,7 +262,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Glass editor panel -->
-          <div class="relative z-10 glass-panel-md rounded-2xl p-8 md:p-12">
+          <div class="relative z-[1] glass-panel-md rounded-2xl p-8 md:p-12">
           <!-- Emoji + Tags editor -->
           <div class="flex items-center gap-3 mb-4">
             <!-- Emoji picker -->
