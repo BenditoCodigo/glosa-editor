@@ -7,16 +7,20 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import MigrationModal from '@/components/ui/MigrationModal.vue'
-import type { ThemeMode, StorageProvider } from '@/types'
+import type { ThemeMode, StorageProvider, AICustomHeader } from '@/types'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
-const { profile, theme, storageProvider, editor, isFileSystemSupported, filesystemPath } = storeToRefs(settingsStore)
+const { profile, theme, storageProvider, editor, isFileSystemSupported, filesystemPath, ai } = storeToRefs(settingsStore)
 
 // Local state for avatar preview
 const avatarInput = ref<HTMLInputElement | null>(null)
 const showDeleteConfirm = ref(false)
 const isSelectingFolder = ref(false)
+
+// AI settings local state
+const showApiKey = ref(false)
+const showHeaderValues = ref<Record<number, boolean>>({})
 
 // Migration modal state
 const showMigrationModal = ref(false)
@@ -123,6 +127,10 @@ async function confirmDeleteAll() {
   router.push('/')
   // Reload to reset app state
   window.location.reload()
+}
+
+function toggleHeaderValueVisibility(index: number) {
+  showHeaderValues.value = { ...showHeaderValues.value, [index]: !showHeaderValues.value[index] }
 }
 </script>
 
@@ -405,7 +413,141 @@ async function confirmDeleteAll() {
           </div>
         </section>
 
-        <!-- 5. Datos -->
+        <!-- 5. Inteligencia Artificial -->
+        <section>
+          <div class="flex items-center gap-4 mb-5">
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Inteligencia Artificial</h2>
+            <div class="h-px flex-1 bg-outline-variant/30"></div>
+          </div>
+
+          <div class="glass-panel-md rounded-2xl p-6 space-y-6">
+            <!-- Enable toggle -->
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-sm font-medium text-on-surface">Habilitar asistente de IA</span>
+                <p class="text-xs text-secondary/60 mt-0.5">Conecta un modelo de lenguaje local o remoto.</p>
+              </div>
+              <button
+                class="relative w-11 h-6 rounded-full transition-colors duration-200"
+                :class="ai.enabled ? 'bg-primary' : 'bg-outline-variant/50'"
+                role="switch"
+                :aria-checked="ai.enabled"
+                @click="settingsStore.updateAI({ enabled: !ai.enabled })"
+              >
+                <span
+                  class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+                  :class="ai.enabled && 'translate-x-5'"
+                />
+              </button>
+            </div>
+
+            <!-- Connection fields (shown when enabled) -->
+            <Transition name="fade-up">
+              <div v-if="ai.enabled" class="space-y-5 pt-2">
+                <!-- Base URL -->
+                <div>
+                  <label class="block text-xs font-medium text-secondary mb-2">URL Base</label>
+                  <input
+                    :value="ai.baseUrl"
+                    type="text"
+                    placeholder="http://localhost:11434/v1"
+                    class="glass-input w-full px-4 py-2.5 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    @input="settingsStore.updateAI({ baseUrl: ($event.target as HTMLInputElement).value })"
+                  >
+                </div>
+
+                <!-- Model -->
+                <div>
+                  <label class="block text-xs font-medium text-secondary mb-2">Modelo</label>
+                  <input
+                    :value="ai.model"
+                    type="text"
+                    placeholder="llama3.1:8b"
+                    class="glass-input w-full px-4 py-2.5 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    @input="settingsStore.updateAI({ model: ($event.target as HTMLInputElement).value })"
+                  >
+                </div>
+
+                <!-- API Key -->
+                <div>
+                  <label class="block text-xs font-medium text-secondary mb-2">API Key</label>
+                  <div class="relative">
+                    <input
+                      :value="ai.apiKey"
+                      :type="showApiKey ? 'text' : 'password'"
+                      placeholder="sk-... (opcional)"
+                      class="glass-input w-full px-4 py-2.5 pr-10 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                      @input="settingsStore.updateAI({ apiKey: ($event.target as HTMLInputElement).value })"
+                    >
+                    <button
+                      class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg text-secondary/60 hover:text-secondary transition-colors"
+                      type="button"
+                      :aria-label="showApiKey ? 'Ocultar API Key' : 'Mostrar API Key'"
+                      @click="showApiKey = !showApiKey"
+                    >
+                      <UiIcon :name="showApiKey ? 'visibility_off' : 'visibility'" size="sm" />
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Custom Headers -->
+                <div>
+                  <label class="block text-xs font-medium text-secondary mb-2">Headers personalizados</label>
+                  <div v-if="ai.headers.length > 0" class="space-y-2 mb-3">
+                    <div
+                      v-for="(header, index) in ai.headers"
+                      :key="index"
+                      class="flex items-center gap-2"
+                    >
+                      <input
+                        :value="header.key"
+                        type="text"
+                        placeholder="Header name"
+                        class="glass-input flex-1 px-3 py-2 rounded-lg text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        @input="settingsStore.updateAIHeader(index, { ...header, key: ($event.target as HTMLInputElement).value })"
+                      >
+                      <div class="relative flex-1">
+                        <input
+                          :value="header.value"
+                          :type="showHeaderValues[index] ? 'text' : 'password'"
+                          placeholder="Value"
+                          class="glass-input w-full px-3 py-2 pr-8 rounded-lg text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                          @input="settingsStore.updateAIHeader(index, { ...header, value: ($event.target as HTMLInputElement).value })"
+                        >
+                        <button
+                          class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-secondary/60 hover:text-secondary transition-colors"
+                          type="button"
+                          :aria-label="showHeaderValues[index] ? 'Ocultar valor' : 'Mostrar valor'"
+                          @click="toggleHeaderValueVisibility(index)"
+                        >
+                          <UiIcon :name="showHeaderValues[index] ? 'visibility_off' : 'visibility'" size="sm" />
+                        </button>
+                      </div>
+                      <button
+                        class="p-1.5 rounded-lg text-secondary/60 hover:text-error hover:bg-error/10 transition-colors"
+                        type="button"
+                        aria-label="Eliminar header"
+                        @click="settingsStore.removeAIHeader(index)"
+                      >
+                        <UiIcon name="close" size="sm" />
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    class="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    type="button"
+                    @click="settingsStore.addAIHeader()"
+                  >
+                    <UiIcon name="add" size="sm" />
+                    <span>Agregar header</span>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
+        </section>
+
+        <!-- 6. Datos -->
         <section>
           <div class="flex items-center gap-4 mb-5">
             <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Datos</h2>
@@ -441,7 +583,7 @@ async function confirmDeleteAll() {
           </div>
         </section>
 
-        <!-- 6. Acerca de -->
+        <!-- 7. Acerca de -->
         <section>
           <div class="flex items-center gap-4 mb-5">
             <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Acerca de</h2>
