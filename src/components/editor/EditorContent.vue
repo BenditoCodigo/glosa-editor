@@ -53,7 +53,13 @@ const editor = useEditor({
     }),
     Typography,
     Link.configure({
-      openOnClick: false,
+      openOnClick: true,
+      autolink: true,
+      linkOnPaste: true,
+      HTMLAttributes: {
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
     }),
     Table.configure({
       resizable: true,
@@ -284,6 +290,29 @@ defineExpose({ editor })
 .dark .tiptap pre .hljs-deletion { color: #ffa0a0; }
 
 .dark .tiptap pre .hljs-meta { color: #8d918d; }
+
+/* Links */
+.tiptap a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  word-break: break-word;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.tiptap a:hover {
+  color: #1d4ed8;
+  opacity: 0.85;
+}
+
+.dark .tiptap a {
+  color: #60a5fa;
+}
+
+.dark .tiptap a:hover {
+  color: #93c5fd;
+}
 
 .tiptap hr {
   border: none;
