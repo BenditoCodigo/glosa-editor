@@ -14,6 +14,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
 import CodeBlockNode from './CodeBlockNode.vue'
+import { openExternalUrl } from '@/utils/openUrl'
 
 const lowlight = createLowlight(common)
 
@@ -26,6 +27,19 @@ const { content } = defineProps<Props>()
 const emit = defineEmits<{
   'update:content': [value: string]
 }>()
+
+function handleEditorClick(event: MouseEvent) {
+  const target = event.target as HTMLElement | null
+  const anchor = target?.closest('a')
+  if (anchor) {
+    const href = anchor.getAttribute('href')
+    if (href) {
+      event.preventDefault()
+      event.stopPropagation()
+      openExternalUrl(href)
+    }
+  }
+}
 
 const editor = useEditor({
   content,
@@ -80,6 +94,20 @@ const editor = useEditor({
     attributes: {
       class: 'prose max-w-none text-on-surface/90 focus:outline-none min-h-[400px] text-lg leading-relaxed',
     },
+    handleClick(_view, _pos, event) {
+      const target = event.target as HTMLElement | null
+      const anchor = target?.closest('a')
+      if (anchor) {
+        const href = anchor.getAttribute('href')
+        if (href) {
+          event.preventDefault()
+          event.stopPropagation()
+          openExternalUrl(href)
+          return true
+        }
+      }
+      return false
+    },
   },
   onUpdate: ({ editor: e }) => {
     const md = (e.storage as Record<string, any>).markdown.getMarkdown()
@@ -104,7 +132,7 @@ defineExpose({ editor })
 </script>
 
 <template>
-  <EditorContent :editor="editor" />
+  <EditorContent :editor="editor" @click="handleEditorClick" />
 </template>
 
 <style>
