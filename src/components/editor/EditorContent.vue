@@ -41,8 +41,18 @@ const activeBlockIndex = ref<number | null>(null)
 const handleTop = ref<number | null>(null)
 const handleVisible = ref(false)
 const isDragging = ref(false)
+const dropIndicatorTop = ref<number | null>(null)
 const dropTargetIndex = ref<number | null>(null)
 const dropInsertAfter = ref(false)
+
+// Cache initial untransformed bounding boxes during drag to avoid measurement thrashing
+interface BlockBox {
+  top: number
+  bottom: number
+  height: number
+  midpoint: number
+}
+let initialBlockBoxes: BlockBox[] = []
 
 let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -192,72 +202,78 @@ function getTiptapBlockElements(): HTMLElement[] {
   return Array.from(tiptapEl.children) as HTMLElement[]
 }
 
-// Find top-level block index by mouse coordinates directly from DOM
-function findBlockIndexAtClientY(clientY: number): { index: number; insertAfter: boolean } | null {
-  const children = getTiptapBlockElements()
-  if (children.length === 0) return null
+// Find block index by clientY using cached initial untransformed boxes
+function findBlockIndexFromCache(clientY: number): { index: number; insertAfter: boolean } | null {
+  if (initialBlockBoxes.length === 0) return null
 
-  const firstRect = children[0].getBoundingClientRect()
-  if (clientY < firstRect.top) {
+  if (clientY < initialBlockBoxes[0].midpoint) {
     return { index: 0, insertAfter: false }
   }
 
-  const lastRect = children[children.length - 1].getBoundingClientRect()
-  if (clientY > lastRect.bottom) {
-    return { index: children.length - 1, insertAfter: true }
+  const lastIdx = initialBlockBoxes.length - 1
+  if (clientY > initialBlockBoxes[lastIdx].midpoint) {
+    return { index: lastIdx, insertAfter: true }
   }
 
-  for (let i = 0; i < children.length; i++) {
-    const rect = children[i].getBoundingClientRect()
-    if (clientY >= rect.top && clientY <= rect.bottom) {
-      const midpoint = rect.top + rect.height / 2
-      return { index: i, insertAfter: clientY > midpoint }
+  for (let i = 0; i < initialBlockBoxes.length; i++) {
+    const box = initialBlockBoxes[i]
+    if (clientY >= box.top && clientY <= box.bottom) {
+      return { index: i, insertAfter: clientY > box.midpoint }
     }
   }
 
-  // Fallback: find closest element
+  // Nearest fallback
   let closestIdx = 0
   let minDiff = Infinity
-  for (let i = 0; i < children.length; i++) {
-    const rect = children[i].getBoundingClientRect()
-    const diff = Math.abs(clientY - (rect.top + rect.height / 2))
+  for (let i = 0; i < initialBlockBoxes.length; i++) {
+    const diff = Math.abs(clientY - initialBlockBoxes[i].midpoint)
     if (diff < minDiff) {
       minDiff = diff
       closestIdx = i
     }
   }
-  const rect = children[closestIdx].getBoundingClientRect()
-  return { index: closestIdx, insertAfter: clientY > rect.top + rect.height / 2 }
+  return { index: closestIdx, insertAfter: clientY > initialBlockBoxes[closestIdx].midpoint }
 }
 
 // Fluid CSS displacement of other blocks during drag
 function applyBlockDisplacement(sourceIdx: number, targetIdx: number, insertAfter: boolean) {
   const children = getTiptapBlockElements()
-  if (!children[sourceIdx]) return
+  if (!initialBlockBoxes[sourceIdx]) return
 
-  const sourceRect = children[sourceIdx].getBoundingClientRect()
-  // Height of the displaced block including margins
-  const shiftY = sourceRect.height + 16
+  const shiftY = initialBlockBoxes[sourceIdx].height + 24 // height of dragged block + gap
+
+  const containerRect = editorContainerRef.value?.getBoundingClientRect()
+  const containerTop = containerRect ? containerRect.top : 0
+
+  // Calculate where the drop indicator slot should sit
+  if (containerRect && initialBlockBoxes[targetIdx]) {
+    const targetBox = initialBlockBoxes[targetIdx]
+    if (insertAfter) {
+      dropIndicatorTop.value = targetBox.bottom - containerTop + 6
+    } else {
+      dropIndicatorTop.value = targetBox.top - containerTop - 6
+    }
+  }
 
   children.forEach((child, i) => {
     if (i === sourceIdx) return
 
     let translateY = 0
     if (sourceIdx < targetIdx) {
-      // Dragging downwards: blocks between source and target shift up
-      const limit = insertAfter ? targetIdx : targetIdx - 1
-      if (i > sourceIdx && i <= limit) {
+      // Dragging downwards: blocks between source and target move UP
+      const upperLimit = insertAfter ? targetIdx : targetIdx - 1
+      if (i > sourceIdx && i <= upperLimit) {
         translateY = -shiftY
       }
     } else if (sourceIdx > targetIdx) {
-      // Dragging upwards: blocks between target and source shift down
-      const limit = insertAfter ? targetIdx + 1 : targetIdx
-      if (i < sourceIdx && i >= limit) {
+      // Dragging upwards: blocks between target and source move DOWN
+      const lowerLimit = insertAfter ? targetIdx + 1 : targetIdx
+      if (i < sourceIdx && i >= lowerLimit) {
         translateY = shiftY
       }
     }
 
-    child.style.transition = 'transform 0.18s cubic-bezier(0.2, 0, 0, 1)'
+    child.style.transition = 'transform 0.22s cubic-bezier(0.2, 0, 0, 1)'
     child.style.transform = translateY !== 0 ? `translateY(${translateY}px)` : ''
   })
 }
@@ -269,6 +285,7 @@ function clearBlockDisplacements() {
     child.style.transition = ''
     child.classList.remove('is-being-dragged')
   })
+  initialBlockBoxes = []
 }
 
 function handleMouseMove(event: MouseEvent) {
@@ -276,20 +293,42 @@ function handleMouseMove(event: MouseEvent) {
   if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
 
   const container = editorContainerRef.value
-  if (!container || !editor.value?.view) return
+  if (!container) return
 
   const containerRect = container.getBoundingClientRect()
-  const blockResult = findBlockIndexAtClientY(event.clientY)
+  const children = getTiptapBlockElements()
+  if (children.length === 0) return
 
-  if (blockResult !== null) {
-    const children = getTiptapBlockElements()
-    const targetEl = children[blockResult.index]
-    if (targetEl) {
-      const rect = targetEl.getBoundingClientRect()
-      activeBlockIndex.value = blockResult.index
-      handleTop.value = rect.top - containerRect.top + 4
-      handleVisible.value = true
+  // Find which block corresponds to the mouse Y position (works anywhere across the width and gutter)
+  let foundIdx = -1
+  for (let i = 0; i < children.length; i++) {
+    const rect = children[i].getBoundingClientRect()
+    if (event.clientY >= rect.top - 6 && event.clientY <= rect.bottom + 6) {
+      foundIdx = i
+      break
     }
+  }
+
+  if (foundIdx === -1) {
+    let minDistance = Infinity
+    for (let i = 0; i < children.length; i++) {
+      const rect = children[i].getBoundingClientRect()
+      const mid = rect.top + rect.height / 2
+      const dist = Math.abs(event.clientY - mid)
+      if (dist < minDistance) {
+        minDistance = dist
+        foundIdx = i
+      }
+    }
+  }
+
+  if (foundIdx !== -1 && children[foundIdx]) {
+    const targetEl = children[foundIdx]
+    const rect = targetEl.getBoundingClientRect()
+    activeBlockIndex.value = foundIdx
+    // Align with the first line of the block
+    handleTop.value = rect.top - containerRect.top + Math.max(0, Math.min(6, (rect.height - 24) / 2))
+    handleVisible.value = true
   }
 }
 
@@ -297,7 +336,7 @@ function handleMouseLeave() {
   if (isDragging.value) return
   hideHandleTimeout = setTimeout(() => {
     handleVisible.value = false
-  }, 300)
+  }, 400)
 }
 
 function handleDragStart(event: DragEvent) {
@@ -314,6 +353,17 @@ function handleDragStart(event: DragEvent) {
   }
 
   isDragging.value = true
+
+  // Snapshot untransformed bounding boxes to prevent measurement thrashing during live displacement
+  initialBlockBoxes = children.map((el) => {
+    const rect = el.getBoundingClientRect()
+    return {
+      top: rect.top,
+      bottom: rect.bottom,
+      height: rect.height,
+      midpoint: rect.top + rect.height / 2,
+    }
+  })
 
   // Clear text selection and blur editor so no cursor is active to receive text drops
   if (document.activeElement instanceof HTMLElement) {
@@ -339,7 +389,7 @@ function handleContainerDragOver(event: DragEvent) {
     event.dataTransfer.dropEffect = 'move'
   }
 
-  const blockResult = findBlockIndexAtClientY(event.clientY)
+  const blockResult = findBlockIndexFromCache(event.clientY)
   if (blockResult && activeBlockIndex.value !== null) {
     dropTargetIndex.value = blockResult.index
     dropInsertAfter.value = blockResult.insertAfter
@@ -415,12 +465,15 @@ function handleDragEnd() {
 
 function handleGlobalKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && isDragging.value) {
+    event.preventDefault()
+    event.stopPropagation()
     cancelDrag()
   }
 }
 
 function resetDragState() {
   isDragging.value = false
+  dropIndicatorTop.value = null
   dropTargetIndex.value = null
   dropInsertAfter.value = false
   handleVisible.value = false
@@ -436,11 +489,11 @@ watch(() => content, (newContent) => {
 })
 
 onMounted(() => {
-  window.addEventListener('keydown', handleGlobalKeydown)
+  window.addEventListener('keydown', handleGlobalKeydown, true)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('keydown', handleGlobalKeydown, true)
   if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
   clearBlockDisplacements()
   editor.value?.destroy()
@@ -452,7 +505,7 @@ defineExpose({ editor })
 <template>
   <div
     ref="editorContainerRef"
-    class="editor-block-container relative"
+    class="editor-block-container relative -ml-12 pl-12 -mr-4 pr-4"
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
     @dragover="handleContainerDragOver"
@@ -461,7 +514,7 @@ defineExpose({ editor })
     <!-- Notion-style Block Drag Handle -->
     <div
       v-show="handleVisible && handleTop !== null"
-      class="block-drag-handle absolute -left-8 md:-left-9 z-20 flex items-center justify-center w-6 h-6 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-150"
+      class="block-drag-handle absolute left-2 z-20 flex items-center justify-center w-7 h-7 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-150"
       :style="{ top: `${handleTop}px` }"
       draggable="true"
       title="Arrastrar para mover bloque (Esc para cancelar)"
@@ -476,6 +529,15 @@ defineExpose({ editor })
         <circle cx="8.5" cy="17.5" r="1.5" />
         <circle cx="15.5" cy="17.5" r="1.5" />
       </svg>
+    </div>
+
+    <!-- Drop Indicator Line inside the opened gap -->
+    <div
+      v-if="isDragging && dropIndicatorTop !== null"
+      class="drop-indicator absolute left-12 right-4 h-0.5 bg-primary/70 z-30 pointer-events-none transition-all duration-150 flex items-center"
+      :style="{ top: `${dropIndicatorTop}px` }"
+    >
+      <div class="w-2.5 h-2.5 rounded-full bg-primary -ml-1 shadow-sm ring-2 ring-primary/20" />
     </div>
 
     <!-- Tiptap Editor Content -->
@@ -495,10 +557,10 @@ defineExpose({ editor })
   filter: grayscale(0.5);
 }
 
-/* Distinct block vertical separation (Notion/Medium block spacing) */
+/* Clear, distinct Notion/Medium vertical block spacing */
 .tiptap > * {
-  margin-top: 0.625rem;
-  margin-bottom: 0.625rem;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .tiptap p.is-editor-empty:first-child::before {
@@ -509,43 +571,44 @@ defineExpose({ editor })
   height: 0;
 }
 
-.tiptap h1 {
+.tiptap > h1 {
   font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.2;
-  margin-top: 1.75rem;
-  margin-bottom: 0.75rem;
+  margin-top: 2.25rem !important;
+  margin-bottom: 0.85rem !important;
 }
 
-.tiptap h2 {
+.tiptap > h2 {
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 600;
   line-height: 1.3;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: 1.85rem !important;
+  margin-bottom: 0.65rem !important;
 }
 
-.tiptap h3 {
+.tiptap > h3 {
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 600;
   line-height: 1.4;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
-.tiptap p {
-  margin-top: 0.4rem;
-  margin-bottom: 0.4rem;
+.tiptap > p {
+  margin-top: 0.85rem !important;
+  margin-bottom: 0.85rem !important;
+  line-height: 1.75;
 }
 
-.tiptap ul,
-.tiptap ol {
-  padding-left: 1.25rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+.tiptap > ul,
+.tiptap > ol {
+  padding-left: 1.5rem;
+  margin-top: 0.85rem !important;
+  margin-bottom: 0.85rem !important;
 }
 
 .tiptap ul {
@@ -557,13 +620,13 @@ defineExpose({ editor })
 }
 
 .tiptap li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .tiptap blockquote {
   border-left: 3px solid var(--color-primary);
   padding-left: 1rem;
-  margin: 1.5rem 0;
+  margin: 1.75rem 0 !important;
   font-style: italic;
   color: var(--color-on-surface-variant);
 }
@@ -576,7 +639,7 @@ defineExpose({ editor })
   font-family: var(--font-mono);
   font-size: 0.875rem;
   overflow-x: auto;
-  margin: 1rem 0;
+  margin: 1.25rem 0 !important;
   position: relative;
 }
 
@@ -707,7 +770,7 @@ defineExpose({ editor })
 .tiptap hr {
   border: none;
   border-top: 1px solid var(--color-outline-variant);
-  margin: 2rem 0;
+  margin: 2.25rem 0 !important;
 }
 
 /* Task list (checks) */
@@ -720,7 +783,7 @@ defineExpose({ editor })
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .tiptap ul[data-type="taskList"] li > label {
@@ -764,7 +827,7 @@ defineExpose({ editor })
 .tiptap table {
   border-collapse: collapse;
   width: 100%;
-  margin: 1rem 0;
+  margin: 1.25rem 0 !important;
   overflow: hidden;
   border-radius: 0.5rem;
   border: 1px solid var(--color-outline-variant);
@@ -815,7 +878,7 @@ defineExpose({ editor })
   max-width: 100%;
   height: auto;
   border-radius: 0.5rem;
-  margin: 1rem 0;
+  margin: 1.5rem 0 !important;
 }
 
 .tiptap img.ProseMirror-selectednode {
