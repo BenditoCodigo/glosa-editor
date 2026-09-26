@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useEditor, EditorContent, VueNodeViewRenderer } from '@tiptap/vue-3'
 import { Extension } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
@@ -41,7 +41,6 @@ const activeBlockIndex = ref<number | null>(null)
 const handleTop = ref<number | null>(null)
 const handleVisible = ref(false)
 const isDragging = ref(false)
-const dropIndicatorTop = ref<number | null>(null)
 const dropTargetIndex = ref<number | null>(null)
 const dropInsertAfter = ref(false)
 
@@ -160,12 +159,23 @@ const editor = useEditor({
       }
       return false
     },
-    handleDrop(_view, event) {
-      if (isDragging.value || event.dataTransfer?.types.includes('application/x-glosa-block-index')) {
-        event.preventDefault()
-        return true
-      }
-      return false
+    handleDOMEvents: {
+      dragover(_view, event) {
+        if (isDragging.value) {
+          event.preventDefault()
+          handleContainerDragOver(event)
+          return true
+        }
+        return false
+      },
+      drop(_view, event) {
+        if (isDragging.value) {
+          event.preventDefault()
+          handleContainerDrop(event)
+          return true
+        }
+        return false
+      },
     },
   },
   onUpdate: ({ editor: e }) => {
@@ -174,54 +184,60 @@ const editor = useEditor({
   },
 })
 
-// Find top-level block node (depth 1) at a given mouse client coordinate
-function findTopLevelBlockAtCoords(clientX: number, clientY: number) {
-  if (!editor.value?.view) return null
-  const view = editor.value.view
-
-  const posInfo = view.posAtCoords({ left: clientX, top: clientY })
-  if (!posInfo) return null
-
-  const $pos = view.state.doc.resolve(posInfo.pos)
-  const index = $pos.depth >= 1 ? $pos.index(0) : 0
-  if (index < 0 || index >= view.state.doc.childCount) return null
-
-  let blockPos = 0
-  for (let i = 0; i < index; i++) {
-    blockPos += view.state.doc.child(i).nodeSize
-  }
-  const blockNode = view.state.doc.child(index)
-  const domNode = view.nodeDOM(blockPos) as HTMLElement | null
-
-  return { index, pos: blockPos, node: blockNode, dom: domNode }
+// Helper to get all top-level DOM block elements inside the editor
+function getTiptapBlockElements(): HTMLElement[] {
+  if (!editorContainerRef.value) return []
+  const tiptapEl = editorContainerRef.value.querySelector('.tiptap')
+  if (!tiptapEl) return []
+  return Array.from(tiptapEl.children) as HTMLElement[]
 }
 
-function findTopLevelBlockByIndex(index: number) {
-  if (!editor.value?.view) return null
-  const view = editor.value.view
-  if (index < 0 || index >= view.state.doc.childCount) return null
+// Find top-level block index by mouse coordinates directly from DOM
+function findBlockIndexAtClientY(clientY: number): { index: number; insertAfter: boolean } | null {
+  const children = getTiptapBlockElements()
+  if (children.length === 0) return null
 
-  let blockPos = 0
-  for (let i = 0; i < index; i++) {
-    blockPos += view.state.doc.child(i).nodeSize
+  const firstRect = children[0].getBoundingClientRect()
+  if (clientY < firstRect.top) {
+    return { index: 0, insertAfter: false }
   }
-  const blockNode = view.state.doc.child(index)
-  const domNode = view.nodeDOM(blockPos) as HTMLElement | null
 
-  return { index, pos: blockPos, node: blockNode, dom: domNode }
+  const lastRect = children[children.length - 1].getBoundingClientRect()
+  if (clientY > lastRect.bottom) {
+    return { index: children.length - 1, insertAfter: true }
+  }
+
+  for (let i = 0; i < children.length; i++) {
+    const rect = children[i].getBoundingClientRect()
+    if (clientY >= rect.top && clientY <= rect.bottom) {
+      const midpoint = rect.top + rect.height / 2
+      return { index: i, insertAfter: clientY > midpoint }
+    }
+  }
+
+  // Fallback: find closest element
+  let closestIdx = 0
+  let minDiff = Infinity
+  for (let i = 0; i < children.length; i++) {
+    const rect = children[i].getBoundingClientRect()
+    const diff = Math.abs(clientY - (rect.top + rect.height / 2))
+    if (diff < minDiff) {
+      minDiff = diff
+      closestIdx = i
+    }
+  }
+  const rect = children[closestIdx].getBoundingClientRect()
+  return { index: closestIdx, insertAfter: clientY > rect.top + rect.height / 2 }
 }
 
 // Fluid CSS displacement of other blocks during drag
 function applyBlockDisplacement(sourceIdx: number, targetIdx: number, insertAfter: boolean) {
-  if (!editorContainerRef.value) return
-  const tiptapEl = editorContainerRef.value.querySelector('.tiptap')
-  if (!tiptapEl) return
-
-  const children = Array.from(tiptapEl.children) as HTMLElement[]
+  const children = getTiptapBlockElements()
   if (!children[sourceIdx]) return
 
   const sourceRect = children[sourceIdx].getBoundingClientRect()
-  const shiftY = sourceRect.height + 12
+  // Height of the displaced block including margins
+  const shiftY = sourceRect.height + 16
 
   children.forEach((child, i) => {
     if (i === sourceIdx) return
@@ -241,17 +257,13 @@ function applyBlockDisplacement(sourceIdx: number, targetIdx: number, insertAfte
       }
     }
 
-    child.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)'
+    child.style.transition = 'transform 0.18s cubic-bezier(0.2, 0, 0, 1)'
     child.style.transform = translateY !== 0 ? `translateY(${translateY}px)` : ''
   })
 }
 
 function clearBlockDisplacements() {
-  if (!editorContainerRef.value) return
-  const tiptapEl = editorContainerRef.value.querySelector('.tiptap')
-  if (!tiptapEl) return
-
-  const children = Array.from(tiptapEl.children) as HTMLElement[]
+  const children = getTiptapBlockElements()
   children.forEach((child) => {
     child.style.transform = ''
     child.style.transition = ''
@@ -267,15 +279,17 @@ function handleMouseMove(event: MouseEvent) {
   if (!container || !editor.value?.view) return
 
   const containerRect = container.getBoundingClientRect()
-  // Search slightly to the right if mouse is hovering in the left gutter
-  const searchX = Math.max(event.clientX, containerRect.left + 30)
-  const block = findTopLevelBlockAtCoords(searchX, event.clientY)
+  const blockResult = findBlockIndexAtClientY(event.clientY)
 
-  if (block && block.dom && block.dom.getBoundingClientRect) {
-    const rect = block.dom.getBoundingClientRect()
-    activeBlockIndex.value = block.index
-    handleTop.value = rect.top - containerRect.top
-    handleVisible.value = true
+  if (blockResult !== null) {
+    const children = getTiptapBlockElements()
+    const targetEl = children[blockResult.index]
+    if (targetEl) {
+      const rect = targetEl.getBoundingClientRect()
+      activeBlockIndex.value = blockResult.index
+      handleTop.value = rect.top - containerRect.top + 4
+      handleVisible.value = true
+    }
   }
 }
 
@@ -292,9 +306,9 @@ function handleDragStart(event: DragEvent) {
     return
   }
 
-  const view = editor.value.view
   const index = activeBlockIndex.value
-  if (index < 0 || index >= view.state.doc.childCount) {
+  const children = getTiptapBlockElements()
+  if (index < 0 || index >= children.length) {
     event.preventDefault()
     return
   }
@@ -306,14 +320,14 @@ function handleDragStart(event: DragEvent) {
     document.activeElement.blur()
   }
 
-  const block = findTopLevelBlockByIndex(index)
-  if (block?.dom) {
-    block.dom.classList.add('is-being-dragged')
+  const targetEl = children[index]
+  if (targetEl) {
+    targetEl.classList.add('is-being-dragged')
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move'
-      // Use ONLY custom data type so browser doesn't interpret it as plain text insertion
+      // Custom data type to prevent browser/ProseMirror native text drop insertion
       event.dataTransfer.setData('application/x-glosa-block-index', String(index))
-      event.dataTransfer.setDragImage(block.dom, 20, 20)
+      event.dataTransfer.setDragImage(targetEl, 20, 20)
     }
   }
 }
@@ -325,29 +339,11 @@ function handleContainerDragOver(event: DragEvent) {
     event.dataTransfer.dropEffect = 'move'
   }
 
-  const container = editorContainerRef.value
-  const containerRect = container.getBoundingClientRect()
-
-  const searchX = Math.max(event.clientX, containerRect.left + 30)
-  const block = findTopLevelBlockAtCoords(searchX, event.clientY)
-
-  if (block && block.dom && block.dom.getBoundingClientRect && block.node) {
-    const rect = block.dom.getBoundingClientRect()
-    const midpoint = rect.top + rect.height / 2
-    const isAbove = event.clientY < midpoint
-
-    dropTargetIndex.value = block.index
-    dropInsertAfter.value = !isAbove
-
-    if (isAbove) {
-      dropIndicatorTop.value = rect.top - containerRect.top
-    } else {
-      dropIndicatorTop.value = rect.bottom - containerRect.top
-    }
-
-    if (activeBlockIndex.value !== null) {
-      applyBlockDisplacement(activeBlockIndex.value, block.index, !isAbove)
-    }
+  const blockResult = findBlockIndexAtClientY(event.clientY)
+  if (blockResult && activeBlockIndex.value !== null) {
+    dropTargetIndex.value = blockResult.index
+    dropInsertAfter.value = blockResult.insertAfter
+    applyBlockDisplacement(activeBlockIndex.value, blockResult.index, blockResult.insertAfter)
   }
 }
 
@@ -408,14 +404,23 @@ function handleContainerDrop(event: DragEvent) {
   resetDragState()
 }
 
-function handleDragEnd() {
+function cancelDrag() {
   clearBlockDisplacements()
   resetDragState()
 }
 
+function handleDragEnd() {
+  cancelDrag()
+}
+
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && isDragging.value) {
+    cancelDrag()
+  }
+}
+
 function resetDragState() {
   isDragging.value = false
-  dropIndicatorTop.value = null
   dropTargetIndex.value = null
   dropInsertAfter.value = false
   handleVisible.value = false
@@ -430,7 +435,12 @@ watch(() => content, (newContent) => {
   }
 })
 
+onMounted(() => {
+  window.addEventListener('keydown', handleGlobalKeydown)
+})
+
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown)
   if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
   clearBlockDisplacements()
   editor.value?.destroy()
@@ -454,7 +464,7 @@ defineExpose({ editor })
       class="block-drag-handle absolute -left-8 md:-left-9 z-20 flex items-center justify-center w-6 h-6 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-150"
       :style="{ top: `${handleTop}px` }"
       draggable="true"
-      title="Arrastrar para mover bloque"
+      title="Arrastrar para mover bloque (Esc para cancelar)"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
     >
@@ -466,15 +476,6 @@ defineExpose({ editor })
         <circle cx="8.5" cy="17.5" r="1.5" />
         <circle cx="15.5" cy="17.5" r="1.5" />
       </svg>
-    </div>
-
-    <!-- Drop Indicator Line -->
-    <div
-      v-if="isDragging && dropIndicatorTop !== null"
-      class="drop-indicator absolute left-0 right-0 h-0.5 bg-primary z-30 pointer-events-none transition-all duration-75 flex items-center"
-      :style="{ top: `${dropIndicatorTop}px` }"
-    >
-      <div class="w-2.5 h-2.5 rounded-full bg-primary -ml-1.5 shadow-md ring-2 ring-primary/30 animate-pulse" />
     </div>
 
     <!-- Tiptap Editor Content -->
@@ -494,6 +495,12 @@ defineExpose({ editor })
   filter: grayscale(0.5);
 }
 
+/* Distinct block vertical separation (Notion/Medium block spacing) */
+.tiptap > * {
+  margin-top: 0.625rem;
+  margin-bottom: 0.625rem;
+}
+
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -507,7 +514,7 @@ defineExpose({ editor })
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.2;
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
   margin-bottom: 0.75rem;
 }
 
@@ -516,7 +523,7 @@ defineExpose({ editor })
   font-size: 1.5rem;
   font-weight: 600;
   line-height: 1.3;
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
   margin-bottom: 0.5rem;
 }
 
@@ -525,18 +532,20 @@ defineExpose({ editor })
   font-size: 1.25rem;
   font-weight: 600;
   line-height: 1.4;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
   margin-bottom: 0.5rem;
 }
 
 .tiptap p {
-  margin-bottom: 0.75rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
 }
 
 .tiptap ul,
 .tiptap ol {
   padding-left: 1.25rem;
-  margin-bottom: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .tiptap ul {
