@@ -2,8 +2,6 @@
 import { ref, onBeforeUnmount, watch } from 'vue'
 import { useEditor, EditorContent, VueNodeViewRenderer } from '@tiptap/vue-3'
 import { Extension } from '@tiptap/core'
-import { Plugin, PluginKey } from '@tiptap/pm/state'
-import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
@@ -49,32 +47,35 @@ const dropInsertAfter = ref(false)
 
 let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Extension that adds 'is-active-block' decoration to the currently focused top-level block
-const ActiveBlockHighlight = Extension.create({
-  name: 'activeBlockHighlight',
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        key: new PluginKey('activeBlockHighlight'),
-        props: {
-          decorations(state) {
-            const { selection } = state
-            const { $from } = selection
-            if ($from.depth < 1) return null
+// Extension that provides Notion-style Mod-a (Cmd+A / Ctrl+A):
+// First press selects only the active block's text. Second press selects all blocks.
+const BlockSelectAll = Extension.create({
+  name: 'blockSelectAll',
+  addKeyboardShortcuts() {
+    return {
+      'Mod-a': ({ editor: ed }) => {
+        const { state, commands } = ed
+        const { selection } = state
+        const { $from } = selection
 
-            const blockPos = $from.before(1)
-            const node = state.doc.nodeAt(blockPos)
-            if (!node) return null
+        if ($from.depth < 1) return false
+        const blockPos = $from.before(1)
+        const node = state.doc.nodeAt(blockPos)
+        if (!node) return false
 
-            return DecorationSet.create(state.doc, [
-              Decoration.node(blockPos, blockPos + node.nodeSize, {
-                class: 'is-active-block',
-              }),
-            ])
-          },
-        },
-      }),
-    ]
+        const contentStart = blockPos + 1
+        const contentEnd = blockPos + node.nodeSize - 1
+
+        // If selection doesn't already span the entire active block, select only this block
+        if (selection.from !== contentStart || selection.to !== contentEnd) {
+          commands.setTextSelection({ from: contentStart, to: contentEnd })
+          return true
+        }
+
+        // If already selected the active block, allow default selectAll (all document)
+        return false
+      },
+    }
   },
 })
 
@@ -139,7 +140,7 @@ const editor = useEditor({
       inline: false,
       allowBase64: false,
     }),
-    ActiveBlockHighlight,
+    BlockSelectAll,
   ],
   editorProps: {
     attributes: {
@@ -252,14 +253,14 @@ function handleDragStart(event: DragEvent) {
 
   isDragging.value = true
 
-  // Clear text selection to prevent caret cursor conflict
+  // Clear text selection and blur editor so no cursor is active to receive text drops
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur()
   }
 
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
-    // Use custom type to prevent browser/ProseMirror native text insertion at cursor
+    // Use ONLY custom data type so browser doesn't interpret it as plain text insertion
     event.dataTransfer.setData('application/x-glosa-block-index', String(index))
 
     const block = findTopLevelBlockByIndex(index)
@@ -317,38 +318,36 @@ function handleContainerDrop(event: DragEvent) {
       (!insertAfter && targetIndex === sourceIndex + 1)
 
     if (!isDroppingOnSelf && sourceIndex >= 0 && sourceIndex < doc.childCount && targetIndex >= 0 && targetIndex < doc.childCount) {
-      const sourceNode = doc.child(sourceIndex)
+      const nodeToMove = doc.child(sourceIndex)
+
       let sourceStart = 0
       for (let i = 0; i < sourceIndex; i++) {
         sourceStart += doc.child(i).nodeSize
       }
-      const sourceEnd = sourceStart + sourceNode.nodeSize
+      const sourceEnd = sourceStart + nodeToMove.nodeSize
 
-      let targetInsertPos = 0
-      for (let i = 0; i < targetIndex; i++) {
-        targetInsertPos += doc.child(i).nodeSize
+      const tr = view.state.tr
+
+      // 1. Delete source node from document
+      tr.delete(sourceStart, sourceEnd)
+
+      // 2. In the new document after deletion, calculate exact target insertion position
+      const newTargetIndex = targetIndex > sourceIndex ? targetIndex - 1 : targetIndex
+      let insertPos = 0
+      for (let i = 0; i < newTargetIndex; i++) {
+        insertPos += tr.doc.child(i).nodeSize
       }
       if (insertAfter) {
-        targetInsertPos += doc.child(targetIndex).nodeSize
+        insertPos += tr.doc.child(newTargetIndex).nodeSize
       }
 
-      if (targetInsertPos !== sourceStart && targetInsertPos !== sourceEnd) {
-        const slice = doc.slice(sourceStart, sourceEnd)
-        const tr = view.state.tr
+      // 3. Insert complete Node
+      tr.insert(insertPos, nodeToMove)
 
-        if (targetInsertPos > sourceEnd) {
-          tr.insert(targetInsertPos, slice.content)
-          tr.delete(sourceStart, sourceEnd)
-        } else {
-          tr.delete(sourceStart, sourceEnd)
-          tr.insert(targetInsertPos, slice.content)
-        }
+      view.dispatch(tr)
 
-        view.dispatch(tr)
-
-        const md = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
-        emit('update:content', md)
-      }
+      const md = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
+      emit('update:content', md)
     }
   }
 
@@ -431,32 +430,6 @@ defineExpose({ editor })
 /* Tiptap editor styles */
 .tiptap {
   outline: none;
-}
-
-/* Block feel & spacing - All top-level blocks have baseline padding and transparent dotted border to prevent layout shift */
-.tiptap > * {
-  position: relative;
-  border-radius: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  margin-left: -0.5rem;
-  margin-right: -0.5rem;
-  border: 1.5px dotted transparent;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-/* Active block: solid tint background with dotted border matching theme */
-.tiptap > *:focus-within,
-.tiptap > *.is-active-block,
-.tiptap > *.ProseMirror-selectednode {
-  background-color: rgba(79, 96, 86, 0.05);
-  border-color: rgba(79, 96, 86, 0.45);
-}
-
-.dark .tiptap > *:focus-within,
-.dark .tiptap > *.is-active-block,
-.dark .tiptap > *.ProseMirror-selectednode {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(184, 203, 191, 0.45);
 }
 
 .tiptap p.is-editor-empty:first-child::before {

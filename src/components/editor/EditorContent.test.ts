@@ -77,12 +77,10 @@ Segundo párrafo de texto
     const posSecond = firstNode.nodeSize // start pos of 2nd node
     const sizeSecond = secondNode.nodeSize
 
-    const slice = doc.slice(posSecond, posSecond + sizeSecond)
-
-    // Reorder: delete second node and insert at position 0
+    // Reorder: delete second node and insert Node at position 0
     const tr = editor.state.tr
     tr.delete(posSecond, posSecond + sizeSecond)
-    tr.insert(0, slice.content)
+    tr.insert(0, secondNode)
     editor.view.dispatch(tr)
 
     interface MarkdownStorage { markdown: { getMarkdown: () => string } }
@@ -92,6 +90,67 @@ Segundo párrafo de texto
     const pIndex = mdOutput.indexOf('Segundo párrafo de texto')
     const hIndex = mdOutput.indexOf('# Bloque 1')
     expect(pIndex).toBeLessThan(hIndex)
+
+    editor.destroy()
+  })
+
+  it('keeps individual blocks distinct when moving multiple paragraphs without merging numbers or text', () => {
+    const mdInput = `1
+
+2
+
+3
+
+4
+
+5
+
+6`
+
+    const editor = new Editor({
+      content: mdInput,
+      extensions: [
+        StarterKit,
+        Markdown.configure({
+          html: true,
+          tightLists: true,
+        }),
+      ],
+    })
+
+    const doc = editor.state.doc
+    expect(doc.childCount).toBe(6)
+
+    // Move block 4 (index 3, value "4") to before block 2 (index 1, value "2")
+    const sourceIndex = 3
+    const targetIndex = 1
+    const nodeToMove = doc.child(sourceIndex)
+
+    let sourceStart = 0
+    for (let i = 0; i < sourceIndex; i++) {
+      sourceStart += doc.child(i).nodeSize
+    }
+    const sourceEnd = sourceStart + nodeToMove.nodeSize
+
+    const tr = editor.state.tr
+    tr.delete(sourceStart, sourceEnd)
+
+    const newTargetIndex = targetIndex > sourceIndex ? targetIndex - 1 : targetIndex
+    let insertPos = 0
+    for (let i = 0; i < newTargetIndex; i++) {
+      insertPos += tr.doc.child(i).nodeSize
+    }
+    tr.insert(insertPos, nodeToMove)
+    editor.view.dispatch(tr)
+
+    // Verify all 6 blocks remain distinct
+    expect(editor.state.doc.childCount).toBe(6)
+    expect(editor.state.doc.child(0).textContent).toBe('1')
+    expect(editor.state.doc.child(1).textContent).toBe('4')
+    expect(editor.state.doc.child(2).textContent).toBe('2')
+    expect(editor.state.doc.child(3).textContent).toBe('3')
+    expect(editor.state.doc.child(4).textContent).toBe('5')
+    expect(editor.state.doc.child(5).textContent).toBe('6')
 
     editor.destroy()
   })
