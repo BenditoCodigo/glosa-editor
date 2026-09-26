@@ -18,6 +18,12 @@ import { openExternalUrl } from '@/utils/openUrl'
 
 const lowlight = createLowlight(common)
 
+interface MarkdownStorage {
+  markdown: {
+    getMarkdown: () => string
+  }
+}
+
 interface Props {
   content: string
 }
@@ -122,7 +128,7 @@ const editor = useEditor({
     },
   },
   onUpdate: ({ editor: e }) => {
-    const md = (e.storage as Record<string, any>).markdown.getMarkdown()
+    const md = (e.storage as unknown as MarkdownStorage).markdown.getMarkdown()
     emit('update:content', md)
   },
 })
@@ -226,7 +232,6 @@ function handleContainerDragOver(event: DragEvent) {
 
   const container = editorContainerRef.value
   const containerRect = container.getBoundingClientRect()
-  const view = editor.value.view
 
   const searchX = Math.max(event.clientX, containerRect.left + 30)
   const block = findTopLevelBlockAtCoords(searchX, event.clientY)
@@ -275,7 +280,7 @@ function handleContainerDrop(event: DragEvent) {
 
         view.dispatch(tr)
 
-        const md = (editor.value.storage as Record<string, any>).markdown.getMarkdown()
+        const md = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
         emit('update:content', md)
       }
     }
@@ -298,7 +303,7 @@ function resetDragState() {
 // Update editor content when prop changes externally (e.g. loading a different note)
 watch(() => content, (newContent) => {
   if (!editor.value) return
-  const currentContent = (editor.value.storage as Record<string, any>).markdown.getMarkdown()
+  const currentContent = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
   if (currentContent !== newContent) {
     editor.value.commands.setContent(newContent, { emitUpdate: false })
   }

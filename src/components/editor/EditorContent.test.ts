@@ -40,7 +40,8 @@ describe('Tiptap Markdown with TaskList and Link', () => {
     expect(html).toContain('href="https://www.homedepot.com.mx/p/calentador"')
     expect(html).toContain('Calentador Eléctrico Calorex')
 
-    const mdOutput = (editor.storage as any).markdown.getMarkdown()
+    interface MarkdownStorage { markdown: { getMarkdown: () => string } }
+    const mdOutput = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown()
     expect(mdOutput.trim()).toBe(mdInput)
 
     editor.destroy()
@@ -84,7 +85,8 @@ Segundo párrafo de texto
     tr.insert(0, slice.content)
     editor.view.dispatch(tr)
 
-    const mdOutput = (editor.storage as any).markdown.getMarkdown()
+    interface MarkdownStorage { markdown: { getMarkdown: () => string } }
+    const mdOutput = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown()
     expect(mdOutput).toContain('Segundo párrafo de texto')
     // Check that paragraph now comes before heading
     const pIndex = mdOutput.indexOf('Segundo párrafo de texto')

@@ -9,7 +9,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import MigrationModal from '@/components/ui/MigrationModal.vue'
-import type { ThemeMode, StorageProvider, AICustomHeader } from '@/types'
+import type { ThemeMode, StorageProvider } from '@/types'
 import { DEFAULT_SYSTEM_PROMPT } from '@/types'
 
 const router = useRouter()
