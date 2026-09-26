@@ -211,6 +211,54 @@ function findTopLevelBlockByIndex(index: number) {
   return { index, pos: blockPos, node: blockNode, dom: domNode }
 }
 
+// Fluid CSS displacement of other blocks during drag
+function applyBlockDisplacement(sourceIdx: number, targetIdx: number, insertAfter: boolean) {
+  if (!editorContainerRef.value) return
+  const tiptapEl = editorContainerRef.value.querySelector('.tiptap')
+  if (!tiptapEl) return
+
+  const children = Array.from(tiptapEl.children) as HTMLElement[]
+  if (!children[sourceIdx]) return
+
+  const sourceRect = children[sourceIdx].getBoundingClientRect()
+  const shiftY = sourceRect.height + 12
+
+  children.forEach((child, i) => {
+    if (i === sourceIdx) return
+
+    let translateY = 0
+    if (sourceIdx < targetIdx) {
+      // Dragging downwards: blocks between source and target shift up
+      const limit = insertAfter ? targetIdx : targetIdx - 1
+      if (i > sourceIdx && i <= limit) {
+        translateY = -shiftY
+      }
+    } else if (sourceIdx > targetIdx) {
+      // Dragging upwards: blocks between target and source shift down
+      const limit = insertAfter ? targetIdx + 1 : targetIdx
+      if (i < sourceIdx && i >= limit) {
+        translateY = shiftY
+      }
+    }
+
+    child.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)'
+    child.style.transform = translateY !== 0 ? `translateY(${translateY}px)` : ''
+  })
+}
+
+function clearBlockDisplacements() {
+  if (!editorContainerRef.value) return
+  const tiptapEl = editorContainerRef.value.querySelector('.tiptap')
+  if (!tiptapEl) return
+
+  const children = Array.from(tiptapEl.children) as HTMLElement[]
+  children.forEach((child) => {
+    child.style.transform = ''
+    child.style.transition = ''
+    child.classList.remove('is-being-dragged')
+  })
+}
+
 function handleMouseMove(event: MouseEvent) {
   if (isDragging.value) return
   if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
@@ -258,13 +306,13 @@ function handleDragStart(event: DragEvent) {
     document.activeElement.blur()
   }
 
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move'
-    // Use ONLY custom data type so browser doesn't interpret it as plain text insertion
-    event.dataTransfer.setData('application/x-glosa-block-index', String(index))
-
-    const block = findTopLevelBlockByIndex(index)
-    if (block?.dom) {
+  const block = findTopLevelBlockByIndex(index)
+  if (block?.dom) {
+    block.dom.classList.add('is-being-dragged')
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move'
+      // Use ONLY custom data type so browser doesn't interpret it as plain text insertion
+      event.dataTransfer.setData('application/x-glosa-block-index', String(index))
       event.dataTransfer.setDragImage(block.dom, 20, 20)
     }
   }
@@ -296,6 +344,10 @@ function handleContainerDragOver(event: DragEvent) {
     } else {
       dropIndicatorTop.value = rect.bottom - containerRect.top
     }
+
+    if (activeBlockIndex.value !== null) {
+      applyBlockDisplacement(activeBlockIndex.value, block.index, !isAbove)
+    }
   }
 }
 
@@ -303,6 +355,8 @@ function handleContainerDrop(event: DragEvent) {
   if (!isDragging.value || !editor.value?.view) return
   event.preventDefault()
   event.stopPropagation()
+
+  clearBlockDisplacements()
 
   const view = editor.value.view
   const doc = view.state.doc
@@ -355,6 +409,7 @@ function handleContainerDrop(event: DragEvent) {
 }
 
 function handleDragEnd() {
+  clearBlockDisplacements()
   resetDragState()
 }
 
@@ -377,6 +432,7 @@ watch(() => content, (newContent) => {
 
 onBeforeUnmount(() => {
   if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
+  clearBlockDisplacements()
   editor.value?.destroy()
 })
 
@@ -430,6 +486,12 @@ defineExpose({ editor })
 /* Tiptap editor styles */
 .tiptap {
   outline: none;
+}
+
+/* Being dragged block styling */
+.tiptap > *.is-being-dragged {
+  opacity: 0.35;
+  filter: grayscale(0.5);
 }
 
 .tiptap p.is-editor-empty:first-child::before {
