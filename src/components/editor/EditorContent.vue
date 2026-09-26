@@ -42,8 +42,7 @@ const handleTop = ref<number | null>(null)
 const handleVisible = ref(false)
 const isDragging = ref(false)
 const dropIndicatorTop = ref<number | null>(null)
-const dropTargetIndex = ref<number | null>(null)
-const dropInsertAfter = ref(false)
+const dropTargetSlot = ref<number | null>(null)
 
 // Cache initial untransformed bounding boxes during drag to avoid measurement thrashing
 interface BlockBox {
@@ -106,6 +105,7 @@ const editor = useEditor({
   extensions: [
     StarterKit.configure({
       codeBlock: false, // Replaced by CodeBlockLowlight
+      dropcursor: false, // Prevent ProseMirror dropCursor plugin from re-rendering DOM and clearing transforms during drag
     }),
     CodeBlockLowlight.configure({
       lowlight,
@@ -145,7 +145,9 @@ const editor = useEditor({
     TaskItem.configure({
       nested: true,
     }),
-    Image.configure({
+    Image.extend({
+      draggable: false, // Block drag handle controls dragging; prevent native image drag
+    }).configure({
       inline: false,
       allowBase64: false,
     }),
@@ -202,74 +204,67 @@ function getTiptapBlockElements(): HTMLElement[] {
   return Array.from(tiptapEl.children) as HTMLElement[]
 }
 
-// Find block index by clientY using cached initial untransformed boxes
-function findBlockIndexFromCache(clientY: number): { index: number; insertAfter: boolean } | null {
-  if (initialBlockBoxes.length === 0) return null
+// Find insertion slot (0 to N) from clientY using cached initial block bounding boxes
+function findTargetSlotFromClientY(clientY: number): number {
+  if (initialBlockBoxes.length === 0) return 0
+  const n = initialBlockBoxes.length
+  const firstBox = initialBlockBoxes[0]
+  const lastBox = initialBlockBoxes[n - 1]
 
-  if (clientY < initialBlockBoxes[0].midpoint) {
-    return { index: 0, insertAfter: false }
+  if (firstBox && clientY < firstBox.midpoint) {
+    return 0
+  }
+  if (lastBox && clientY >= lastBox.midpoint) {
+    return n
   }
 
-  const lastIdx = initialBlockBoxes.length - 1
-  if (clientY > initialBlockBoxes[lastIdx].midpoint) {
-    return { index: lastIdx, insertAfter: true }
-  }
-
-  for (let i = 0; i < initialBlockBoxes.length; i++) {
+  for (let i = 0; i < n - 1; i++) {
     const box = initialBlockBoxes[i]
-    if (clientY >= box.top && clientY <= box.bottom) {
-      return { index: i, insertAfter: clientY > box.midpoint }
+    const nextBox = initialBlockBoxes[i + 1]
+    if (box && nextBox && clientY >= box.midpoint && clientY < nextBox.midpoint) {
+      return i + 1
     }
   }
 
-  // Nearest fallback
-  let closestIdx = 0
-  let minDiff = Infinity
-  for (let i = 0; i < initialBlockBoxes.length; i++) {
-    const diff = Math.abs(clientY - initialBlockBoxes[i].midpoint)
-    if (diff < minDiff) {
-      minDiff = diff
-      closestIdx = i
-    }
-  }
-  return { index: closestIdx, insertAfter: clientY > initialBlockBoxes[closestIdx].midpoint }
+  return n
 }
 
 // Fluid CSS displacement of other blocks during drag
-function applyBlockDisplacement(sourceIdx: number, targetIdx: number, insertAfter: boolean) {
+function applyBlockDisplacement(sourceIdx: number, targetSlot: number) {
   const children = getTiptapBlockElements()
-  if (!initialBlockBoxes[sourceIdx]) return
+  const sourceBox = initialBlockBoxes[sourceIdx]
+  if (!sourceBox || children.length === 0) return
 
-  const shiftY = initialBlockBoxes[sourceIdx].height + 24 // height of dragged block + gap
-
+  const shiftY = sourceBox.height + 24 // height of dragged block + gap
   const containerRect = editorContainerRef.value?.getBoundingClientRect()
   const containerTop = containerRect ? containerRect.top : 0
 
-  // Calculate where the drop indicator slot should sit
-  if (containerRect && initialBlockBoxes[targetIdx]) {
-    const targetBox = initialBlockBoxes[targetIdx]
-    if (insertAfter) {
-      dropIndicatorTop.value = targetBox.bottom - containerTop + 6
-    } else {
-      dropIndicatorTop.value = targetBox.top - containerTop - 6
-    }
+  // Position the drop indicator line exactly inside the opened gap
+  const firstBox = initialBlockBoxes[0]
+  const lastBox = initialBlockBoxes[initialBlockBoxes.length - 1]
+  const prevBox = initialBlockBoxes[targetSlot - 1]
+
+  if (targetSlot === 0 && firstBox) {
+    dropIndicatorTop.value = firstBox.top - containerTop - 12
+  } else if (targetSlot >= initialBlockBoxes.length && lastBox) {
+    dropIndicatorTop.value = lastBox.bottom - containerTop + 12
+  } else if (prevBox) {
+    dropIndicatorTop.value = prevBox.bottom - containerTop + 12
   }
 
   children.forEach((child, i) => {
     if (i === sourceIdx) return
 
     let translateY = 0
-    if (sourceIdx < targetIdx) {
-      // Dragging downwards: blocks between source and target move UP
-      const upperLimit = insertAfter ? targetIdx : targetIdx - 1
-      if (i > sourceIdx && i <= upperLimit) {
-        translateY = -shiftY
-      }
-    } else if (sourceIdx > targetIdx) {
-      // Dragging upwards: blocks between target and source move DOWN
-      const lowerLimit = insertAfter ? targetIdx + 1 : targetIdx
-      if (i < sourceIdx && i >= lowerLimit) {
+    if (targetSlot < sourceIdx) {
+      // Dragging UP: blocks from targetSlot up to sourceIdx - 1 move DOWN
+      if (i >= targetSlot && i < sourceIdx) {
         translateY = shiftY
+      }
+    } else if (targetSlot > sourceIdx + 1) {
+      // Dragging DOWN: blocks from sourceIdx + 1 up to targetSlot - 1 move UP
+      if (i > sourceIdx && i < targetSlot) {
+        translateY = -shiftY
       }
     }
 
@@ -284,6 +279,7 @@ function clearBlockDisplacements() {
     child.style.transform = ''
     child.style.transition = ''
     child.classList.remove('is-being-dragged')
+    child.style.opacity = ''
   })
   initialBlockBoxes = []
 }
@@ -302,8 +298,10 @@ function handleMouseMove(event: MouseEvent) {
   // Find which block corresponds to the mouse Y position (works anywhere across the width and gutter)
   let foundIdx = -1
   for (let i = 0; i < children.length; i++) {
-    const rect = children[i].getBoundingClientRect()
-    if (event.clientY >= rect.top - 6 && event.clientY <= rect.bottom + 6) {
+    const child = children[i]
+    if (!child) continue
+    const rect = child.getBoundingClientRect()
+    if (event.clientY >= rect.top - 8 && event.clientY <= rect.bottom + 8) {
       foundIdx = i
       break
     }
@@ -312,7 +310,9 @@ function handleMouseMove(event: MouseEvent) {
   if (foundIdx === -1) {
     let minDistance = Infinity
     for (let i = 0; i < children.length; i++) {
-      const rect = children[i].getBoundingClientRect()
+      const child = children[i]
+      if (!child) continue
+      const rect = child.getBoundingClientRect()
       const mid = rect.top + rect.height / 2
       const dist = Math.abs(event.clientY - mid)
       if (dist < minDistance) {
@@ -322,12 +322,15 @@ function handleMouseMove(event: MouseEvent) {
     }
   }
 
-  if (foundIdx !== -1 && children[foundIdx]) {
-    const targetEl = children[foundIdx]
+  const targetEl = foundIdx !== -1 ? children[foundIdx] : undefined
+  if (foundIdx !== -1 && targetEl) {
     const rect = targetEl.getBoundingClientRect()
     activeBlockIndex.value = foundIdx
-    // Align with the first line of the block
-    handleTop.value = rect.top - containerRect.top + Math.max(0, Math.min(6, (rect.height - 24) / 2))
+
+    // For images, align handle near the top; for text, align with the first line
+    const isImg = targetEl.tagName === 'IMG' || targetEl.querySelector('img') !== null
+    const verticalOffset = isImg ? 8 : Math.max(0, Math.min(8, (rect.height - 24) / 2))
+    handleTop.value = rect.top - containerRect.top + verticalOffset
     handleVisible.value = true
   }
 }
@@ -373,11 +376,44 @@ function handleDragStart(event: DragEvent) {
   const targetEl = children[index]
   if (targetEl) {
     targetEl.classList.add('is-being-dragged')
+    targetEl.style.opacity = '0.25'
+
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move'
       // Custom data type to prevent browser/ProseMirror native text drop insertion
       event.dataTransfer.setData('application/x-glosa-block-index', String(index))
-      event.dataTransfer.setDragImage(targetEl, 20, 20)
+
+      // Create a clean, elegant drag preview badge that works cross-origin and never throws SecurityError
+      const isImg = targetEl.tagName === 'IMG' || targetEl.querySelector('img') !== null
+      const previewText = isImg ? 'Imagen' : (targetEl.textContent?.trim().slice(0, 32) || 'Bloque')
+      const ghost = document.createElement('div')
+      ghost.style.position = 'fixed'
+      ghost.style.top = '-9999px'
+      ghost.style.left = '-9999px'
+      ghost.style.padding = '6px 14px'
+      ghost.style.borderRadius = '8px'
+      ghost.style.background = 'rgba(28, 32, 28, 0.92)'
+      ghost.style.color = '#ffffff'
+      ghost.style.fontSize = '12px'
+      ghost.style.fontWeight = '500'
+      ghost.style.boxShadow = '0 6px 16px rgba(0,0,0,0.25)'
+      ghost.style.display = 'flex'
+      ghost.style.alignItems = 'center'
+      ghost.style.gap = '8px'
+      ghost.style.pointerEvents = 'none'
+      ghost.style.zIndex = '9999'
+      ghost.innerHTML = `<span>${isImg ? '🖼️' : '📄'}</span><span>${previewText}</span>`
+      document.body.appendChild(ghost)
+
+      try {
+        event.dataTransfer.setDragImage(ghost, 15, 15)
+      } catch {
+        // Fallback for browsers that restrict setDragImage
+      }
+
+      setTimeout(() => {
+        if (ghost.parentNode) ghost.parentNode.removeChild(ghost)
+      }, 0)
     }
   }
 }
@@ -389,11 +425,10 @@ function handleContainerDragOver(event: DragEvent) {
     event.dataTransfer.dropEffect = 'move'
   }
 
-  const blockResult = findBlockIndexFromCache(event.clientY)
-  if (blockResult && activeBlockIndex.value !== null) {
-    dropTargetIndex.value = blockResult.index
-    dropInsertAfter.value = blockResult.insertAfter
-    applyBlockDisplacement(activeBlockIndex.value, blockResult.index, blockResult.insertAfter)
+  const targetSlot = findTargetSlotFromClientY(event.clientY)
+  if (activeBlockIndex.value !== null) {
+    dropTargetSlot.value = targetSlot
+    applyBlockDisplacement(activeBlockIndex.value, targetSlot)
   }
 }
 
@@ -407,17 +442,13 @@ function handleContainerDrop(event: DragEvent) {
   const view = editor.value.view
   const doc = view.state.doc
   const sourceIndex = activeBlockIndex.value
-  const targetIndex = dropTargetIndex.value
-  const insertAfter = dropInsertAfter.value
+  const targetSlot = dropTargetSlot.value
 
-  if (sourceIndex !== null && targetIndex !== null) {
+  if (sourceIndex !== null && targetSlot !== null) {
     // Check if dropping on itself
-    const isDroppingOnSelf =
-      sourceIndex === targetIndex ||
-      (insertAfter && targetIndex === sourceIndex - 1) ||
-      (!insertAfter && targetIndex === sourceIndex + 1)
+    const isDroppingOnSelf = targetSlot === sourceIndex || targetSlot === sourceIndex + 1
 
-    if (!isDroppingOnSelf && sourceIndex >= 0 && sourceIndex < doc.childCount && targetIndex >= 0 && targetIndex < doc.childCount) {
+    if (!isDroppingOnSelf && sourceIndex >= 0 && sourceIndex < doc.childCount) {
       const nodeToMove = doc.child(sourceIndex)
 
       let sourceStart = 0
@@ -432,13 +463,10 @@ function handleContainerDrop(event: DragEvent) {
       tr.delete(sourceStart, sourceEnd)
 
       // 2. In the new document after deletion, calculate exact target insertion position
-      const newTargetIndex = targetIndex > sourceIndex ? targetIndex - 1 : targetIndex
+      const newTargetIndex = targetSlot > sourceIndex ? targetSlot - 1 : targetSlot
       let insertPos = 0
       for (let i = 0; i < newTargetIndex; i++) {
         insertPos += tr.doc.child(i).nodeSize
-      }
-      if (insertAfter) {
-        insertPos += tr.doc.child(newTargetIndex).nodeSize
       }
 
       // 3. Insert complete Node
@@ -474,8 +502,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
 function resetDragState() {
   isDragging.value = false
   dropIndicatorTop.value = null
-  dropTargetIndex.value = null
-  dropInsertAfter.value = false
+  dropTargetSlot.value = null
   handleVisible.value = false
 }
 
@@ -879,6 +906,9 @@ defineExpose({ editor })
   height: auto;
   border-radius: 0.5rem;
   margin: 1.5rem 0 !important;
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: auto;
 }
 
 .tiptap img.ProseMirror-selectednode {

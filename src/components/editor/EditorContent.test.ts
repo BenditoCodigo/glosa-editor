@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import Image from '@tiptap/extension-image'
 import { Markdown } from 'tiptap-markdown'
 
 describe('Tiptap Markdown with TaskList and Link', () => {
@@ -151,6 +152,125 @@ Segundo párrafo de texto
     expect(editor.state.doc.child(3).textContent).toBe('3')
     expect(editor.state.doc.child(4).textContent).toBe('5')
     expect(editor.state.doc.child(5).textContent).toBe('6')
+
+    editor.destroy()
+  })
+
+  it('correctly parses image block and allows moving image block and other blocks around it', () => {
+    const mdInput = `54
+
+3
+
+2
+
+1
+
+6
+
+![Dune](https://example.com/beach.jpg)`
+
+    const editor = new Editor({
+      content: mdInput,
+      extensions: [
+        StarterKit,
+        Link,
+        TaskList,
+        TaskItem.configure({ nested: true }),
+        Image.configure({
+          inline: false,
+          allowBase64: false,
+        }),
+        Markdown.configure({
+          html: true,
+          tightLists: true,
+        }),
+      ],
+    })
+
+    const doc = editor.state.doc
+    console.log('Doc children count:', doc.childCount)
+    for (let i = 0; i < doc.childCount; i++) {
+      console.log(`Child ${i}:`, doc.child(i).type.name, doc.child(i).toJSON())
+    }
+
+    expect(doc.childCount).toBe(6)
+
+    // Move child 5 (image) to position 0 (top)
+    const sourceIndex = 5
+    const nodeToMove = doc.child(sourceIndex)
+
+    let sourceStart = 0
+    for (let i = 0; i < sourceIndex; i++) {
+      sourceStart += doc.child(i).nodeSize
+    }
+    const sourceEnd = sourceStart + nodeToMove.nodeSize
+
+    const tr = editor.state.tr
+    tr.delete(sourceStart, sourceEnd)
+    tr.insert(0, nodeToMove)
+    editor.view.dispatch(tr)
+
+    expect(editor.state.doc.childCount).toBe(6)
+    expect(editor.state.doc.child(0).type.name).toBe('image')
+    expect(editor.state.doc.child(1).textContent).toBe('54')
+
+    interface MarkdownStorage { markdown: { getMarkdown: () => string } }
+    const mdOutput = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown()
+    expect(mdOutput.indexOf('![Dune]')).toBeLessThan(mdOutput.indexOf('54'))
+
+    editor.destroy()
+  })
+
+  it('correctly reorders block 1 (index 3) to slot 1 between 54 (index 0) and 3 (index 1)', () => {
+    const mdInput = `54
+
+3
+
+2
+
+1
+
+6`
+
+    const editor = new Editor({
+      content: mdInput,
+      extensions: [
+        StarterKit.configure({ dropcursor: false }),
+        Markdown.configure({ html: true }),
+      ],
+    })
+
+    const doc = editor.state.doc
+    expect(doc.childCount).toBe(5)
+
+    // Move block "1" (sourceIndex = 3) to targetSlot = 1 (between "54" and "3")
+    const sourceIndex = 3
+    const targetSlot = 1
+    const nodeToMove = doc.child(sourceIndex)
+
+    let sourceStart = 0
+    for (let i = 0; i < sourceIndex; i++) {
+      sourceStart += doc.child(i).nodeSize
+    }
+    const sourceEnd = sourceStart + nodeToMove.nodeSize
+
+    const tr = editor.state.tr
+    tr.delete(sourceStart, sourceEnd)
+
+    const newTargetIndex = targetSlot > sourceIndex ? targetSlot - 1 : targetSlot
+    let insertPos = 0
+    for (let i = 0; i < newTargetIndex; i++) {
+      insertPos += tr.doc.child(i).nodeSize
+    }
+    tr.insert(insertPos, nodeToMove)
+    editor.view.dispatch(tr)
+
+    expect(editor.state.doc.childCount).toBe(5)
+    expect(editor.state.doc.child(0).textContent).toBe('54')
+    expect(editor.state.doc.child(1).textContent).toBe('1')
+    expect(editor.state.doc.child(2).textContent).toBe('3')
+    expect(editor.state.doc.child(3).textContent).toBe('2')
+    expect(editor.state.doc.child(4).textContent).toBe('6')
 
     editor.destroy()
   })
