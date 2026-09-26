@@ -233,7 +233,6 @@ export class FilesystemAdapter implements StorageAdapter {
       // Update child notes' folder references and file paths
       for (const [noteId, entry] of Array.from(this.fileMap.entries())) {
         if (entry.folderPath === folder.id) {
-          const oldAbsPath = entry.absolutePath
           entry.folderPath = newRelativePath
           entry.relativePath = `${newRelativePath}/${entry.filename}`
           entry.absolutePath = `${this.rootPath}/${entry.relativePath}`

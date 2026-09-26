@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { WatchEvent } from '@tauri-apps/plugin-fs'
-import type { Note } from '@/types/note'
 import type { Folder } from '@/types/folder'
 import type { WatcherChangeCallback } from './filesystem'
 

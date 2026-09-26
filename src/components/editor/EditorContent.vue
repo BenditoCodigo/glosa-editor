@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { onBeforeUnmount, watch } from 'vue'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
-import { VueNodeViewRenderer } from '@tiptap/vue-3'
+import { ref, onBeforeUnmount, watch } from 'vue'
+import { useEditor, EditorContent, VueNodeViewRenderer } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
@@ -11,6 +10,7 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { NodeSelection } from '@tiptap/pm/state'
 import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
 import CodeBlockNode from './CodeBlockNode.vue'
@@ -27,6 +27,18 @@ const { content } = defineProps<Props>()
 const emit = defineEmits<{
   'update:content': [value: string]
 }>()
+
+const editorContainerRef = ref<HTMLElement | null>(null)
+
+// Block Drag & Drop State
+const activeBlockPos = ref<number | null>(null)
+const handleTop = ref<number | null>(null)
+const handleVisible = ref(false)
+const isDragging = ref(false)
+const dropIndicatorTop = ref<number | null>(null)
+const dropTargetPos = ref<number | null>(null)
+
+let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
 
 function handleEditorClick(event: MouseEvent) {
   const target = event.target as HTMLElement | null
@@ -115,6 +127,174 @@ const editor = useEditor({
   },
 })
 
+// Find top-level block node (depth 1) at a given mouse client coordinate
+function findTopLevelBlockAtCoords(clientX: number, clientY: number) {
+  if (!editor.value?.view) return null
+  const view = editor.value.view
+
+  // Find position in ProseMirror doc from coordinates
+  const posInfo = view.posAtCoords({ left: clientX, top: clientY })
+  if (!posInfo) return null
+
+  const $pos = view.state.doc.resolve(posInfo.pos)
+  if ($pos.depth < 1) {
+    if ($pos.nodeAfter && $pos.pos === 0) {
+      const dom = view.nodeDOM(0) as HTMLElement | null
+      return { pos: 0, node: $pos.nodeAfter, dom }
+    }
+    return null
+  }
+
+  const blockPos = $pos.before(1)
+  const blockNode = view.state.doc.nodeAt(blockPos)
+  const domNode = view.nodeDOM(blockPos) as HTMLElement | null
+
+  return { pos: blockPos, node: blockNode, dom: domNode }
+}
+
+function handleMouseMove(event: MouseEvent) {
+  if (isDragging.value) return
+  if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
+
+  const container = editorContainerRef.value
+  if (!container || !editor.value?.view) return
+
+  const containerRect = container.getBoundingClientRect()
+  // Search slightly to the right if mouse is hovering in the left gutter
+  const searchX = Math.max(event.clientX, containerRect.left + 30)
+  const block = findTopLevelBlockAtCoords(searchX, event.clientY)
+
+  if (block && block.dom && block.dom.getBoundingClientRect) {
+    const rect = block.dom.getBoundingClientRect()
+    activeBlockPos.value = block.pos
+    handleTop.value = rect.top - containerRect.top
+    handleVisible.value = true
+  }
+}
+
+function handleMouseLeave() {
+  if (isDragging.value) return
+  hideHandleTimeout = setTimeout(() => {
+    handleVisible.value = false
+  }, 300)
+}
+
+function handleDragStart(event: DragEvent) {
+  if (activeBlockPos.value === null || !editor.value?.view) {
+    event.preventDefault()
+    return
+  }
+
+  const view = editor.value.view
+  const pos = activeBlockPos.value
+  const node = view.state.doc.nodeAt(pos)
+  if (!node) {
+    event.preventDefault()
+    return
+  }
+
+  isDragging.value = true
+
+  // Select the node in ProseMirror
+  try {
+    const tr = view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos))
+    view.dispatch(tr)
+  } catch {
+    // Ignore selection error if node doesn't support nodeSelection directly
+  }
+
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', node.textContent || '')
+    event.dataTransfer.setData('application/x-glosa-block-pos', String(pos))
+    event.dataTransfer.setData('application/x-glosa-block-size', String(node.nodeSize))
+
+    // Subtle drag image
+    const domNode = view.nodeDOM(pos) as HTMLElement | null
+    if (domNode) {
+      event.dataTransfer.setDragImage(domNode, 20, 20)
+    }
+  }
+}
+
+function handleContainerDragOver(event: DragEvent) {
+  if (!isDragging.value || !editor.value?.view || !editorContainerRef.value) return
+  event.preventDefault()
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+
+  const container = editorContainerRef.value
+  const containerRect = container.getBoundingClientRect()
+  const view = editor.value.view
+
+  const searchX = Math.max(event.clientX, containerRect.left + 30)
+  const block = findTopLevelBlockAtCoords(searchX, event.clientY)
+
+  if (block && block.dom && block.dom.getBoundingClientRect && block.node) {
+    const rect = block.dom.getBoundingClientRect()
+    const midpoint = rect.top + rect.height / 2
+    const isAbove = event.clientY < midpoint
+
+    if (isAbove) {
+      dropIndicatorTop.value = rect.top - containerRect.top
+      dropTargetPos.value = block.pos
+    } else {
+      dropIndicatorTop.value = rect.bottom - containerRect.top
+      dropTargetPos.value = block.pos + block.node.nodeSize
+    }
+  }
+}
+
+function handleContainerDrop(event: DragEvent) {
+  if (!isDragging.value || !editor.value?.view) return
+  event.preventDefault()
+
+  const view = editor.value.view
+  const sourcePos = activeBlockPos.value
+  const targetPos = dropTargetPos.value
+
+  if (sourcePos !== null && targetPos !== null && sourcePos !== targetPos) {
+    const node = view.state.doc.nodeAt(sourcePos)
+    if (node) {
+      const sourceFrom = sourcePos
+      const sourceTo = sourcePos + node.nodeSize
+
+      // Ensure target is not within the dragged node range
+      if (targetPos < sourceFrom || targetPos > sourceTo) {
+        const slice = view.state.doc.slice(sourceFrom, sourceTo)
+        const tr = view.state.tr
+
+        if (targetPos > sourceTo) {
+          tr.insert(targetPos, slice.content)
+          tr.delete(sourceFrom, sourceTo)
+        } else {
+          tr.delete(sourceFrom, sourceTo)
+          tr.insert(targetPos, slice.content)
+        }
+
+        view.dispatch(tr)
+
+        const md = (editor.value.storage as Record<string, any>).markdown.getMarkdown()
+        emit('update:content', md)
+      }
+    }
+  }
+
+  resetDragState()
+}
+
+function handleDragEnd() {
+  resetDragState()
+}
+
+function resetDragState() {
+  isDragging.value = false
+  dropIndicatorTop.value = null
+  dropTargetPos.value = null
+  handleVisible.value = false
+}
+
 // Update editor content when prop changes externally (e.g. loading a different note)
 watch(() => content, (newContent) => {
   if (!editor.value) return
@@ -125,6 +305,7 @@ watch(() => content, (newContent) => {
 })
 
 onBeforeUnmount(() => {
+  if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
   editor.value?.destroy()
 })
 
@@ -132,13 +313,59 @@ defineExpose({ editor })
 </script>
 
 <template>
-  <EditorContent :editor="editor" @click="handleEditorClick" />
+  <div
+    ref="editorContainerRef"
+    class="editor-block-container relative"
+    @mousemove="handleMouseMove"
+    @mouseleave="handleMouseLeave"
+    @dragover="handleContainerDragOver"
+    @drop="handleContainerDrop"
+  >
+    <!-- Notion-style Block Drag Handle -->
+    <div
+      v-show="handleVisible && handleTop !== null"
+      class="block-drag-handle absolute -left-8 md:-left-9 z-20 flex items-center justify-center w-6 h-6 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-150"
+      :style="{ top: `${handleTop}px` }"
+      draggable="true"
+      title="Arrastrar para mover bloque"
+      @dragstart="handleDragStart"
+      @dragend="handleDragEnd"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="8.5" cy="6.5" r="1.5" />
+        <circle cx="15.5" cy="6.5" r="1.5" />
+        <circle cx="8.5" cy="12" r="1.5" />
+        <circle cx="15.5" cy="12" r="1.5" />
+        <circle cx="8.5" cy="17.5" r="1.5" />
+        <circle cx="15.5" cy="17.5" r="1.5" />
+      </svg>
+    </div>
+
+    <!-- Drop Indicator Line -->
+    <div
+      v-if="isDragging && dropIndicatorTop !== null"
+      class="drop-indicator absolute left-0 right-0 h-0.5 bg-primary z-30 pointer-events-none transition-all duration-75 flex items-center"
+      :style="{ top: `${dropIndicatorTop}px` }"
+    >
+      <div class="w-2.5 h-2.5 rounded-full bg-primary -ml-1.5 shadow-md ring-2 ring-primary/30 animate-pulse" />
+    </div>
+
+    <!-- Tiptap Editor Content -->
+    <EditorContent :editor="editor" @click="handleEditorClick" />
+  </div>
 </template>
 
 <style>
 /* Tiptap editor styles */
 .tiptap {
   outline: none;
+}
+
+/* Block feel & spacing */
+.tiptap > * {
+  position: relative;
+  transition: background-color 0.15s ease;
+  border-radius: 0.25rem;
 }
 
 .tiptap p.is-editor-empty:first-child::before {

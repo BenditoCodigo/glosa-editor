@@ -45,4 +45,52 @@ describe('Tiptap Markdown with TaskList and Link', () => {
 
     editor.destroy()
   })
+
+  it('correctly moves a block to a new position and serializes to markdown', () => {
+    const mdInput = `# Bloque 1
+
+Segundo párrafo de texto
+
+- Lista elemento 1
+- Lista elemento 2`
+
+    const editor = new Editor({
+      content: mdInput,
+      extensions: [
+        StarterKit,
+        Markdown.configure({
+          html: true,
+          tightLists: true,
+          bulletListMarker: '-',
+        }),
+      ],
+    })
+
+    // Find the second top-level node (paragraph) and move it before the first node (heading)
+    const doc = editor.state.doc
+    expect(doc.childCount).toBe(3)
+
+    const firstNode = doc.child(0)
+    const secondNode = doc.child(1)
+
+    const posSecond = firstNode.nodeSize // start pos of 2nd node
+    const sizeSecond = secondNode.nodeSize
+
+    const slice = doc.slice(posSecond, posSecond + sizeSecond)
+
+    // Reorder: delete second node and insert at position 0
+    const tr = editor.state.tr
+    tr.delete(posSecond, posSecond + sizeSecond)
+    tr.insert(0, slice.content)
+    editor.view.dispatch(tr)
+
+    const mdOutput = (editor.storage as any).markdown.getMarkdown()
+    expect(mdOutput).toContain('Segundo párrafo de texto')
+    // Check that paragraph now comes before heading
+    const pIndex = mdOutput.indexOf('Segundo párrafo de texto')
+    const hIndex = mdOutput.indexOf('# Bloque 1')
+    expect(pIndex).toBeLessThan(hIndex)
+
+    editor.destroy()
+  })
 })

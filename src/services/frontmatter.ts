@@ -17,7 +17,7 @@ export interface ParsedNote {
 const FRONTMATTER_DELIMITER = '---'
 
 /** Deterministic field order for serialization */
-const FIELD_ORDER: readonly string[] = [
+const _FIELD_ORDER: readonly string[] = [
   'id',
   'title',
   'createdAt',
@@ -29,7 +29,7 @@ const FIELD_ORDER: readonly string[] = [
 ]
 
 /** Characters that require quoting in YAML values */
-const YAML_SPECIAL_CHARS = /[:{}\[\],&*?|>!%@`#'"\\]/
+const YAML_SPECIAL_CHARS = /[:{}[\],&*?|>!%@`#'"\\]/
 
 /** ISO 8601 date pattern (basic validation) */
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/

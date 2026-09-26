@@ -323,10 +323,8 @@ describe('groupResults', () => {
 
 import { vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { ref } from 'vue'
 import { useSearch } from './useSearch'
 import { useNotesStore } from '@/stores/notes'
-import { useFoldersStore } from '@/stores/folders'
 
 const mockPush = vi.fn()
 

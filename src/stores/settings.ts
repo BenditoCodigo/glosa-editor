@@ -14,7 +14,7 @@ function loadFromStorage(): AppSettings {
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
-        ai: { ...DEFAULT_AI_SETTINGS, ...(parsed.ai ?? {}), modelParameters: { ...DEFAULT_AI_MODEL_PARAMETERS, ...(parsed.ai?.modelParameters ?? {}) } },
+        ai: { ...DEFAULT_AI_SETTINGS, ...parsed.ai, modelParameters: { ...DEFAULT_AI_MODEL_PARAMETERS, ...parsed.ai?.modelParameters } },
       }
     }
   } catch {
