@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount, watch } from 'vue'
 import { useEditor, EditorContent, VueNodeViewRenderer } from '@tiptap/vue-3'
+import { Extension } from '@tiptap/core'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
@@ -10,7 +13,6 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
-import { NodeSelection } from '@tiptap/pm/state'
 import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
 import CodeBlockNode from './CodeBlockNode.vue'
@@ -37,14 +39,44 @@ const emit = defineEmits<{
 const editorContainerRef = ref<HTMLElement | null>(null)
 
 // Block Drag & Drop State
-const activeBlockPos = ref<number | null>(null)
+const activeBlockIndex = ref<number | null>(null)
 const handleTop = ref<number | null>(null)
 const handleVisible = ref(false)
 const isDragging = ref(false)
 const dropIndicatorTop = ref<number | null>(null)
-const dropTargetPos = ref<number | null>(null)
+const dropTargetIndex = ref<number | null>(null)
+const dropInsertAfter = ref(false)
 
 let hideHandleTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Extension that adds 'is-active-block' decoration to the currently focused top-level block
+const ActiveBlockHighlight = Extension.create({
+  name: 'activeBlockHighlight',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('activeBlockHighlight'),
+        props: {
+          decorations(state) {
+            const { selection } = state
+            const { $from } = selection
+            if ($from.depth < 1) return null
+
+            const blockPos = $from.before(1)
+            const node = state.doc.nodeAt(blockPos)
+            if (!node) return null
+
+            return DecorationSet.create(state.doc, [
+              Decoration.node(blockPos, blockPos + node.nodeSize, {
+                class: 'is-active-block',
+              }),
+            ])
+          },
+        },
+      }),
+    ]
+  },
+})
 
 function handleEditorClick(event: MouseEvent) {
   const target = event.target as HTMLElement | null
@@ -107,6 +139,7 @@ const editor = useEditor({
       inline: false,
       allowBase64: false,
     }),
+    ActiveBlockHighlight,
   ],
   editorProps: {
     attributes: {
@@ -126,6 +159,13 @@ const editor = useEditor({
       }
       return false
     },
+    handleDrop(_view, event) {
+      if (isDragging.value || event.dataTransfer?.types.includes('application/x-glosa-block-index')) {
+        event.preventDefault()
+        return true
+      }
+      return false
+    },
   },
   onUpdate: ({ editor: e }) => {
     const md = (e.storage as unknown as MarkdownStorage).markdown.getMarkdown()
@@ -138,24 +178,36 @@ function findTopLevelBlockAtCoords(clientX: number, clientY: number) {
   if (!editor.value?.view) return null
   const view = editor.value.view
 
-  // Find position in ProseMirror doc from coordinates
   const posInfo = view.posAtCoords({ left: clientX, top: clientY })
   if (!posInfo) return null
 
   const $pos = view.state.doc.resolve(posInfo.pos)
-  if ($pos.depth < 1) {
-    if ($pos.nodeAfter && $pos.pos === 0) {
-      const dom = view.nodeDOM(0) as HTMLElement | null
-      return { pos: 0, node: $pos.nodeAfter, dom }
-    }
-    return null
-  }
+  const index = $pos.depth >= 1 ? $pos.index(0) : 0
+  if (index < 0 || index >= view.state.doc.childCount) return null
 
-  const blockPos = $pos.before(1)
-  const blockNode = view.state.doc.nodeAt(blockPos)
+  let blockPos = 0
+  for (let i = 0; i < index; i++) {
+    blockPos += view.state.doc.child(i).nodeSize
+  }
+  const blockNode = view.state.doc.child(index)
   const domNode = view.nodeDOM(blockPos) as HTMLElement | null
 
-  return { pos: blockPos, node: blockNode, dom: domNode }
+  return { index, pos: blockPos, node: blockNode, dom: domNode }
+}
+
+function findTopLevelBlockByIndex(index: number) {
+  if (!editor.value?.view) return null
+  const view = editor.value.view
+  if (index < 0 || index >= view.state.doc.childCount) return null
+
+  let blockPos = 0
+  for (let i = 0; i < index; i++) {
+    blockPos += view.state.doc.child(i).nodeSize
+  }
+  const blockNode = view.state.doc.child(index)
+  const domNode = view.nodeDOM(blockPos) as HTMLElement | null
+
+  return { index, pos: blockPos, node: blockNode, dom: domNode }
 }
 
 function handleMouseMove(event: MouseEvent) {
@@ -172,7 +224,7 @@ function handleMouseMove(event: MouseEvent) {
 
   if (block && block.dom && block.dom.getBoundingClientRect) {
     const rect = block.dom.getBoundingClientRect()
-    activeBlockPos.value = block.pos
+    activeBlockIndex.value = block.index
     handleTop.value = rect.top - containerRect.top
     handleVisible.value = true
   }
@@ -186,39 +238,33 @@ function handleMouseLeave() {
 }
 
 function handleDragStart(event: DragEvent) {
-  if (activeBlockPos.value === null || !editor.value?.view) {
+  if (activeBlockIndex.value === null || !editor.value?.view) {
     event.preventDefault()
     return
   }
 
   const view = editor.value.view
-  const pos = activeBlockPos.value
-  const node = view.state.doc.nodeAt(pos)
-  if (!node) {
+  const index = activeBlockIndex.value
+  if (index < 0 || index >= view.state.doc.childCount) {
     event.preventDefault()
     return
   }
 
   isDragging.value = true
 
-  // Select the node in ProseMirror
-  try {
-    const tr = view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos))
-    view.dispatch(tr)
-  } catch {
-    // Ignore selection error if node doesn't support nodeSelection directly
+  // Clear text selection to prevent caret cursor conflict
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur()
   }
 
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', node.textContent || '')
-    event.dataTransfer.setData('application/x-glosa-block-pos', String(pos))
-    event.dataTransfer.setData('application/x-glosa-block-size', String(node.nodeSize))
+    // Use custom type to prevent browser/ProseMirror native text insertion at cursor
+    event.dataTransfer.setData('application/x-glosa-block-index', String(index))
 
-    // Subtle drag image
-    const domNode = view.nodeDOM(pos) as HTMLElement | null
-    if (domNode) {
-      event.dataTransfer.setDragImage(domNode, 20, 20)
+    const block = findTopLevelBlockByIndex(index)
+    if (block?.dom) {
+      event.dataTransfer.setDragImage(block.dom, 20, 20)
     }
   }
 }
@@ -241,12 +287,13 @@ function handleContainerDragOver(event: DragEvent) {
     const midpoint = rect.top + rect.height / 2
     const isAbove = event.clientY < midpoint
 
+    dropTargetIndex.value = block.index
+    dropInsertAfter.value = !isAbove
+
     if (isAbove) {
       dropIndicatorTop.value = rect.top - containerRect.top
-      dropTargetPos.value = block.pos
     } else {
       dropIndicatorTop.value = rect.bottom - containerRect.top
-      dropTargetPos.value = block.pos + block.node.nodeSize
     }
   }
 }
@@ -254,28 +301,47 @@ function handleContainerDragOver(event: DragEvent) {
 function handleContainerDrop(event: DragEvent) {
   if (!isDragging.value || !editor.value?.view) return
   event.preventDefault()
+  event.stopPropagation()
 
   const view = editor.value.view
-  const sourcePos = activeBlockPos.value
-  const targetPos = dropTargetPos.value
+  const doc = view.state.doc
+  const sourceIndex = activeBlockIndex.value
+  const targetIndex = dropTargetIndex.value
+  const insertAfter = dropInsertAfter.value
 
-  if (sourcePos !== null && targetPos !== null && sourcePos !== targetPos) {
-    const node = view.state.doc.nodeAt(sourcePos)
-    if (node) {
-      const sourceFrom = sourcePos
-      const sourceTo = sourcePos + node.nodeSize
+  if (sourceIndex !== null && targetIndex !== null) {
+    // Check if dropping on itself
+    const isDroppingOnSelf =
+      sourceIndex === targetIndex ||
+      (insertAfter && targetIndex === sourceIndex - 1) ||
+      (!insertAfter && targetIndex === sourceIndex + 1)
 
-      // Ensure target is not within the dragged node range
-      if (targetPos < sourceFrom || targetPos > sourceTo) {
-        const slice = view.state.doc.slice(sourceFrom, sourceTo)
+    if (!isDroppingOnSelf && sourceIndex >= 0 && sourceIndex < doc.childCount && targetIndex >= 0 && targetIndex < doc.childCount) {
+      const sourceNode = doc.child(sourceIndex)
+      let sourceStart = 0
+      for (let i = 0; i < sourceIndex; i++) {
+        sourceStart += doc.child(i).nodeSize
+      }
+      const sourceEnd = sourceStart + sourceNode.nodeSize
+
+      let targetInsertPos = 0
+      for (let i = 0; i < targetIndex; i++) {
+        targetInsertPos += doc.child(i).nodeSize
+      }
+      if (insertAfter) {
+        targetInsertPos += doc.child(targetIndex).nodeSize
+      }
+
+      if (targetInsertPos !== sourceStart && targetInsertPos !== sourceEnd) {
+        const slice = doc.slice(sourceStart, sourceEnd)
         const tr = view.state.tr
 
-        if (targetPos > sourceTo) {
-          tr.insert(targetPos, slice.content)
-          tr.delete(sourceFrom, sourceTo)
+        if (targetInsertPos > sourceEnd) {
+          tr.insert(targetInsertPos, slice.content)
+          tr.delete(sourceStart, sourceEnd)
         } else {
-          tr.delete(sourceFrom, sourceTo)
-          tr.insert(targetPos, slice.content)
+          tr.delete(sourceStart, sourceEnd)
+          tr.insert(targetInsertPos, slice.content)
         }
 
         view.dispatch(tr)
@@ -296,7 +362,8 @@ function handleDragEnd() {
 function resetDragState() {
   isDragging.value = false
   dropIndicatorTop.value = null
-  dropTargetPos.value = null
+  dropTargetIndex.value = null
+  dropInsertAfter.value = false
   handleVisible.value = false
 }
 
@@ -366,11 +433,30 @@ defineExpose({ editor })
   outline: none;
 }
 
-/* Block feel & spacing */
+/* Block feel & spacing - All top-level blocks have baseline padding and transparent dotted border to prevent layout shift */
 .tiptap > * {
   position: relative;
-  transition: background-color 0.15s ease;
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  border: 1.5px dotted transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Active block: solid tint background with dotted border matching theme */
+.tiptap > *:focus-within,
+.tiptap > *.is-active-block,
+.tiptap > *.ProseMirror-selectednode {
+  background-color: rgba(79, 96, 86, 0.05);
+  border-color: rgba(79, 96, 86, 0.45);
+}
+
+.dark .tiptap > *:focus-within,
+.dark .tiptap > *.is-active-block,
+.dark .tiptap > *.ProseMirror-selectednode {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(184, 203, 191, 0.45);
 }
 
 .tiptap p.is-editor-empty:first-child::before {
