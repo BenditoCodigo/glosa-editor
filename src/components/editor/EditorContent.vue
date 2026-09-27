@@ -41,8 +41,7 @@ const activeBlockIndex = ref<number | null>(null)
 const handleTop = ref<number | null>(null)
 const handleVisible = ref(false)
 const isDragging = ref(false)
-const dropIndicatorTop = ref<number | null>(null)
-const dropTargetSlot = ref<number | null>(null)
+const currentDropIndex = ref<number | null>(null)
 
 let dragStartY = 0
 let initialHandleTop = 0
@@ -192,76 +191,68 @@ function getTiptapBlockElements(): HTMLElement[] {
   return Array.from(tiptapEl.children) as HTMLElement[]
 }
 
-// Find insertion slot (0 to N) from clientY using cached initial block bounding boxes
-function findTargetSlotFromClientY(clientY: number): number {
-  if (initialBlockBoxes.length === 0) return 0
-  const n = initialBlockBoxes.length
-  const firstBox = initialBlockBoxes[0]
-  const lastBox = initialBlockBoxes[n - 1]
+// Calculate target index (0 to N - 1) among blocks
+function findNewIndex(sourceIdx: number, deltaY: number, clientY: number): number {
+  if (initialBlockBoxes.length <= 1) return sourceIdx
+  const sourceBox = initialBlockBoxes[sourceIdx]
+  if (!sourceBox) return sourceIdx
 
-  if (firstBox && clientY < firstBox.midpoint) {
-    return 0
-  }
-  if (lastBox && clientY >= lastBox.midpoint) {
-    return n
-  }
+  const draggedMidpoint = sourceBox.midpoint + deltaY
 
-  for (let i = 0; i < n - 1; i++) {
+  let count = 0
+  for (let i = 0; i < initialBlockBoxes.length; i++) {
+    if (i === sourceIdx) continue
     const box = initialBlockBoxes[i]
-    const nextBox = initialBlockBoxes[i + 1]
-    if (box && nextBox && clientY >= box.midpoint && clientY < nextBox.midpoint) {
-      return i + 1
+    if (!box) continue
+
+    if (i > sourceIdx) {
+      // Neighbor is below source. Swaps when dragged block or cursor moves into it
+      const threshold = Math.min(box.midpoint, box.top + Math.min(box.height / 2, 40))
+      if (draggedMidpoint >= threshold || clientY >= threshold) {
+        count++
+      }
+    } else {
+      // Neighbor is above source. Swaps when dragged block or cursor moves above it
+      const threshold = Math.max(box.midpoint, box.bottom - Math.min(box.height / 2, 40))
+      if (draggedMidpoint >= threshold && clientY >= threshold) {
+        count++
+      }
     }
   }
 
-  return n
+  return Math.max(0, Math.min(count, initialBlockBoxes.length - 1))
 }
 
-// Fluid CSS displacement of other blocks during drag
-function applyBlockDisplacement(sourceIdx: number, targetSlot: number) {
+// Fluid list reordering displacement: other blocks slide cleanly into the opened slot
+function applyBlockDisplacement(sourceIdx: number, newIndex: number) {
   const children = getTiptapBlockElements()
-  const sourceBox = initialBlockBoxes[sourceIdx]
-  if (!sourceBox || children.length === 0) return
-
-  const shiftY = Math.max(sourceBox.height + 20, 52) // Ensure a generous, clearly visible opening gap
-  const containerRect = editorContainerRef.value?.getBoundingClientRect()
-  const containerTop = containerRect ? containerRect.top : 0
-
-  // Position the drop indicator line inside the opened gap (hidden when at original slot)
-  const isOriginalSlot = targetSlot === sourceIdx || targetSlot === sourceIdx + 1
-  if (isOriginalSlot) {
-    dropIndicatorTop.value = null
-  } else {
-    const firstBox = initialBlockBoxes[0]
-    const lastBox = initialBlockBoxes[initialBlockBoxes.length - 1]
-    const prevBox = initialBlockBoxes[targetSlot - 1]
-
-    if (targetSlot === 0 && firstBox) {
-      dropIndicatorTop.value = firstBox.top - containerTop - 12
-    } else if (targetSlot >= initialBlockBoxes.length && lastBox) {
-      dropIndicatorTop.value = lastBox.bottom - containerTop + 12
-    } else if (prevBox) {
-      dropIndicatorTop.value = prevBox.bottom - containerTop + 12
-    }
-  }
+  if (children.length === 0 || initialBlockBoxes.length === 0) return
 
   children.forEach((child, i) => {
     if (i === sourceIdx) return
 
     let translateY = 0
-    if (targetSlot < sourceIdx) {
-      // Dragging UP: blocks from targetSlot up to sourceIdx - 1 move DOWN
-      if (i >= targetSlot && i < sourceIdx) {
-        translateY = shiftY
+    if (newIndex < sourceIdx) {
+      // Dragged item moved UP: items from newIndex to sourceIdx - 1 move DOWN
+      if (i >= newIndex && i < sourceIdx) {
+        const nextBox = initialBlockBoxes[i + 1]
+        const currentBox = initialBlockBoxes[i]
+        if (nextBox && currentBox) {
+          translateY = nextBox.top - currentBox.top
+        }
       }
-    } else if (targetSlot > sourceIdx + 1) {
-      // Dragging DOWN: blocks from sourceIdx + 1 up to targetSlot - 1 move UP
-      if (i > sourceIdx && i < targetSlot) {
-        translateY = -shiftY
+    } else if (newIndex > sourceIdx) {
+      // Dragged item moved DOWN: items from sourceIdx + 1 to newIndex move UP
+      if (i > sourceIdx && i <= newIndex) {
+        const prevBox = initialBlockBoxes[i - 1]
+        const currentBox = initialBlockBoxes[i]
+        if (prevBox && currentBox) {
+          translateY = -(currentBox.top - prevBox.top)
+        }
       }
     }
 
-    child.style.transition = 'transform 0.22s cubic-bezier(0.2, 0, 0, 1)'
+    child.style.transition = 'transform 0.18s cubic-bezier(0.2, 0, 0, 1)'
     child.style.transform = translateY !== 0 ? `translateY(${translateY}px)` : ''
   })
 }
@@ -426,11 +417,10 @@ function handlePointerMove(event: PointerEvent) {
   // 2. Also displace the drag handle alongside the block
   handleTop.value = initialHandleTop + deltaY
 
-  // 3. Compute target slot based directly on the mouse cursor position (instant, responsive trigger)
-  const targetSlot = findTargetSlotFromClientY(event.clientY)
-
-  dropTargetSlot.value = targetSlot
-  applyBlockDisplacement(sourceIdx, targetSlot)
+  // 3. Compute dynamic target index and fluidly displace neighboring items
+  const newIndex = findNewIndex(sourceIdx, deltaY, event.clientY)
+  currentDropIndex.value = newIndex
+  applyBlockDisplacement(sourceIdx, newIndex)
 
   // 4. Auto-scroll when dragging near viewport/container edges
   const scrollContainer = editorContainerRef.value?.closest('.overflow-y-auto')
@@ -461,54 +451,62 @@ function cleanupPointerListeners() {
 }
 
 function commitDrop() {
-  if (!isDragging.value || !editor.value?.view) {
+  if (!isDragging.value || !editor.value?.view || activeBlockIndex.value === null) {
     cancelDrag()
+    return
+  }
+
+  const sourceIndex = activeBlockIndex.value
+  const targetIndex = currentDropIndex.value
+
+  cleanupPointerListeners()
+  clearBlockDisplacements()
+  resetDragState()
+
+  if (targetIndex === null || targetIndex === sourceIndex) {
     return
   }
 
   const view = editor.value.view
   const doc = view.state.doc
-  const sourceIndex = activeBlockIndex.value
-  const targetSlot = dropTargetSlot.value
+  const childCount = doc.childCount
 
-  clearBlockDisplacements()
-
-  if (sourceIndex !== null && targetSlot !== null) {
-    // Check if dropping on itself
-    const isDroppingOnSelf = targetSlot === sourceIndex || targetSlot === sourceIndex + 1
-
-    if (!isDroppingOnSelf && sourceIndex >= 0 && sourceIndex < doc.childCount) {
-      const nodeToMove = doc.child(sourceIndex)
-
-      let sourceStart = 0
-      for (let i = 0; i < sourceIndex; i++) {
-        sourceStart += doc.child(i).nodeSize
-      }
-      const sourceEnd = sourceStart + nodeToMove.nodeSize
-
-      const tr = view.state.tr
-
-      // 1. Delete source node from document
-      tr.delete(sourceStart, sourceEnd)
-
-      // 2. In the new document after deletion, calculate exact target insertion position
-      const newTargetIndex = targetSlot > sourceIndex ? targetSlot - 1 : targetSlot
-      let insertPos = 0
-      for (let i = 0; i < newTargetIndex; i++) {
-        insertPos += tr.doc.child(i).nodeSize
-      }
-
-      // 3. Insert complete Node
-      tr.insert(insertPos, nodeToMove)
-
-      view.dispatch(tr)
-
-      const md = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
-      emit('update:content', md)
-    }
+  if (
+    sourceIndex < 0 ||
+    sourceIndex >= childCount ||
+    targetIndex < 0 ||
+    targetIndex >= childCount
+  ) {
+    return
   }
 
-  resetDragState()
+  // Calculate start position of source node
+  let sourceStart = 0
+  for (let i = 0; i < sourceIndex; i++) {
+    sourceStart += doc.child(i).nodeSize
+  }
+  const nodeToMove = doc.child(sourceIndex)
+  const sourceEnd = sourceStart + nodeToMove.nodeSize
+
+  const tr = view.state.tr
+
+  // 1. Delete source node from document
+  tr.delete(sourceStart, sourceEnd)
+
+  // 2. In modified document (which now has childCount - 1 nodes),
+  // calculate exact target insertion position for targetIndex
+  let insertPos = 0
+  for (let i = 0; i < targetIndex; i++) {
+    insertPos += tr.doc.child(i).nodeSize
+  }
+
+  // 3. Insert complete node at target position
+  tr.insert(insertPos, nodeToMove)
+
+  view.dispatch(tr)
+
+  const md = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
+  emit('update:content', md)
 }
 
 function cancelDrag() {
@@ -527,8 +525,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
 
 function resetDragState() {
   isDragging.value = false
-  dropIndicatorTop.value = null
-  dropTargetSlot.value = null
+  currentDropIndex.value = null
   handleVisible.value = false
 }
 
@@ -583,15 +580,6 @@ defineExpose({ editor })
       </svg>
     </div>
 
-    <!-- Drop Indicator Line inside the opened gap -->
-    <div
-      v-if="isDragging && dropIndicatorTop !== null"
-      class="drop-indicator absolute left-12 right-4 h-0.5 bg-primary/70 z-30 pointer-events-none transition-all duration-150 flex items-center"
-      :style="{ top: `${dropIndicatorTop}px` }"
-    >
-      <div class="w-2.5 h-2.5 rounded-full bg-primary -ml-1 shadow-sm ring-2 ring-primary/20" />
-    </div>
-
     <!-- Tiptap Editor Content -->
     <EditorContent :editor="editor" @click="handleEditorClick" />
   </div>
@@ -603,18 +591,12 @@ defineExpose({ editor })
   outline: none;
 }
 
-/* Being dragged block styling - lifts and physically moves with cursor */
+/* Being dragged block styling - moves directly with the cursor without background glitch */
 .tiptap > *.is-being-dragged {
-  opacity: 0.96;
-  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.16), 0 4px 10px -2px rgba(0, 0, 0, 0.08);
-  border-radius: 0.5rem;
-  background: var(--bc-glass-surface, rgba(255, 255, 255, 0.85));
+  opacity: 0.8;
   cursor: grabbing !important;
-}
-
-.dark .tiptap > *.is-being-dragged {
-  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6), 0 4px 14px -2px rgba(0, 0, 0, 0.4);
-  background: rgba(30, 41, 35, 0.85);
+  pointer-events: none;
+  z-index: 40 !important;
 }
 
 /* Clear, distinct Notion/Medium vertical block spacing */
@@ -946,6 +928,7 @@ defineExpose({ editor })
   pointer-events: auto;
 }
 
+.tiptap *:has(> img),
 .tiptap div:has(> img) {
   width: 100% !important;
 }
