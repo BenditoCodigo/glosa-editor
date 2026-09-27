@@ -44,6 +44,9 @@ const isDragging = ref(false)
 const dropIndicatorTop = ref<number | null>(null)
 const dropTargetSlot = ref<number | null>(null)
 
+let dragStartY = 0
+let initialHandleTop = 0
+
 // Cache initial untransformed bounding boxes during drag to avoid measurement thrashing
 interface BlockBox {
   top: number
@@ -150,6 +153,9 @@ const editor = useEditor({
     }).configure({
       inline: false,
       allowBase64: false,
+      HTMLAttributes: {
+        class: 'w-full rounded-xl object-cover',
+      },
     }),
     BlockSelectAll,
   ],
@@ -170,24 +176,6 @@ const editor = useEditor({
         }
       }
       return false
-    },
-    handleDOMEvents: {
-      dragover(_view, event) {
-        if (isDragging.value) {
-          event.preventDefault()
-          handleContainerDragOver(event)
-          return true
-        }
-        return false
-      },
-      drop(_view, event) {
-        if (isDragging.value) {
-          event.preventDefault()
-          handleContainerDrop(event)
-          return true
-        }
-        return false
-      },
     },
   },
   onUpdate: ({ editor: e }) => {
@@ -235,21 +223,26 @@ function applyBlockDisplacement(sourceIdx: number, targetSlot: number) {
   const sourceBox = initialBlockBoxes[sourceIdx]
   if (!sourceBox || children.length === 0) return
 
-  const shiftY = sourceBox.height + 24 // height of dragged block + gap
+  const shiftY = Math.max(sourceBox.height + 20, 52) // Ensure a generous, clearly visible opening gap
   const containerRect = editorContainerRef.value?.getBoundingClientRect()
   const containerTop = containerRect ? containerRect.top : 0
 
-  // Position the drop indicator line exactly inside the opened gap
-  const firstBox = initialBlockBoxes[0]
-  const lastBox = initialBlockBoxes[initialBlockBoxes.length - 1]
-  const prevBox = initialBlockBoxes[targetSlot - 1]
+  // Position the drop indicator line inside the opened gap (hidden when at original slot)
+  const isOriginalSlot = targetSlot === sourceIdx || targetSlot === sourceIdx + 1
+  if (isOriginalSlot) {
+    dropIndicatorTop.value = null
+  } else {
+    const firstBox = initialBlockBoxes[0]
+    const lastBox = initialBlockBoxes[initialBlockBoxes.length - 1]
+    const prevBox = initialBlockBoxes[targetSlot - 1]
 
-  if (targetSlot === 0 && firstBox) {
-    dropIndicatorTop.value = firstBox.top - containerTop - 12
-  } else if (targetSlot >= initialBlockBoxes.length && lastBox) {
-    dropIndicatorTop.value = lastBox.bottom - containerTop + 12
-  } else if (prevBox) {
-    dropIndicatorTop.value = prevBox.bottom - containerTop + 12
+    if (targetSlot === 0 && firstBox) {
+      dropIndicatorTop.value = firstBox.top - containerTop - 12
+    } else if (targetSlot >= initialBlockBoxes.length && lastBox) {
+      dropIndicatorTop.value = lastBox.bottom - containerTop + 12
+    } else if (prevBox) {
+      dropIndicatorTop.value = prevBox.bottom - containerTop + 12
+    }
   }
 
   children.forEach((child, i) => {
@@ -278,8 +271,9 @@ function clearBlockDisplacements() {
   children.forEach((child) => {
     child.style.transform = ''
     child.style.transition = ''
+    child.style.zIndex = ''
+    child.style.position = ''
     child.classList.remove('is-being-dragged')
-    child.style.opacity = ''
   })
   initialBlockBoxes = []
 }
@@ -372,20 +366,18 @@ function handleMouseLeave() {
   }, 400)
 }
 
-function handleDragStart(event: DragEvent) {
-  if (activeBlockIndex.value === null || !editor.value?.view) {
-    event.preventDefault()
-    return
-  }
+function handlePointerDown(event: PointerEvent) {
+  if (event.button !== 0) return // Left click only
+  if (activeBlockIndex.value === null || !editor.value?.view) return
 
   const index = activeBlockIndex.value
   const children = getTiptapBlockElements()
-  if (index < 0 || index >= children.length) {
-    event.preventDefault()
-    return
-  }
+  if (index < 0 || index >= children.length) return
 
+  event.preventDefault()
   isDragging.value = true
+  dragStartY = event.clientY
+  initialHandleTop = handleTop.value ?? 0
 
   // Snapshot untransformed bounding boxes to prevent measurement thrashing during live displacement
   initialBlockBoxes = children.map((el) => {
@@ -406,73 +398,80 @@ function handleDragStart(event: DragEvent) {
   const targetEl = children[index]
   if (targetEl) {
     targetEl.classList.add('is-being-dragged')
-    targetEl.style.opacity = '0.25'
+    targetEl.style.position = 'relative'
+    targetEl.style.zIndex = '35'
+    targetEl.style.transition = 'none'
+  }
 
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move'
-      // Custom data type to prevent browser/ProseMirror native text drop insertion
-      event.dataTransfer.setData('application/x-glosa-block-index', String(index))
+  window.addEventListener('pointermove', handlePointerMove, { passive: false })
+  window.addEventListener('pointerup', handlePointerUp)
+  window.addEventListener('pointercancel', handlePointerCancel)
+}
 
-      // Create a clean, elegant drag preview badge that works cross-origin and never throws SecurityError
-      const isImg = targetEl.tagName === 'IMG' || targetEl.querySelector('img') !== null
-      const previewText = isImg ? 'Imagen' : (targetEl.textContent?.trim().slice(0, 32) || 'Bloque')
-      const ghost = document.createElement('div')
-      ghost.style.position = 'fixed'
-      ghost.style.top = '-9999px'
-      ghost.style.left = '-9999px'
-      ghost.style.padding = '6px 14px'
-      ghost.style.borderRadius = '8px'
-      ghost.style.background = 'rgba(28, 32, 28, 0.92)'
-      ghost.style.color = '#ffffff'
-      ghost.style.fontSize = '12px'
-      ghost.style.fontWeight = '500'
-      ghost.style.boxShadow = '0 6px 16px rgba(0,0,0,0.25)'
-      ghost.style.display = 'flex'
-      ghost.style.alignItems = 'center'
-      ghost.style.gap = '8px'
-      ghost.style.pointerEvents = 'none'
-      ghost.style.zIndex = '9999'
-      ghost.innerHTML = `<span>${isImg ? '🖼️' : '📄'}</span><span>${previewText}</span>`
-      document.body.appendChild(ghost)
+function handlePointerMove(event: PointerEvent) {
+  if (!isDragging.value || activeBlockIndex.value === null) return
+  event.preventDefault()
 
-      try {
-        event.dataTransfer.setDragImage(ghost, 15, 15)
-      } catch {
-        // Fallback for browsers that restrict setDragImage
-      }
+  const sourceIdx = activeBlockIndex.value
+  const children = getTiptapBlockElements()
+  const targetEl = children[sourceIdx]
+  const sourceBox = initialBlockBoxes[sourceIdx]
+  if (!targetEl || !sourceBox) return
 
-      setTimeout(() => {
-        if (ghost.parentNode) ghost.parentNode.removeChild(ghost)
-      }, 0)
+  const deltaY = event.clientY - dragStartY
+
+  // 1. Physically displace the dragged block along the vertical axis with the cursor
+  targetEl.style.transform = `translateY(${deltaY}px)`
+
+  // 2. Also displace the drag handle alongside the block
+  handleTop.value = initialHandleTop + deltaY
+
+  // 3. Compute target slot based directly on the mouse cursor position (instant, responsive trigger)
+  const targetSlot = findTargetSlotFromClientY(event.clientY)
+
+  dropTargetSlot.value = targetSlot
+  applyBlockDisplacement(sourceIdx, targetSlot)
+
+  // 4. Auto-scroll when dragging near viewport/container edges
+  const scrollContainer = editorContainerRef.value?.closest('.overflow-y-auto')
+  if (scrollContainer) {
+    const rect = scrollContainer.getBoundingClientRect()
+    if (event.clientY < rect.top + 60) {
+      scrollContainer.scrollTop -= 8
+    } else if (event.clientY > rect.bottom - 60) {
+      scrollContainer.scrollTop += 8
     }
   }
 }
 
-function handleContainerDragOver(event: DragEvent) {
-  if (!isDragging.value || !editor.value?.view || !editorContainerRef.value) return
-  event.preventDefault()
-  if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = 'move'
-  }
-
-  const targetSlot = findTargetSlotFromClientY(event.clientY)
-  if (activeBlockIndex.value !== null) {
-    dropTargetSlot.value = targetSlot
-    applyBlockDisplacement(activeBlockIndex.value, targetSlot)
-  }
+function handlePointerUp() {
+  cleanupPointerListeners()
+  commitDrop()
 }
 
-function handleContainerDrop(event: DragEvent) {
-  if (!isDragging.value || !editor.value?.view) return
-  event.preventDefault()
-  event.stopPropagation()
+function handlePointerCancel() {
+  cleanupPointerListeners()
+  cancelDrag()
+}
 
-  clearBlockDisplacements()
+function cleanupPointerListeners() {
+  window.removeEventListener('pointermove', handlePointerMove)
+  window.removeEventListener('pointerup', handlePointerUp)
+  window.removeEventListener('pointercancel', handlePointerCancel)
+}
+
+function commitDrop() {
+  if (!isDragging.value || !editor.value?.view) {
+    cancelDrag()
+    return
+  }
 
   const view = editor.value.view
   const doc = view.state.doc
   const sourceIndex = activeBlockIndex.value
   const targetSlot = dropTargetSlot.value
+
+  clearBlockDisplacements()
 
   if (sourceIndex !== null && targetSlot !== null) {
     // Check if dropping on itself
@@ -513,12 +512,9 @@ function handleContainerDrop(event: DragEvent) {
 }
 
 function cancelDrag() {
+  cleanupPointerListeners()
   clearBlockDisplacements()
   resetDragState()
-}
-
-function handleDragEnd() {
-  cancelDrag()
 }
 
 function handleGlobalKeydown(event: KeyboardEvent) {
@@ -551,6 +547,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  cleanupPointerListeners()
   window.removeEventListener('mousemove', handleGlobalMouseMove)
   window.removeEventListener('keydown', handleGlobalKeydown, true)
   if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
@@ -567,20 +564,16 @@ defineExpose({ editor })
     class="editor-block-container relative -ml-12 pl-12 -mr-4 pr-4"
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
-    @dragover="handleContainerDragOver"
-    @drop="handleContainerDrop"
   >
     <!-- Notion-style Block Drag Handle -->
     <div
       v-show="handleVisible && handleTop !== null"
-      class="block-drag-handle absolute left-2 z-20 flex items-center justify-center w-7 h-7 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-150"
+      class="block-drag-handle absolute left-2 z-20 flex items-center justify-center w-7 h-7 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-150 select-none touch-none"
       :style="{ top: `${handleTop}px` }"
-      draggable="true"
       title="Arrastrar para mover bloque (Esc para cancelar)"
-      @dragstart="handleDragStart"
-      @dragend="handleDragEnd"
+      @pointerdown="handlePointerDown"
     >
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+      <svg class="w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
         <circle cx="8.5" cy="6.5" r="1.5" />
         <circle cx="15.5" cy="6.5" r="1.5" />
         <circle cx="8.5" cy="12" r="1.5" />
@@ -610,10 +603,18 @@ defineExpose({ editor })
   outline: none;
 }
 
-/* Being dragged block styling */
+/* Being dragged block styling - lifts and physically moves with cursor */
 .tiptap > *.is-being-dragged {
-  opacity: 0.35;
-  filter: grayscale(0.5);
+  opacity: 0.96;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.16), 0 4px 10px -2px rgba(0, 0, 0, 0.08);
+  border-radius: 0.5rem;
+  background: var(--bc-glass-surface, rgba(255, 255, 255, 0.85));
+  cursor: grabbing !important;
+}
+
+.dark .tiptap > *.is-being-dragged {
+  box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.6), 0 4px 14px -2px rgba(0, 0, 0, 0.4);
+  background: rgba(30, 41, 35, 0.85);
 }
 
 /* Clear, distinct Notion/Medium vertical block spacing */
@@ -934,13 +935,19 @@ defineExpose({ editor })
 
 /* Image */
 .tiptap img {
-  max-width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   height: auto;
-  border-radius: 0.5rem;
+  display: block;
+  border-radius: 0.75rem;
   margin: 1.5rem 0 !important;
   -webkit-user-drag: none;
   user-select: none;
   pointer-events: auto;
+}
+
+.tiptap div:has(> img) {
+  width: 100% !important;
 }
 
 .tiptap img.ProseMirror-selectednode {
