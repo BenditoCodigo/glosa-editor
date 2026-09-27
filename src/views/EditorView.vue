@@ -216,7 +216,7 @@ onUnmounted(() => {
 
     <template v-else-if="activeNote">
       <!-- Editor header -->
-      <div class="relative z-[1] flex items-center justify-between px-6 lg:px-12 py-2">
+      <div class="relative z-30 flex items-center justify-between px-6 lg:px-12 py-2">
         <div class="flex items-center gap-3">
           <UiIconButton icon="arrow_back" ariaLabel="Back to explorer" tooltip="Volver" size="sm" @click="goBack" />
           <div class="flex items-center gap-2 text-secondary">
