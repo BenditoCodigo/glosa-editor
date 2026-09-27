@@ -284,9 +284,12 @@ function clearBlockDisplacements() {
   initialBlockBoxes = []
 }
 
-function handleMouseMove(event: MouseEvent) {
+function updateHandleForMouse(clientY: number) {
   if (isDragging.value) return
-  if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
+  if (hideHandleTimeout) {
+    clearTimeout(hideHandleTimeout)
+    hideHandleTimeout = null
+  }
 
   const container = editorContainerRef.value
   if (!container) return
@@ -295,13 +298,13 @@ function handleMouseMove(event: MouseEvent) {
   const children = getTiptapBlockElements()
   if (children.length === 0) return
 
-  // Find which block corresponds to the mouse Y position (works anywhere across the width and gutter)
+  // Find which block corresponds to the mouse Y position
   let foundIdx = -1
   for (let i = 0; i < children.length; i++) {
     const child = children[i]
     if (!child) continue
     const rect = child.getBoundingClientRect()
-    if (event.clientY >= rect.top - 8 && event.clientY <= rect.bottom + 8) {
+    if (clientY >= rect.top - 8 && clientY <= rect.bottom + 8) {
       foundIdx = i
       break
     }
@@ -314,7 +317,7 @@ function handleMouseMove(event: MouseEvent) {
       if (!child) continue
       const rect = child.getBoundingClientRect()
       const mid = rect.top + rect.height / 2
-      const dist = Math.abs(event.clientY - mid)
+      const dist = Math.abs(clientY - mid)
       if (dist < minDistance) {
         minDistance = dist
         foundIdx = i
@@ -332,6 +335,33 @@ function handleMouseMove(event: MouseEvent) {
     const verticalOffset = isImg ? 8 : Math.max(0, Math.min(8, (rect.height - 24) / 2))
     handleTop.value = rect.top - containerRect.top + verticalOffset
     handleVisible.value = true
+  }
+}
+
+function handleMouseMove(event: MouseEvent) {
+  updateHandleForMouse(event.clientY)
+}
+
+function handleGlobalMouseMove(event: MouseEvent) {
+  if (isDragging.value) return
+  const container = editorContainerRef.value
+  if (!container) return
+
+  const containerRect = container.getBoundingClientRect()
+
+  // Gutter hover zone: extends 80px to the left of the container (covering the left gutter area)
+  // and across the full editor width
+  if (
+    event.clientX >= containerRect.left - 80 &&
+    event.clientX <= containerRect.right + 40 &&
+    event.clientY >= containerRect.top - 20 &&
+    event.clientY <= containerRect.bottom + 20
+  ) {
+    updateHandleForMouse(event.clientY)
+  } else if (handleVisible.value && !hideHandleTimeout) {
+    hideHandleTimeout = setTimeout(() => {
+      handleVisible.value = false
+    }, 300)
   }
 }
 
@@ -516,10 +546,12 @@ watch(() => content, (newContent) => {
 })
 
 onMounted(() => {
+  window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
   window.addEventListener('keydown', handleGlobalKeydown, true)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('mousemove', handleGlobalMouseMove)
   window.removeEventListener('keydown', handleGlobalKeydown, true)
   if (hideHandleTimeout) clearTimeout(hideHandleTimeout)
   clearBlockDisplacements()
