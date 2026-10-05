@@ -67,13 +67,17 @@ flowchart TD
 ### Job 4: `build-macos` (Generación de Artefacto DMG)
 - **Entorno**: `macos-latest` (Apple Silicon)
 - **Dependencia**: Solo se ejecuta si los tres jobs anteriores (`lint-and-typecheck`, `unit-tests`, `rust-check`) concluyen satisfactoriamente.
+- **Firma Ad-hoc y Sellado de Recursos**:
+  - Se configuró `"signingIdentity": "-"` en [`src-tauri/tauri.conf.json`](file:///Users/mau/Repos/bendito-codigo/internal/libreta-abierta/frontend/src-tauri/tauri.conf.json).
+  - Esto garantiza que Tauri aplique la firma Ad-Hoc sellando el bundle `Glosa.app`, `Info.plist` y sus recursos, evitando que macOS Gatekeeper lo detecte como un paquete dañado o con firma rota al descargarse desde internet.
 - **Pasos**:
   1. Configuración de Node.js y Rust toolchain.
   2. Restauración de caché de Cargo.
   3. Ejecución de `npm run tauri:build`:
      - Compila el frontend estático optimizado con Vite.
      - Compila el backend de Rust en perfil release (`--release`).
-     - Empaqueta el bundle de macOS (`Glosa.app`) y el instalador (`Glosa_x.x.x_aarch64.dmg`).
+     - Firma ad-hoc y sella el bundle `.app`.
+     - Empaqueta el instalador (`Glosa_x.x.x_aarch64.dmg`).
   4. Subida del instalador `.dmg` a los artefactos de la ejecución en GitHub mediante `actions/upload-artifact@v4` con retención de 14 días.
 
 ---
