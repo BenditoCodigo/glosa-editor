@@ -15,6 +15,7 @@ Está redactada para cualquier nivel de experiencia — un desarrollador junior 
 | 03 | [Estructura del código](./03-estructura-codigo.md) | Cómo está organizado el código fuente |
 | 04 | [Almacenamiento](./04-almacenamiento.md) | Cómo funciona la persistencia de datos |
 | 05 | [Inteligencia Artificial](./05-inteligencia-artificial.md) | Servicio de IA: arquitectura, tipos e integración |
+| 06 | [Pipeline de CI/CD](./06-cicd-pipeline.md) | Integración continua, validación y compilación en GitHub Actions |
 
 ---
 
