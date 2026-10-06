@@ -33,10 +33,10 @@ describe('useAIBlockAssistant', () => {
       expect(prompt).toContain('Etiquetas: ciencia, historia')
       expect(prompt).toContain('[DOCUMENTO COMPLETO (CONTEXTO GENERAL DE LA NOTA)]')
       expect(prompt).toContain('# Introducción a la física')
-      expect(prompt).toContain('[BLOQUE O FRAGMENTO SELECCIONADO (FOCO PRINCIPAL DE LA CONSULTA)]')
+      expect(prompt).toContain('[BLOQUE O FRAGMENTO SELECCIONADO]')
       expect(prompt).toContain('La teoría de la relatividad fue formulada en 1905.')
       expect(prompt).toContain('¿Es precisa la fecha y contexto histórico?')
-      expect(prompt).toContain('NO reescribas ni sustituyas directamente el texto')
+      expect(prompt).toContain('Responde de forma directa, útil, precisa y natural')
     })
 
     it('handles empty/default context gracefully', () => {

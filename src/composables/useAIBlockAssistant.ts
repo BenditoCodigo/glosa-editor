@@ -72,19 +72,19 @@ export function buildAIBlockPrompt(params: {
 - Ubicación / Carpeta: ${folderName}
 - Etiquetas: ${tagList}${context.updatedAt ? `\n- Última modificación: ${context.updatedAt}` : ''}${sourcesSection}${fullDocSection}
 
-[BLOQUE O FRAGMENTO SELECCIONADO (FOCO PRINCIPAL DE LA CONSULTA)]
+[BLOQUE O FRAGMENTO SELECCIONADO]
 """
 ${blockContent.trim()}
 """
 
-[CONSULTA / OBJETIVO SOBRE EL BLOQUE]
+[CONSULTA DEL USUARIO]
 ${userQuery.trim()}
 
 [INSTRUCCIONES IMPORTANTES]
-- Tu foco de análisis y respuesta es exclusivamente el [BLOQUE O FRAGMENTO SELECCIONADO], interpretado en armonía y relación con el [DOCUMENTO COMPLETO] y sus [FUENTES Y REFERENCIAS / ANEXOS] si están presentes.
-- Responde en español con tono reflexivo, analítico, conciso y constructivo.
-- Enfócate en sugerencias, dudas críticas, preguntas de profundización y verificación de información o coherencia global.
-- NO reescribas ni sustituyas directamente el texto completo de la nota. Tu objetivo es asesorar y retroalimentar al autor.`
+- Responde de forma directa, útil, precisa y natural a la [CONSULTA DEL USUARIO], tomando en cuenta el [BLOQUE O FRAGMENTO SELECCIONADO] y el contexto de la nota.
+- Si el usuario hace una pregunta puntual, saludo o petición libre, respóndele directamente lo que solicita sin forzar análisis o críticas no pedidas.
+- Si la consulta solicita análisis, dudas o verificación, aporta observaciones constructivas y fundamentadas.
+- Responde en español con formato markdown limpio y conciso.`
 }
 
 export function useAIBlockAssistant() {
