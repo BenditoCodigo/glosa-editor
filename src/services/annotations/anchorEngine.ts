@@ -67,35 +67,55 @@ export function createAnnotationAnchor(
   }
 }
 
+// Pre-allocated rows for fast Levenshtein without GC pressure
+let prevRow = new Int32Array(256)
+let currRow = new Int32Array(256)
+
 /**
- * Calculates the Levenshtein distance between two strings.
+ * Calculates the Levenshtein distance between two strings with early-exit.
  */
-export function levenshteinDistance(a: string, b: string): number {
+export function levenshteinDistance(a: string, b: string, maxDistance = Infinity): number {
   if (a === b) return 0
-  if (a.length === 0) return b.length
-  if (b.length === 0) return a.length
+  const aLen = a.length
+  const bLen = b.length
+  if (aLen === 0) return bLen
+  if (bLen === 0) return aLen
+  if (Math.abs(aLen - bLen) > maxDistance) return maxDistance + 1
 
-  const row = new Array<number>(b.length + 1)
-  for (let j = 0; j <= b.length; j++) {
-    row[j] = j
+  if (bLen + 1 > prevRow.length) {
+    prevRow = new Int32Array(bLen + 128)
+    currRow = new Int32Array(bLen + 128)
   }
 
-  for (let i = 1; i <= a.length; i++) {
-    let prev = i - 1
-    row[0] = i
+  for (let j = 0; j <= bLen; j++) {
+    prevRow[j] = j
+  }
 
-    for (let j = 1; j <= b.length; j++) {
-      const temp = row[j]!
-      if (a[i - 1] === b[j - 1]) {
-        row[j] = prev
-      } else {
-        row[j] = Math.min(prev + 1, row[j]! + 1, row[j - 1]! + 1)
-      }
-      prev = temp
+  for (let i = 1; i <= aLen; i++) {
+    currRow[0] = i
+    const aChar = a[i - 1]
+    let minRowVal = currRow[0]
+
+    for (let j = 1; j <= bLen; j++) {
+      const cost = aChar === b[j - 1] ? 0 : 1
+      const val = Math.min(
+        prevRow[j]! + 1,      // deletion
+        currRow[j - 1]! + 1,  // insertion
+        prevRow[j - 1]! + cost // substitution
+      )
+      currRow[j] = val
+      if (val < minRowVal) minRowVal = val
     }
+
+    if (minRowVal > maxDistance) return maxDistance + 1
+
+    // Swap row buffers
+    const temp = prevRow
+    prevRow = currRow
+    currRow = temp
   }
 
-  return row[b.length]!
+  return prevRow[bLen]!
 }
 
 /**
@@ -105,7 +125,9 @@ export function stringSimilarity(a: string, b: string): number {
   if (a === b) return 1
   const maxLen = Math.max(a.length, b.length)
   if (maxLen === 0) return 1
-  const distance = levenshteinDistance(a, b)
+  const maxAllowedDist = Math.floor(maxLen * (1 - FUZZY_MIN_SIMILARITY)) + 1
+  const distance = levenshteinDistance(a, b, maxAllowedDist)
+  if (distance > maxAllowedDist) return 0
   return 1 - distance / maxLen
 }
 
@@ -115,7 +137,7 @@ export function stringSimilarity(a: string, b: string): number {
  * 1. Exact match at approxStartOffset
  * 2. Full context match (prefix + exact + suffix)
  * 3. Disambiguated exact match (exact text scored by context and proximity)
- * 4. Fuzzy Levenshtein match (survives minor edits, typos, pluralizations)
+ * 4. Fast sub-anchor / fuzzy match (survives minor edits, typos, pluralizations)
  * 5. Returns isOrphan: true if text is deleted.
  */
 export function findAnchorPosition(
@@ -175,6 +197,7 @@ export function findAnchorPosition(
     if (foundPos === -1) break
     occurrences.push(foundPos)
     searchPos = foundPos + 1
+    if (occurrences.length > 50) break // safety cap
   }
 
   if (occurrences.length === 1) {
@@ -221,39 +244,65 @@ export function findAnchorPosition(
     }
   }
 
-  // 4. Fuzzy search for edited/mutated text around approxStartOffset
-  // Search window: around approxStartOffset +/- 300 chars, or whole document if short
-  const searchStart = Math.max(0, offset - 300)
-  const searchEnd = Math.min(docText.length, offset + exactLen + 300)
-  const windowText = docText.slice(searchStart, searchEnd)
-
-  let bestFuzzySimilarity = 0
-  let bestFuzzyFrom = -1
-  let bestFuzzyTo = -1
-
-  // Candidate lengths to try: exactLen - 5 to exactLen + 5
-  const minLen = Math.max(1, exactLen - 5)
-  const maxLen = Math.min(windowText.length, exactLen + 5)
-
-  for (let len = minLen; len <= maxLen; len++) {
-    for (let i = 0; i <= windowText.length - len; i++) {
-      const candidate = windowText.slice(i, i + len)
-      const sim = stringSimilarity(candidate, anchor.exact)
-      if (sim > bestFuzzySimilarity) {
-        bestFuzzySimilarity = sim
-        bestFuzzyFrom = searchStart + i
-        bestFuzzyTo = searchStart + i + len
+  // 4. Fast sub-anchor / fuzzy search for edited or mutated text
+  // If text is long (> 60 chars, e.g. whole block), match via anchor head and tail sub-strings
+  if (exactLen > 60) {
+    const head = anchor.exact.slice(0, 30)
+    const headPos = docText.indexOf(head)
+    if (headPos !== -1) {
+      return {
+        from: headPos,
+        to: Math.min(docText.length, headPos + exactLen),
+        exactText: docText.slice(headPos, Math.min(docText.length, headPos + exactLen)),
+        confidence: 0.9,
+        isOrphan: false,
       }
     }
-  }
+    const tail = anchor.exact.slice(-30)
+    const tailPos = docText.indexOf(tail)
+    if (tailPos !== -1) {
+      const from = Math.max(0, tailPos - exactLen + 30)
+      return {
+        from,
+        to: tailPos + 30,
+        exactText: docText.slice(from, tailPos + 30),
+        confidence: 0.85,
+        isOrphan: false,
+      }
+    }
+  } else {
+    // For short text phrases, run targeted fuzzy search in bounded proximity window
+    const searchStart = Math.max(0, offset - 150)
+    const searchEnd = Math.min(docText.length, offset + exactLen + 150)
+    const windowText = docText.slice(searchStart, searchEnd)
 
-  if (bestFuzzySimilarity >= FUZZY_MIN_SIMILARITY) {
-    return {
-      from: bestFuzzyFrom,
-      to: bestFuzzyTo,
-      exactText: docText.slice(bestFuzzyFrom, bestFuzzyTo),
-      confidence: Number((bestFuzzySimilarity * 0.9).toFixed(2)),
-      isOrphan: false,
+    let bestFuzzySimilarity = 0
+    let bestFuzzyFrom = -1
+    let bestFuzzyTo = -1
+
+    const minLen = Math.max(1, exactLen - 3)
+    const maxLen = Math.min(windowText.length, exactLen + 3)
+
+    for (let len = minLen; len <= maxLen; len++) {
+      for (let i = 0; i <= windowText.length - len; i++) {
+        const candidate = windowText.slice(i, i + len)
+        const sim = stringSimilarity(candidate, anchor.exact)
+        if (sim > bestFuzzySimilarity) {
+          bestFuzzySimilarity = sim
+          bestFuzzyFrom = searchStart + i
+          bestFuzzyTo = searchStart + i + len
+        }
+      }
+    }
+
+    if (bestFuzzySimilarity >= FUZZY_MIN_SIMILARITY) {
+      return {
+        from: bestFuzzyFrom,
+        to: bestFuzzyTo,
+        exactText: docText.slice(bestFuzzyFrom, bestFuzzyTo),
+        confidence: Number((bestFuzzySimilarity * 0.9).toFixed(2)),
+        isOrphan: false,
+      }
     }
   }
 

@@ -85,18 +85,32 @@ const popoverAnnotation = ref<WriterAnnotation | null>(null)
 const popoverPosition = ref<{ top: number; left: number } | null>(null)
 const orphanIds = ref<string[]>([])
 
-function checkOrphanAnnotations() {
-  const text = content.value || ''
-  const orphans: string[] = []
-  for (const item of annotations.value) {
-    if (item.anchor) {
-      const match = findAnchorPosition(text, item.anchor)
-      if (match.isOrphan) {
-        orphans.push(item.id)
+let checkOrphansTimer: ReturnType<typeof setTimeout> | null = null
+function checkOrphanAnnotations(immediate = false) {
+  if (checkOrphansTimer) clearTimeout(checkOrphansTimer)
+  if (annotations.value.length === 0) {
+    orphanIds.value = []
+    return
+  }
+  const run = () => {
+    const text = content.value || ''
+    const orphans: string[] = []
+    for (const item of annotations.value) {
+      if (item.anchor) {
+        const match = findAnchorPosition(text, item.anchor)
+        if (match.isOrphan) {
+          orphans.push(item.id)
+        }
       }
     }
+    orphanIds.value = orphans
   }
-  orphanIds.value = orphans
+
+  if (immediate) {
+    run()
+  } else {
+    checkOrphansTimer = setTimeout(run, 200)
+  }
 }
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
