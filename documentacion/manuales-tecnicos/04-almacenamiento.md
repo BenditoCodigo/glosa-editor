@@ -55,20 +55,30 @@ Almacenamiento en el sistema de archivos real. Disponible en la aplicación de e
 
 ### Formato de archivos
 
-Cada nota es un archivo `.md` con frontmatter YAML:
+Cada nota es un archivo `.md` con frontmatter YAML que incluye su metadata estructurada:
 
 ```markdown
 ---
 id: abc123
 title: Mi nota
+description: Breve resumen o sinopsis de la nota para tarjetas de vista previa.
 createdAt: 2026-06-20T10:00:00Z
 updatedAt: 2026-06-20T10:30:00Z
-tags: [idea]
+tags: [idea, investigacion]
 isFavorite: false
+emoji: 📝
+coverImage: https://images.unsplash.com/photo-123...
+sources:
+  - https://ejemplo.com/articulo-fuente
+aiInstructions: Eres un editor de investigación riguroso. Contrasta fuentes y fechas.
 ---
 
 Contenido en markdown...
 ```
+
+- **`description`** — Resumen breve o sinopsis opcional. Si está presente, se visualiza en las tarjetas de la nota en el explorador e inicio.
+- **`coverImage`** — URL externa o imagen local codificada en Data URL (Base64) que se muestra como encabezado y fondo difuminado.
+- **`sources`** y **`aiInstructions`** — Lista de fuentes de consulta e instrucciones específicas para el asistente de IA con prioridad absoluta sobre las globales.
 
 ### Nombres de archivo
 

@@ -369,6 +369,19 @@ export function useAIAutocomplete() {
 
 ---
 
+## Casos de uso implementados
+
+### 1. Asistente flotante por bloques (`useAIBlockAssistant`)
+Permite invocar a la IA sobre un bloque específico del editor Tiptap, proporcionando contexto completo del documento (título, contenido, etiquetas, fuentes y las instrucciones de IA específicas del archivo).
+
+### 2. Generación de descripción breve (`NoteReferencesModal`)
+Genera resúmenes sintéticos (hasta 140 caracteres) de la nota para usar en tarjetas de vista previa, con soporte de historial de deshacer/rehacer (Undo/Redo) en sesión y persistencia en el frontmatter `description`.
+
+### 3. Diagnóstico de comportamiento de muestreo (`SettingsView`)
+En la vista de Configuración, la propiedad computada `samplingBehavior` evalúa la combinación de `temperature` y `topP` para clasificar y orientar al usuario sobre el resultado esperado (determinista/fáctico, conservador, equilibrado, creativo o experimental/caótico).
+
+---
+
 ## Manejo de errores
 
 El servicio traduce los errores HTTP y de red a mensajes legibles en español.

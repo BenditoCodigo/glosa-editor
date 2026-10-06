@@ -99,53 +99,55 @@ Consulta la sección de [Problemas comunes](#problemas-comunes-y-soluciones) má
 
 ---
 
-## Parámetros del modelo
+## Parámetros del modelo y comportamiento esperado
 
-En la configuración encontrarás controles para ajustar cómo responde el modelo. Aquí explicamos cada uno en lenguaje sencillo:
+En la configuración encontrarás controles para ajustar cómo responde el modelo junto con un panel interactivo que describe el **comportamiento esperado**:
 
-### Temperatura (Temperature)
+### Panel de comportamiento esperado
 
-Controla qué tan creativo es el modelo al responder.
+Conforme mueves los deslizadores de **Temperatura** y **Top P**, Glosa te indicará el tipo de respuesta que obtendrás:
 
-- **Valor bajo** (por ejemplo 0.2): Las respuestas son más predecibles y conservadoras. Útil cuando necesitas precisión.
-- **Valor alto** (por ejemplo 1.5): Las respuestas son más variadas y creativas. Útil para lluvia de ideas.
-- **Valor por defecto**: 0.7 (un balance entre creatividad y coherencia).
+- **Determinista y fáctico**: Máxima precisión lógica. Ideal para corrección ortográfica y resúmenes estructurados.
+- **Enfocado y conservador**: Respuestas directas y predecibles.
+- **Equilibrado**: Balance óptimo entre fidelidad fáctica y fluidez natural para redacción general.
+- **Creativo y variado**: Fomenta vocabulario amplio e ideas novedosas. Excelente para lluvia de ideas y ficción.
+- **Experimental / Caótico**: Temperatura muy alta. Respuestas divergentes que pueden presentar incoherencias.
 
-### Top P (diversidad de palabras)
+### Parámetros individuales
 
-Controla cuántas opciones de palabras considera el modelo antes de elegir la siguiente.
+#### Temperatura (Temperature)
+Controla qué tan creativo o determinista es el modelo al responder (0.0 a 2.0).
 
-- **Valor bajo** (por ejemplo 0.5): Elige entre menos opciones, lo que produce texto más enfocado.
-- **Valor alto** (por ejemplo 0.95): Considera más opciones, lo que produce texto más diverso.
-- **Valor por defecto**: 0.9
+#### Top P (Muestreo por núcleo)
+Controla la diversidad del vocabulario evaluando las palabras más probables que acumulan este porcentaje (0.05 a 1.0).
 
-### Tokens máximos (Max Tokens)
+#### Tokens máximos (Max Tokens)
+Define la longitud máxima de la respuesta generada (256 a 8192 tokens).
 
-Define la longitud máxima de la respuesta. Un "token" es aproximadamente una palabra o parte de una palabra.
+#### Penalización de frecuencia (Frequency Penalty)
+Reduce la repetición literal de palabras ya empleadas en la respuesta (-2.0 a 2.0).
 
-- **Valor bajo** (por ejemplo 256): Respuestas cortas y directas.
-- **Valor alto** (por ejemplo 4096): Respuestas largas y detalladas.
-- **Valor por defecto**: 2048 (respuestas de longitud moderada).
-
-### Penalización de frecuencia (Frequency Penalty)
-
-Reduce la repetición de palabras que el modelo ya usó mucho en su respuesta.
-
-- **Valor 0**: Sin penalización, el modelo puede repetir palabras libremente.
-- **Valor positivo**: Evita repeticiones.
-- **Valor por defecto**: 0
-
-### Penalización de presencia (Presence Penalty)
-
-Anima al modelo a hablar de temas nuevos en lugar de repetir los mismos.
-
-- **Valor 0**: Sin efecto.
-- **Valor positivo**: El modelo intentará cubrir más temas diferentes.
-- **Valor por defecto**: 0
+#### Penalización de presencia (Presence Penalty)
+Incentiva al modelo a introducir nuevos temas y conceptos en lugar de centrarse en los ya expuestos (-2.0 a 2.0).
 
 ### Restablecer valores
 
-Si experimentaste con los parámetros y quieres volver a la configuración original, haz clic en **"Restablecer valores por defecto"**. Esto solo afecta los parámetros del modelo, no la URL ni el nombre del modelo.
+Si experimentaste con los parámetros y quieres volver a la configuración original, haz clic en **"Restablecer valores por defecto"**.
+
+---
+
+## Asistencia de IA en tus notas
+
+Además de la configuración general, puedes usar la IA directamente mientras escribes:
+
+### 1. Asistente flotante por bloques
+Al pasar el cursor sobre cualquier párrafo o bloque en el editor, verás el botón de asistente de IA para solicitar mejoras de redacción, síntesis o continuación del texto.
+
+### 2. Generación automática de descripción breve
+En la ventana de **Metadatos e instrucciones de IA** (ícono 📖 en el editor), puedes pulsar **"Generar con IA"** para que el modelo redacte una síntesis precisa de tu nota para mostrar en las tarjetas del explorador y la pantalla de inicio.
+
+### 3. Instrucciones específicas por documento
+Puedes darle indicaciones exclusivas a cada nota (por ejemplo, definir un tono periodístico, técnico o humorístico) que tendrán prioridad sobre las instrucciones globales del sistema.
 
 ---
 

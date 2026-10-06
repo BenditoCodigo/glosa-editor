@@ -221,6 +221,76 @@ function handleMaxTokensInput(event: Event) {
     settingsStore.updateAIModelParameters({ maxTokens: clamp(raw, 256, 8192) })
   }
 }
+
+const samplingBehavior = computed(() => {
+  const t = ai.value.modelParameters.temperature
+  const p = ai.value.modelParameters.topP
+
+  if (t >= 1.4) {
+    return {
+      title: 'Comportamiento experimental / caótico',
+      description:
+        'Temperatura muy alta. Las respuestas serán sumamente impredecibles, abstractas o divergentes, y pueden presentar alucinaciones o incoherencias.',
+      badge: 'Muy creativo',
+      icon: 'bolt',
+      style:
+        'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30',
+    }
+  }
+  if (t <= 0.3 && p <= 0.5) {
+    return {
+      title: 'Comportamiento determinista y fáctico',
+      description:
+        'Máxima precisión y coherencia lógica. Ideal para corrección ortográfica, clasificación, extracción estructurada de datos y síntesis rigurosa.',
+      badge: 'Preciso',
+      icon: 'verified',
+      style:
+        'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 dark:border-blue-500/30',
+    }
+  }
+  if (t <= 0.3) {
+    return {
+      title: 'Comportamiento enfocado y conservador',
+      description:
+        'Respuestas predecibles y directas. El modelo elegirá las palabras y construcciones más lógicas y estándar.',
+      badge: 'Enfocado',
+      icon: 'psychology',
+      style:
+        'bg-primary/10 text-primary border-primary/20 dark:border-primary-fixed-dim/30 dark:text-primary-fixed-dim',
+    }
+  }
+  if (t >= 0.8 && p >= 0.7) {
+    return {
+      title: 'Comportamiento creativo y variado',
+      description:
+        'Fomenta vocabulario amplio e ideas novedosas. Excelente para lluvia de ideas, redacción de ficción, metáforas y desarrollo de conceptos.',
+      badge: 'Creativo',
+      icon: 'auto_awesome',
+      style:
+        'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 dark:border-purple-500/30',
+    }
+  }
+  if (t >= 0.8 && p <= 0.5) {
+    return {
+      title: 'Comportamiento variado pero acotado',
+      description:
+        'Temperatura alta con vocabulario restringido por Top P. Proporciona giros expresivos interesantes sin desviarse del tema central.',
+      badge: 'Variado acotado',
+      icon: 'tune',
+      style:
+        'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 dark:border-indigo-500/30',
+    }
+  }
+  return {
+    title: 'Comportamiento equilibrado',
+    description:
+      'Balance óptimo entre coherencia fáctica y fluidez narrativa natural. Recomendado para edición de notas, resúmenes y redacción general.',
+    badge: 'Equilibrado',
+    icon: 'balance',
+    style:
+      'bg-primary/10 text-primary border-primary/20 dark:border-primary-fixed-dim/30 dark:text-primary-fixed-dim',
+  }
+})
 </script>
 
 <template>
@@ -716,7 +786,30 @@ function handleMaxTokensInput(event: Event) {
                     <div class="h-px flex-1 bg-outline-variant/20"></div>
                   </div>
 
-                  <div class="space-y-5">
+                  <div class="space-y-6">
+                    <!-- Dynamic sampling behavior summary card -->
+                    <div
+                      class="p-4 rounded-xl border transition-all duration-300 flex flex-col gap-1.5"
+                      :class="samplingBehavior.style"
+                    >
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                          <UiIcon :name="samplingBehavior.icon" size="sm" />
+                          <span class="text-xs font-semibold uppercase tracking-wider">
+                            {{ samplingBehavior.title }}
+                          </span>
+                        </div>
+                        <span
+                          class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-current/10"
+                        >
+                          {{ samplingBehavior.badge }}
+                        </span>
+                      </div>
+                      <p class="text-xs opacity-90 leading-relaxed">
+                        {{ samplingBehavior.description }}
+                      </p>
+                    </div>
+
                     <!-- Temperature -->
                     <div>
                       <div class="flex items-center justify-between mb-1.5">
@@ -734,6 +827,11 @@ function handleMaxTokensInput(event: Event) {
                         class="w-full accent-primary"
                         @input="handleSliderInput('temperature', $event)"
                       />
+                      <p class="mt-1 text-xs text-secondary/60">
+                        Controla la aleatoriedad y creatividad. Valores bajos (0.0 - 0.3) son más
+                        precisos y predecibles; valores altos (0.7 - 1.5+) fomentan mayor variedad e
+                        imaginación.
+                      </p>
                     </div>
 
                     <!-- Top P -->
@@ -753,6 +851,11 @@ function handleMaxTokensInput(event: Event) {
                         class="w-full accent-primary"
                         @input="handleSliderInput('topP', $event)"
                       />
+                      <p class="mt-1 text-xs text-secondary/60">
+                        Muestreo por núcleo (Nucleus Sampling). Limita la selección a las palabras
+                        cuya probabilidad acumulada alcance este valor. 1.0 evalúa todo el
+                        vocabulario; 0.1 evalúa solo las más probables.
+                      </p>
                     </div>
 
                     <!-- Max Tokens -->
@@ -771,6 +874,10 @@ function handleMaxTokensInput(event: Event) {
                         class="glass-input w-full px-4 py-2 rounded-xl text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/40"
                         @change="handleMaxTokensInput"
                       />
+                      <p class="mt-1.5 text-xs text-secondary/60">
+                        Límite máximo de tokens (palabras o fragmentos) que el modelo generará en
+                        cada respuesta.
+                      </p>
                     </div>
 
                     <!-- Frequency Penalty -->
@@ -790,6 +897,10 @@ function handleMaxTokensInput(event: Event) {
                         class="w-full accent-primary"
                         @input="handleSliderInput('frequencyPenalty', $event)"
                       />
+                      <p class="mt-1 text-xs text-secondary/60">
+                        Penaliza palabras según su frecuencia de aparición previa. Valores positivos
+                        reducen la repetición literal de las mismas palabras.
+                      </p>
                     </div>
 
                     <!-- Presence Penalty -->
@@ -809,6 +920,10 @@ function handleMaxTokensInput(event: Event) {
                         class="w-full accent-primary"
                         @input="handleSliderInput('presencePenalty', $event)"
                       />
+                      <p class="mt-1 text-xs text-secondary/60">
+                        Penaliza palabras que ya hayan aparecido al menos una vez, incentivando al
+                        modelo a incorporar vocabulario y conceptos novedosos.
+                      </p>
                     </div>
                   </div>
 
