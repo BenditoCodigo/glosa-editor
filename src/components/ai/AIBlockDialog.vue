@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import type { useAIBlockAssistant } from '@/composables/useAIBlockAssistant'
+import { renderMarkdown } from '@/utils/markdown'
 
 interface Props {
   assistant: ReturnType<typeof useAIBlockAssistant>
@@ -23,6 +24,8 @@ const blockSnippet = computed(() => {
   if (!raw) return ''
   return raw.length > 90 ? `${raw.slice(0, 90)}…` : raw
 })
+
+const renderedResponse = computed(() => renderMarkdown(assistant.response.value))
 
 function updatePosition() {
   if (!assistant.isOpen.value) return
@@ -340,13 +343,12 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <!-- Generated Markdown / Text Response with Top-right Copy Action -->
+            <!-- Generated Formatted Markdown Response with Top-right Copy Action -->
             <div
               v-if="assistant.response.value"
               class="
                 relative group
-                text-xs sm:text-sm text-on-surface/90 leading-relaxed
-                whitespace-pre-wrap select-text cursor-text
+                select-text cursor-text
                 bg-black/5 dark:bg-white/5 rounded-xl p-3.5
                 border border-outline-variant/20
               "
@@ -355,24 +357,25 @@ onBeforeUnmount(() => {
               <button
                 type="button"
                 class="
-                  absolute top-2.5 right-2.5
+                  absolute top-2.5 right-2.5 z-10
                   inline-flex items-center gap-1
                   px-2 py-1 rounded-md text-[11px] font-medium
-                  bg-surface/80 dark:bg-surface-container/80
+                  bg-surface/90 dark:bg-surface-container/90
                   border border-outline-variant/40
                   text-secondary hover:text-on-surface hover:bg-surface
                   transition-all duration-150 cursor-pointer shadow-xs
                 "
-                :title="copied ? 'Copiado al portapapeles' : 'Copiar respuesta'"
+                :title="copied ? 'Copiado al portapapeles' : 'Copiar respuesta (Markdown)'"
                 @click="copyResponse"
               >
                 <UiIcon :name="copied ? 'check' : 'content_copy'" size="sm" class="text-[13px]" :class="copied && 'text-green-600 dark:text-green-400'" />
                 <span :class="copied && 'text-green-600 dark:text-green-400 font-semibold'">{{ copied ? 'Copiado' : 'Copiar' }}</span>
               </button>
 
-              <div class="pr-16">
-                {{ assistant.response.value }}
-              </div>
+              <div
+                class="ai-formatted-content text-xs sm:text-sm text-on-surface leading-relaxed pr-16"
+                v-html="renderedResponse"
+              />
             </div>
 
             <!-- Response Actions Footer -->
