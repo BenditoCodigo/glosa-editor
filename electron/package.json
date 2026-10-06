@@ -1,7 +1,8 @@
 {
   "name": "app-electron",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "author": "Bendito Código",
   "description": "Electron platform project for App.",
   "main": "build/main.js",
   "scripts": {

@@ -9,6 +9,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import MigrationModal from '@/components/ui/MigrationModal.vue'
+import { openExternalUrl } from '@/utils/openUrl'
 import type { ThemeMode, StorageProvider } from '@/types'
 import { DEFAULT_SYSTEM_PROMPT } from '@/types'
 
@@ -1223,13 +1224,24 @@ const samplingBehavior = computed(() => {
                 </div>
                 <div>
                   <span class="font-display text-base font-semibold text-on-surface">Glosa</span>
-                  <span class="ml-2 text-xs text-secondary/60">v0.1.0</span>
+                  <span class="ml-2 text-xs text-secondary/60">v1.0.0</span>
                 </div>
               </div>
               <p class="text-sm text-secondary">
                 Plataforma personal de notas en markdown. Privada, local, tuya.
               </p>
-              <p class="text-xs text-secondary/60">Hecho con 💚 por Bendito Código</p>
+              <p class="text-xs text-secondary/60">
+                Redactado con propósito 💚 por
+                <a
+                  href="https://benditocodigo.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-primary hover:underline font-medium"
+                  @click.prevent="openExternalUrl('https://benditocodigo.com')"
+                >
+                  Bendito Código
+                </a>
+              </p>
             </div>
           </div>
         </section>
