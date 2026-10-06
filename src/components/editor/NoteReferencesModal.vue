@@ -377,7 +377,7 @@ function handleKeydown(event: KeyboardEvent) {
                   variant="outline"
                   size="sm"
                   :disabled="isGeneratingDescription"
-                  class="h-7 text-xs px-2.5 py-0 rounded-lg gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                  class="h-7 text-xs px-2.5 py-0 rounded-lg gap-1"
                   @click="generateDescriptionWithAI"
                 >
                   <template #icon-left>

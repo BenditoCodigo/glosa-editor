@@ -713,19 +713,22 @@ const samplingBehavior = computed(() => {
 
                 <!-- Connection test -->
                 <div class="flex items-center gap-3 pt-2">
-                  <button
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    type="button"
+                  <UiButton
+                    variant="outline"
+                    size="sm"
                     :disabled="!canTestConnection || isTestingConnection"
+                    class="rounded-xl px-4 py-2 text-sm font-medium"
                     @click="handleTestConnection"
                   >
-                    <UiIcon v-if="!isTestingConnection" name="power" size="sm" />
-                    <span
-                      v-else
-                      class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
-                    />
-                    <span>{{ isTestingConnection ? 'Probando...' : 'Probar conexión' }}</span>
-                  </button>
+                    <template #icon-left>
+                      <UiIcon v-if="!isTestingConnection" name="power" size="sm" />
+                      <span
+                        v-else
+                        class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                      />
+                    </template>
+                    {{ isTestingConnection ? 'Probando...' : 'Probar conexión' }}
+                  </UiButton>
 
                   <!-- Success indicator -->
                   <Transition name="fade">
