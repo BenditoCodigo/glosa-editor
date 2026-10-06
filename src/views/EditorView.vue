@@ -768,6 +768,27 @@ onUnmounted(() => {
               @click="save"
             />
 
+            <!-- Glosas del manuscrito button -->
+            <div class="relative">
+              <UiIconButton
+                icon="rate_review"
+                ariaLabel="Glosas del manuscrito"
+                tooltip="Glosas del manuscrito"
+                size="sm"
+                :class="[
+                  showAnnotationsDrawer && 'bg-primary/20 text-primary',
+                  annotations.length > 0 && !showAnnotationsDrawer && 'text-primary',
+                ]"
+                @click="showAnnotationsDrawer = !showAnnotationsDrawer"
+              />
+              <span
+                v-if="annotations.length > 0"
+                class="absolute -top-1 -right-1 px-1 min-w-[14px] h-3.5 rounded-full text-[9px] font-bold bg-primary text-on-primary flex items-center justify-center leading-none pointer-events-none shadow-xs"
+              >
+                {{ annotations.length }}
+              </span>
+            </div>
+
             <!-- Fuentes e instrucciones button -->
             <UiIconButton
               icon="menu_book"
