@@ -73,11 +73,18 @@ export function buildAIBlockPrompt(params: {
   const fullDocSection = context.fullContent?.trim()
     ? `\n\n[DOCUMENTO COMPLETO (CONTEXTO GENERAL DE LA NOTA)]\n"""\n${context.fullContent.trim()}\n"""`
     : ''
+  const aiInstructionsSection = context.aiInstructions?.trim()
+    ? `\n\n[INSTRUCCIONES ESPECÍFICAS / ROL Y CRITERIO A SEGUIR PARA ESTA NOTA (MÁXIMA PRIORIDAD)]\n"""\n${context.aiInstructions.trim()}\n"""`
+    : ''
+
+  const instructionsRule = context.aiInstructions?.trim()
+    ? `\n- PRIORIDAD ABSOLUTA: Asume rigurosamente la personalidad, rol, criterio y directrices definidas en [INSTRUCCIONES ESPECÍFICAS / ROL Y CRITERIO A SEGUIR PARA ESTA NOTA]. Toda tu respuesta debe construirse desde esa perspectiva y tono.`
+    : ''
 
   return `[INFORMACIÓN DE LA NOTA]
 - Título: ${context.title || 'Sin título'}
 - Ubicación / Carpeta: ${folderName}
-- Etiquetas: ${tagList}${context.updatedAt ? `\n- Última modificación: ${context.updatedAt}` : ''}${sourcesSection}${fullDocSection}
+- Etiquetas: ${tagList}${context.updatedAt ? `\n- Última modificación: ${context.updatedAt}` : ''}${sourcesSection}${fullDocSection}${aiInstructionsSection}
 
 [BLOQUE O FRAGMENTO SELECCIONADO]
 """
@@ -87,7 +94,7 @@ ${blockContent.trim()}
 [CONSULTA DEL USUARIO]
 ${userQuery.trim()}
 
-[INSTRUCCIONES IMPORTANTES]
+[INSTRUCCIONES IMPORTANTES]${instructionsRule}
 - Responde de forma directa, útil, precisa y natural a la [CONSULTA DEL USUARIO], tomando en cuenta el [BLOQUE O FRAGMENTO SELECCIONADO] y el contexto de la nota.
 - Si el usuario hace una pregunta puntual, saludo o petición libre, respóndele directamente lo que solicita sin forzar análisis o críticas no pedidas.
 - Si la consulta solicita análisis, dudas o verificación, aporta observaciones constructivas y fundamentadas.

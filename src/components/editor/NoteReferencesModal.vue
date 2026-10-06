@@ -196,13 +196,15 @@ async function generateDescriptionWithAI() {
       .replace(/\s+/g, ' ')
       .trim()
 
+    const editorialTask =
+      'Genera una descripción breve, concisa y atractiva (máximo 140 caracteres, 1 o 2 oraciones) que resuma la nota para mostrarse en tarjetas de vista previa. Responde ÚNICAMENTE con el texto de la descripción, en español neutro, sin introducciones, sin comillas y sin markdown.'
+
+    const systemPromptContent = localInstructions.value.trim()
+      ? `${localInstructions.value.trim()}\n\n[INSTRUCCIÓN EDITORIAL]\n${editorialTask}`
+      : `Eres un asistente editorial. ${editorialTask}`
+
     const response = await chat(
       [
-        {
-          role: 'system',
-          content:
-            'Eres un asistente editorial. Tu tarea es generar una descripción breve, concisa y atractiva (máximo 140 caracteres, 1 o 2 oraciones) que resuma la nota para mostrarse en tarjetas de vista previa. Responde ÚNICAMENTE con el texto de la descripción, en español neutro, sin introducciones, sin comillas y sin markdown.',
-        },
         {
           role: 'user',
           content:
@@ -213,7 +215,7 @@ async function generateDescriptionWithAI() {
         },
       ],
       {
-        systemPrompt: localInstructions.value.trim() || undefined,
+        systemPrompt: systemPromptContent,
         temperature: customSampling.value ? localTemperature.value : undefined,
         topP: customSampling.value ? localTopP.value : undefined,
       },

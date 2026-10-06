@@ -206,7 +206,8 @@ function buildHeaders(ai: AISettings): Record<string, string> {
 
 function prependSystemPrompt(systemPrompt: string, messages: ChatMessage[]): ChatMessage[] {
   const prompt = systemPrompt.trim() || DEFAULT_SYSTEM_PROMPT
-  return [{ role: 'system', content: prompt }, ...messages]
+  const nonSystemMessages = messages.filter((m) => m.role !== 'system')
+  return [{ role: 'system', content: prompt }, ...nonSystemMessages]
 }
 
 function mergeParameters(defaults: AIModelParameters, overrides?: ChatOptions): AIModelParameters {
