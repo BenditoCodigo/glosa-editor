@@ -208,5 +208,38 @@ describe('useAIBlockAssistant', () => {
         'Instrucciones específicas de este documento: actúa como fact-checker estricto.',
       )
     })
+
+    it('passes document-level temperature and topP overrides to chatStream', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.settings.ai.enabled = true
+      settingsStore.settings.ai.baseUrl = 'http://localhost:11434/v1'
+      settingsStore.settings.ai.model = 'llama3.1:8b'
+      settingsStore.settings.ai.modelParameters.temperature = 0.7
+      settingsStore.settings.ai.modelParameters.topP = 0.9
+
+      const chatStreamSpy = vi
+        .spyOn(aiService, 'chatStream')
+        .mockImplementation(async function* () {
+          yield 'Respuesta'
+        })
+
+      const assistant = useAIBlockAssistant()
+      assistant.openAssistant({
+        index: 0,
+        content: 'Bloque con parámetros personalizados.',
+        context: {
+          title: 'Documento creativo',
+          temperature: 1.5,
+          topP: 0.95,
+        },
+      })
+
+      await assistant.ask('Generar ideas')
+
+      expect(chatStreamSpy).toHaveBeenCalled()
+      const options = chatStreamSpy.mock.calls[0]![1]
+      expect(options?.temperature).toBe(1.5)
+      expect(options?.topP).toBe(0.95)
+    })
   })
 })

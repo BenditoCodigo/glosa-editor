@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useSettingsStore } from '@/stores/settings'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
@@ -12,14 +13,26 @@ interface Props {
   description?: string
   noteTitle?: string
   noteContent?: string
+  temperature?: number
+  topP?: number
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  save: [payload: { description: string; sources: string[]; aiInstructions: string }]
+  save: [
+    payload: {
+      description: string
+      sources: string[]
+      aiInstructions: string
+      temperature?: number
+      topP?: number
+    },
+  ]
   cancel: []
 }>()
+
+const settingsStore = useSettingsStore()
 
 const localSources = ref<string[]>([])
 const localInstructions = ref('')
@@ -29,6 +42,12 @@ const urlInputRef = ref<HTMLInputElement | null>(null)
 const urlError = ref<string | null>(null)
 const aiError = ref<string | null>(null)
 const isGeneratingDescription = ref(false)
+
+// Advanced sampling parameters
+const showAdvancedSampling = ref(false)
+const customSampling = ref(false)
+const localTemperature = ref(0.7)
+const localTopP = ref(0.9)
 
 // Session undo/redo history for description
 const descriptionHistory = ref<string[]>([])
@@ -78,6 +97,86 @@ function handleDescriptionKeydown(event: KeyboardEvent) {
   }
 }
 
+const samplingBehavior = computed(() => {
+  const t = localTemperature.value
+  const p = localTopP.value
+
+  if (t >= 1.4) {
+    return {
+      title: 'Comportamiento experimental / caótico',
+      description:
+        'Temperatura muy alta. Las respuestas serán sumamente impredecibles, abstractas o divergentes, y pueden presentar alucinaciones o incoherencias.',
+      badge: 'Muy creativo',
+      icon: 'bolt',
+      style:
+        'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30',
+    }
+  }
+  if (t <= 0.3 && p <= 0.5) {
+    return {
+      title: 'Comportamiento determinista y fáctico',
+      description:
+        'Máxima precisión y coherencia lógica. Ideal para corrección ortográfica, clasificación, extracción estructurada de datos y síntesis rigurosa.',
+      badge: 'Preciso',
+      icon: 'verified',
+      style:
+        'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 dark:border-blue-500/30',
+    }
+  }
+  if (t <= 0.3) {
+    return {
+      title: 'Comportamiento enfocado y conservador',
+      description:
+        'Respuestas predecibles y directas. El modelo elegirá las palabras y construcciones más lógicas y estándar.',
+      badge: 'Enfocado',
+      icon: 'psychology',
+      style:
+        'bg-primary/10 text-primary border-primary/20 dark:border-primary-fixed-dim/30 dark:text-primary-fixed-dim',
+    }
+  }
+  if (t >= 0.8 && p >= 0.7) {
+    return {
+      title: 'Comportamiento creativo y variado',
+      description:
+        'Fomenta vocabulario amplio e ideas novedosas. Excelente para lluvia de ideas, redacción de ficción, metáforas y desarrollo de conceptos.',
+      badge: 'Creativo',
+      icon: 'auto_awesome',
+      style:
+        'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 dark:border-purple-500/30',
+    }
+  }
+  if (t >= 0.8 && p <= 0.5) {
+    return {
+      title: 'Comportamiento variado pero acotado',
+      description:
+        'Temperatura alta con vocabulario restringido por Top P. Proporciona giros expresivos interesantes sin desviarse del tema central.',
+      badge: 'Variado acotado',
+      icon: 'tune',
+      style:
+        'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 dark:border-indigo-500/30',
+    }
+  }
+  return {
+    title: 'Comportamiento equilibrado',
+    description:
+      'Balance óptimo entre coherencia fáctica y fluidez narrativa natural. Recomendado para edición de notas, resúmenes y redacción general.',
+    badge: 'Equilibrado',
+    icon: 'balance',
+    style:
+      'bg-primary/10 text-primary border-primary/20 dark:border-primary-fixed-dim/30 dark:text-primary-fixed-dim',
+  }
+})
+
+function enableCustomSampling() {
+  customSampling.value = true
+}
+
+function resetToGlobalSampling() {
+  customSampling.value = false
+  localTemperature.value = settingsStore.settings.ai.modelParameters.temperature
+  localTopP.value = settingsStore.settings.ai.modelParameters.topP
+}
+
 async function generateDescriptionWithAI() {
   if (!isAiAvailable.value || isGeneratingDescription.value) return
   isGeneratingDescription.value = true
@@ -90,21 +189,28 @@ async function generateDescriptionWithAI() {
       .replace(/\s+/g, ' ')
       .trim()
 
-    const response = await chat([
+    const response = await chat(
+      [
+        {
+          role: 'system',
+          content:
+            'Eres un asistente editorial. Tu tarea es generar una descripción breve, concisa y atractiva (máximo 140 caracteres, 1 o 2 oraciones) que resuma la nota para mostrarse en tarjetas de vista previa. Responde ÚNICAMENTE con el texto de la descripción, en español neutro, sin introducciones, sin comillas y sin markdown.',
+        },
+        {
+          role: 'user',
+          content:
+            `Título: ${props.noteTitle || 'Sin título'}\n\nContenido:\n${cleanContent || 'Nota vacía'}`.slice(
+              0,
+              4000,
+            ),
+        },
+      ],
       {
-        role: 'system',
-        content:
-          'Eres un asistente editorial. Tu tarea es generar una descripción breve, concisa y atractiva (máximo 140 caracteres, 1 o 2 oraciones) que resuma la nota para mostrarse en tarjetas de vista previa. Responde ÚNICAMENTE con el texto de la descripción, en español neutro, sin introducciones, sin comillas y sin markdown.',
+        systemPrompt: localInstructions.value.trim() || undefined,
+        temperature: customSampling.value ? localTemperature.value : undefined,
+        topP: customSampling.value ? localTopP.value : undefined,
       },
-      {
-        role: 'user',
-        content:
-          `Título: ${props.noteTitle || 'Sin título'}\n\nContenido:\n${cleanContent || 'Nota vacía'}`.slice(
-            0,
-            4000,
-          ),
-      },
-    ])
+    )
 
     let cleanDesc = response.content.trim()
     cleanDesc = cleanDesc.replace(/^["'«“](.*)["'»”]$/s, '$1').trim()
@@ -132,6 +238,20 @@ watch(
       newSourceUrl.value = ''
       urlError.value = null
       aiError.value = null
+
+      if (props.temperature !== undefined || props.topP !== undefined) {
+        customSampling.value = true
+        localTemperature.value =
+          props.temperature ?? settingsStore.settings.ai.modelParameters.temperature
+        localTopP.value = props.topP ?? settingsStore.settings.ai.modelParameters.topP
+        showAdvancedSampling.value = true
+      } else {
+        customSampling.value = false
+        localTemperature.value = settingsStore.settings.ai.modelParameters.temperature
+        localTopP.value = settingsStore.settings.ai.modelParameters.topP
+        showAdvancedSampling.value = false
+      }
+
       nextTick(() => {
         urlInputRef.value?.focus()
       })
@@ -168,6 +288,8 @@ function handleSave() {
     description: localDescription.value.trim(),
     sources: [...localSources.value],
     aiInstructions: localInstructions.value.trim(),
+    temperature: customSampling.value ? localTemperature.value : undefined,
+    topP: customSampling.value ? localTopP.value : undefined,
   })
 }
 
@@ -396,6 +518,134 @@ function handleKeydown(event: KeyboardEvent) {
               placeholder="Ej: Eres un editor de investigación periodística. Verifica rigurosamente las afirmaciones, contrasta datos con las fuentes listadas y señala cualquier discrepancia de fechas o nombres..."
               class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none leading-relaxed"
             />
+          </div>
+
+          <!-- Section 4: Expand de Configuración Avanzada de IA -->
+          <div class="flex flex-col gap-3 pt-1 border-t border-outline/10">
+            <button
+              type="button"
+              class="flex items-center justify-between gap-2 w-full text-left group py-1.5"
+              @click="showAdvancedSampling = !showAdvancedSampling"
+            >
+              <div class="flex items-center gap-2">
+                <UiIcon
+                  name="chevron_right"
+                  size="sm"
+                  class="text-secondary/70 transition-transform duration-200"
+                  :class="showAdvancedSampling && 'rotate-90'"
+                />
+                <span
+                  class="text-xs font-semibold uppercase tracking-wider text-on-surface/90 group-hover:text-primary transition-colors flex items-center gap-1.5"
+                >
+                  <UiIcon name="tune" size="sm" class="text-primary text-[16px]" />
+                  Configuración avanzada de IA
+                </span>
+              </div>
+
+              <span
+                v-if="customSampling"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/15 text-primary"
+              >
+                Personalizada
+              </span>
+              <span v-else class="text-[11px] text-secondary/60"> Valores globales </span>
+            </button>
+
+            <!-- Collapsible parameters -->
+            <Transition name="fade-up">
+              <div v-if="showAdvancedSampling" class="flex flex-col gap-4 pl-1 sm:pl-2">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-[11px] text-secondary leading-relaxed">
+                    Ajusta la temperatura y el muestreo exclusivo para este documento. Tendrá
+                    prioridad sobre los ajustes generales de Glosa.
+                  </p>
+
+                  <button
+                    v-if="customSampling"
+                    type="button"
+                    class="text-[11px] font-medium text-secondary hover:text-error transition-colors shrink-0"
+                    @click="resetToGlobalSampling"
+                  >
+                    Restablecer a global
+                  </button>
+                  <button
+                    v-else
+                    type="button"
+                    class="text-[11px] font-medium text-primary hover:underline shrink-0"
+                    @click="enableCustomSampling"
+                  >
+                    Personalizar para esta nota
+                  </button>
+                </div>
+
+                <div v-if="customSampling" class="space-y-4">
+                  <!-- Dynamic sampling behavior summary card -->
+                  <div
+                    class="p-3.5 rounded-xl border transition-all duration-300 flex flex-col gap-1"
+                    :class="samplingBehavior.style"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-1.5">
+                        <UiIcon :name="samplingBehavior.icon" size="sm" />
+                        <span class="text-xs font-semibold uppercase tracking-wider">
+                          {{ samplingBehavior.title }}
+                        </span>
+                      </div>
+                      <span
+                        class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-current/10"
+                      >
+                        {{ samplingBehavior.badge }}
+                      </span>
+                    </div>
+                    <p class="text-xs opacity-90 leading-relaxed">
+                      {{ samplingBehavior.description }}
+                    </p>
+                  </div>
+
+                  <!-- Temperature slider -->
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-xs font-medium text-secondary">Temperature</label>
+                      <span class="text-xs font-mono text-on-surface">{{
+                        localTemperature.toFixed(1)
+                      }}</span>
+                    </div>
+                    <input
+                      v-model.number="localTemperature"
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      class="w-full accent-primary"
+                    />
+                    <p class="mt-1 text-[11px] text-secondary/60">
+                      0.0 - 0.3: Preciso y factual · 0.7: Equilibrado · 1.0+: Creativo y variado.
+                    </p>
+                  </div>
+
+                  <!-- Top P slider -->
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-xs font-medium text-secondary">Top P</label>
+                      <span class="text-xs font-mono text-on-surface">{{
+                        localTopP.toFixed(2)
+                      }}</span>
+                    </div>
+                    <input
+                      v-model.number="localTopP"
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      class="w-full accent-primary"
+                    />
+                    <p class="mt-1 text-[11px] text-secondary/60">
+                      Muestreo por núcleo. Limita las opciones a las palabras más probables.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Transition>
           </div>
 
           <!-- Actions -->

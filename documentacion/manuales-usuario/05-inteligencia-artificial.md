@@ -149,6 +149,9 @@ En la ventana de **Metadatos e instrucciones de IA** (ícono 📖 en el editor),
 ### 3. Instrucciones específicas por documento
 Puedes darle indicaciones exclusivas a cada nota (por ejemplo, definir un tono periodístico, técnico o humorístico) que tendrán prioridad sobre las instrucciones globales del sistema.
 
+### 4. Parámetros avanzados por documento (Temperatura y Top P)
+En el desplegable de configuración avanzada de la nota, puedes sobreescribir la temperatura y Top P globales con su propio diagnóstico de comportamiento esperado. Se almacenan en la cabecera `.md` de la nota y tienen prioridad sobre la configuración general.
+
 ---
 
 ## Instrucciones del sistema

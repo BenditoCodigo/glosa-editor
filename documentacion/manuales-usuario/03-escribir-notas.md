@@ -62,6 +62,9 @@ Puedes añadir enlaces a artículos, documentos o sitios web que sirvan de suste
 ### 3. Instrucciones específicas de IA
 Permite definir un criterio editorial o de investigación exclusivo para este documento (por ejemplo: *"Verifica rigurosamente las fechas y contrasta con las fuentes"*). Estas instrucciones tienen **prioridad absoluta** sobre la configuración general del asistente.
 
+### 4. Configuración avanzada de IA
+Al desplegar esta sección puedes ajustar la **Temperatura** y **Top P** exclusivamente para esta nota, visualizando en tiempo real la tarjeta de comportamiento esperado. Estos valores se guardan en la cabecera de la nota y anulan la configuración general de Glosa para todas las consultas asociadas a este documento.
+
 ---
 
 ## Guardado automático

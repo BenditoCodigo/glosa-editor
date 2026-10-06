@@ -29,6 +29,8 @@ const _FIELD_ORDER: readonly string[] = [
   'description',
   'sources',
   'aiInstructions',
+  'temperature',
+  'topP',
 ]
 
 /** Characters that require quoting in YAML values */
@@ -139,6 +141,14 @@ export function frontmatterToNote(
       ? frontmatter.aiInstructions
       : undefined
 
+  const temperature =
+    typeof frontmatter.temperature === 'number' && !isNaN(frontmatter.temperature)
+      ? frontmatter.temperature
+      : undefined
+
+  const topP =
+    typeof frontmatter.topP === 'number' && !isNaN(frontmatter.topP) ? frontmatter.topP : undefined
+
   const note: Note = {
     id,
     title,
@@ -155,6 +165,8 @@ export function frontmatterToNote(
   if (description !== undefined) note.description = description
   if (sources !== undefined && sources.length > 0) note.sources = sources
   if (aiInstructions !== undefined) note.aiInstructions = aiInstructions
+  if (temperature !== undefined) note.temperature = temperature
+  if (topP !== undefined) note.topP = topP
 
   return note
 }
@@ -189,6 +201,12 @@ export function serializeNote(note: Note, extraFields?: Record<string, unknown>)
   }
   if (note.aiInstructions != null && note.aiInstructions.trim().length > 0) {
     lines.push(`aiInstructions: ${quoteYamlValue(note.aiInstructions)}`)
+  }
+  if (note.temperature != null && !isNaN(note.temperature)) {
+    lines.push(`temperature: ${note.temperature}`)
+  }
+  if (note.topP != null && !isNaN(note.topP)) {
+    lines.push(`topP: ${note.topP}`)
   }
 
   // Extra/unrecognized fields in alphabetical order

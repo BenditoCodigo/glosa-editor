@@ -513,6 +513,8 @@ export class FilesystemAdapter implements StorageAdapter {
       'description',
       'sources',
       'aiInstructions',
+      'temperature',
+      'topP',
     ])
     const extraFields: Record<string, unknown> = {}
     let hasExtra = false
@@ -582,6 +584,8 @@ export class FilesystemAdapter implements StorageAdapter {
       'description',
       'sources',
       'aiInstructions',
+      'temperature',
+      'topP',
     ])
     const extraFields: Record<string, unknown> = {}
     let hasExtra = false
@@ -852,6 +856,8 @@ export class FilesystemAdapter implements StorageAdapter {
       'description',
       'sources',
       'aiInstructions',
+      'temperature',
+      'topP',
     ])
     const extraFields: Record<string, unknown> = {}
     let hasExtra = false

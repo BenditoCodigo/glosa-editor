@@ -148,6 +148,41 @@ describe('NoteReferencesModal', () => {
     })
   })
 
+  it('allows configuring advanced sampling parameters (temperature and topP)', async () => {
+    const wrapper = mount(NoteReferencesModal, {
+      props: {
+        open: true,
+        sources: [],
+        aiInstructions: '',
+        description: '',
+        temperature: 0.2,
+        topP: 0.5,
+      },
+      global: {
+        stubs: {
+          Teleport: true,
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('Configuración avanzada de IA')
+    expect(wrapper.text()).toContain('Personalizada')
+    expect(wrapper.text()).toContain('Comportamiento determinista y fáctico')
+
+    const saveButton = wrapper.findAll('button').find((b) => b.text().includes('Guardar cambios'))
+    expect(saveButton).toBeDefined()
+    await saveButton?.trigger('click')
+
+    expect(wrapper.emitted('save')).toBeTruthy()
+    expect(wrapper.emitted('save')?.[0]?.[0]).toEqual({
+      description: '',
+      sources: [],
+      aiInstructions: '',
+      temperature: 0.2,
+      topP: 0.5,
+    })
+  })
+
   it('emits cancel on close button click', async () => {
     const wrapper = mount(NoteReferencesModal, {
       props: {

@@ -51,6 +51,8 @@ const emoji = ref<string | undefined>(undefined)
 const coverImage = ref<string | undefined>(undefined)
 const sources = ref<string[]>([])
 const aiInstructions = ref('')
+const temperature = ref<number | undefined>(undefined)
+const topP = ref<number | undefined>(undefined)
 const showReferencesModal = ref(false)
 const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const isLoading = ref(true)
@@ -126,6 +128,8 @@ watch(
       coverImage.value = note.coverImage
       sources.value = note.sources ? [...note.sources] : []
       aiInstructions.value = note.aiInstructions ?? ''
+      temperature.value = note.temperature
+      topP.value = note.topP
       trackActivity(note.id, 'note', 'open')
     } else {
       router.replace('/')
@@ -170,6 +174,8 @@ async function save() {
     coverImage: coverImage.value,
     sources: sources.value.length > 0 ? [...sources.value] : undefined,
     aiInstructions: aiInstructions.value.trim() || undefined,
+    temperature: temperature.value != null ? temperature.value : undefined,
+    topP: topP.value != null ? topP.value : undefined,
   })
 
   trackActivity(activeNote.value.id, 'note', 'save')
@@ -207,6 +213,8 @@ function handleAiBlockClick(payload: {
       fullContent: content.value,
       sources: [...sources.value],
       aiInstructions: aiInstructions.value,
+      temperature: temperature.value,
+      topP: topP.value,
     },
     getContent: () => editorRef.value?.getBlockContent(payload.index) || payload.content,
     getContext: () => ({
@@ -218,6 +226,8 @@ function handleAiBlockClick(payload: {
       fullContent: content.value,
       sources: [...sources.value],
       aiInstructions: aiInstructions.value,
+      temperature: temperature.value,
+      topP: topP.value,
     }),
   })
 }
@@ -226,10 +236,14 @@ function handleSaveReferences(payload: {
   description: string
   sources: string[]
   aiInstructions: string
+  temperature?: number
+  topP?: number
 }) {
   description.value = payload.description.trim() || undefined
   sources.value = payload.sources
   aiInstructions.value = payload.aiInstructions
+  temperature.value = payload.temperature
+  topP.value = payload.topP
   showReferencesModal.value = false
   scheduleAutosave()
 }
@@ -552,7 +566,9 @@ onUnmounted(() => {
               :class="
                 (sources.length > 0 ||
                   aiInstructions.trim().length > 0 ||
-                  (description && description.trim().length > 0)) &&
+                  (description && description.trim().length > 0) ||
+                  temperature !== undefined ||
+                  topP !== undefined) &&
                 'text-primary'
               "
               @click="showReferencesModal = true"
@@ -580,6 +596,8 @@ onUnmounted(() => {
     :description="description"
     :noteTitle="title"
     :noteContent="content"
+    :temperature="temperature"
+    :topP="topP"
     @save="handleSaveReferences"
     @cancel="showReferencesModal = false"
   />

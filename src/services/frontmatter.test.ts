@@ -548,5 +548,18 @@ describe('Frontmatter Parser', () => {
 
       expect(restored.description).toBe('Breve resumen de la nota para la tarjeta.')
     })
+
+    it('round-trip with temperature and topP', () => {
+      const original = makeNote({
+        temperature: 0.4,
+        topP: 0.85,
+      })
+      const serialized = serializeNote(original)
+      const parsed = parseMarkdownFile('test.md', serialized)
+      const restored = frontmatterToNote(parsed.frontmatter, parsed.body, null)
+
+      expect(restored.temperature).toBe(0.4)
+      expect(restored.topP).toBe(0.85)
+    })
   })
 })

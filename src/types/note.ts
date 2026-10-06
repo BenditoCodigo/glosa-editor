@@ -12,6 +12,8 @@ export interface Note {
   description?: string
   sources?: string[]
   aiInstructions?: string
+  temperature?: number
+  topP?: number
 }
 
 export interface NoteMetadata {

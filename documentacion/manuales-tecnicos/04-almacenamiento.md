@@ -71,6 +71,8 @@ coverImage: https://images.unsplash.com/photo-123...
 sources:
   - https://ejemplo.com/articulo-fuente
 aiInstructions: Eres un editor de investigación riguroso. Contrasta fuentes y fechas.
+temperature: 0.4
+topP: 0.85
 ---
 
 Contenido en markdown...
@@ -79,6 +81,7 @@ Contenido en markdown...
 - **`description`** — Resumen breve o sinopsis opcional. Si está presente, se visualiza en las tarjetas de la nota en el explorador e inicio.
 - **`coverImage`** — URL externa o imagen local codificada en Data URL (Base64) que se muestra como encabezado y fondo difuminado.
 - **`sources`** y **`aiInstructions`** — Lista de fuentes de consulta e instrucciones específicas para el asistente de IA con prioridad absoluta sobre las globales.
+- **`temperature`** y **`topP`** — Parámetros de inferencia de IA específicos para el documento. Tienen prioridad sobre la configuración general de Glosa.
 
 ### Nombres de archivo
 

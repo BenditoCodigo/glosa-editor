@@ -11,6 +11,8 @@ export interface AINoteContext {
   fullContent?: string
   sources?: string[]
   aiInstructions?: string
+  temperature?: number
+  topP?: number
 }
 
 export interface AIQuickAction {
@@ -232,6 +234,8 @@ export function useAIBlockAssistant() {
       const stream = chatStream(messages, {
         signal: abortController.signal,
         systemPrompt: liveContext.aiInstructions?.trim() || undefined,
+        temperature: liveContext.temperature,
+        topP: liveContext.topP,
       })
       isStreaming.value = true
       isLoading.value = false
