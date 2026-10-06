@@ -46,7 +46,7 @@ async function handleExport() {
     const folders: Folder[] = await db.folders.toArray()
     exportTotal.value = notes.length
 
-    const { mkdir, writeTextFile } = await import('@tauri-apps/plugin-fs')
+    const { mkdir, writeTextFile } = await import('@/services/platform')
     const { serializeNote } = await import('@/services/frontmatter')
     const { slugify, resolveFilename } = await import('@/services/slug')
 

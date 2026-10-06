@@ -18,7 +18,6 @@ export default defineConfigWithVueTs(
     '**/dist/**',
     '**/dist-ssr/**',
     '**/coverage/**',
-    '**/src-tauri/target/**',
     '**/electron/**',
     '**/packages/**/dist/**',
     '**/packages/**/electron/**',

@@ -17,10 +17,7 @@
     "cap:sync": "npm run build-only && npx cap sync @capawesome/capacitor-electron",
     "cap:dev": "npm run build-only && npx cap sync @capawesome/capacitor-electron && npx cap run @capawesome/capacitor-electron",
     "cap:build": "npm run build && npx cap sync @capawesome/capacitor-electron && cd electron && npm run pack",
-    "build:dmg": "npm run build && npx cap sync @capawesome/capacitor-electron && cd electron && npm run pack",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "build:dmg": "npm run build && npx cap sync @capawesome/capacitor-electron && cd electron && npm run pack"
   },
   "dependencies": {
     "@capacitor/browser": "^8.0.5",
@@ -30,9 +27,6 @@
     "@capawesome/capacitor-file-picker": "^8.1.0",
     "@glosa/desktop-plugin": "file:./packages/glosa-desktop",
     "@tailwindcss/vite": "^4.3.1",
-    "@tauri-apps/plugin-dialog": "^2.7.1",
-    "@tauri-apps/plugin-fs": "^2.5.1",
-    "@tauri-apps/plugin-opener": "^2.5.4",
     "@tiptap/extension-code-block-lowlight": "^3.27.0",
     "@tiptap/extension-image": "^3.27.0",
     "@tiptap/extension-link": "^3.27.0",
@@ -54,7 +48,6 @@
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.11.2",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.13.2",
     "@vitejs/plugin-vue": "^6.0.7",

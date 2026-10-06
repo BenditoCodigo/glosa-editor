@@ -55,34 +55,9 @@ jobs:
       - name: Run Unit Tests
         run: npm test
 
-  rust-check:
-    name: Rust Format & Clippy
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: ./src-tauri -> target
-
-      - name: Check Rust Formatting
-        run: cargo fmt --check
-        working-directory: ./src-tauri
-
-      - name: Run Clippy
-        run: cargo clippy -- -D warnings
-        working-directory: ./src-tauri
-
   build-macos:
-    name: Build macOS DMG (Tauri)
-    needs: [lint-and-typecheck, unit-tests, rust-check]
+    name: Build macOS DMG (Capacitor Electron)
+    needs: [lint-and-typecheck, unit-tests]
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -97,21 +72,13 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm ci
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: ./src-tauri -> target
-
-      - name: Build Tauri App & Bundle DMG
-        run: npm run tauri:build
+      - name: Build App & Bundle DMG
+        run: npm run build:dmg
 
       - name: Upload DMG Artifact
         uses: actions/upload-artifact@v4
         with:
           name: glosa-macos-dmg
-          path: src-tauri/target/release/bundle/dmg/*.dmg
+          path: electron/dist/*.dmg
           if-no-files-found: error
           retention-days: 14

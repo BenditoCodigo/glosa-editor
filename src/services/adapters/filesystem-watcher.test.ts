@@ -28,7 +28,6 @@ vi.mock('@/services/platform', () => ({
   exists: (...args: unknown[]) => mockExists(...args),
   rename: (...args: unknown[]) => mockRename(...args),
   isDesktop: () => true,
-  isTauri: () => true,
 }))
 
 describe('FilesystemAdapter - File Watching', () => {

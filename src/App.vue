@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
 import { seedIfEmpty, getAdapter } from '@/services/storage'
-import { isTauri } from '@/utils/tauri'
+import { isDesktop, exists } from '@/services/platform'
 import { FilesystemAdapter } from '@/services/adapters/filesystem'
 import DeviceGuard from '@/components/ui/DeviceGuard.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -41,19 +41,18 @@ watch(activeNote, (note) => {
 
 /**
  * On app launch, if filesystem provider is configured with a stored path:
- * - Verify the folder exists via plugin-fs
+ * - Verify the folder exists via platform service
  * - Activate the FilesystemAdapter
  * - Start the file watcher for external change detection
  * - If folder doesn't exist or init fails: fall back to IndexedDB with a warning
  */
 async function activateAdapterOnLaunch() {
   if (settingsStore.storageProvider !== 'filesystem' || !settingsStore.filesystemPath) return
-  if (!isTauri()) return
+  if (!isDesktop()) return
 
   const folderPath = settingsStore.filesystemPath
 
   try {
-    const { exists } = await import('@tauri-apps/plugin-fs')
     const folderExists = await exists(folderPath)
 
     if (!folderExists) {

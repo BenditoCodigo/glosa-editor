@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import type { AppSettings, UserProfile, EditorSettings, ThemeMode, StorageProvider, AISettings, AIModelParameters, AICustomHeader } from '@/types'
 import { DEFAULT_SETTINGS, DEFAULT_AI_SETTINGS, DEFAULT_AI_MODEL_PARAMETERS } from '@/types'
-import { isTauri } from '@/utils/tauri'
+import { isDesktop } from '@/services/platform'
 
 const STORAGE_KEY = 'glosa-settings'
 
@@ -58,16 +58,16 @@ export const useSettingsStore = defineStore('settings', () => {
     return aiConfig.enabled && aiConfig.baseUrl.trim() !== '' && aiConfig.model.trim() !== ''
   })
 
-  // Tauri detection — true only when running inside Tauri desktop app
-  const isFileSystemSupported = computed(() => isTauri())
+  // Desktop detection — true only when running inside desktop app
+  const isFileSystemSupported = computed(() => isDesktop())
 
   const userInitial = computed(() => {
     const name = settings.value.profile.username.trim()
     return name ? name.charAt(0).toUpperCase() : 'U'
   })
 
-  // Validate: if storageProvider is 'filesystem' but not in Tauri, fall back
-  if (settings.value.storageProvider === 'filesystem' && !isTauri()) {
+  // Validate: if storageProvider is 'filesystem' but not in desktop, fall back
+  if (settings.value.storageProvider === 'filesystem' && !isDesktop()) {
     settings.value.storageProvider = 'indexeddb'
     settings.value.filesystemPath = null
   }
@@ -171,14 +171,14 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Opens Tauri's native folder picker dialog, stores the selected path,
+   * Opens the native folder picker dialog, stores the selected path,
    * and determines whether a migration dialog is needed.
    *
    * Returns null if cancelled/failed, or a result object with the selected path
    * and whether migration is needed (first-time link with existing notes).
    */
   async function selectFilesystemFolder(): Promise<SelectFolderResult | null> {
-    if (!isTauri()) return null
+    if (!isDesktop()) return null
 
     const previousProvider = settings.value.storageProvider
     const previousPath = settings.value.filesystemPath

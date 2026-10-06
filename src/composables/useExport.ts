@@ -1,5 +1,4 @@
 import type { Note } from '@/types'
-import { isTauri } from '@/utils/tauri'
 
 /**
  * Generates a clean markdown string from a Note.
@@ -39,38 +38,21 @@ function getSlug(title: string): string {
 }
 
 /**
- * Saves a Note as a .md file using Tauri's native "Save As" dialog.
- * Falls back to browser download if not running in Tauri.
+ * Saves a Note as a .md file using browser download.
  */
 async function downloadAsMarkdown(note: Note) {
   const markdown = noteToMarkdown(note)
   const defaultName = `${getSlug(note.title)}.md`
 
-  if (isTauri()) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const { writeTextFile } = await import('@tauri-apps/plugin-fs')
-
-    const filePath = await save({
-      title: 'Guardar nota como Markdown',
-      defaultPath: defaultName,
-      filters: [{ name: 'Markdown', extensions: ['md'] }],
-    })
-
-    if (!filePath) return // User cancelled
-
-    await writeTextFile(filePath, markdown)
-  } else {
-    // Browser fallback
-    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = defaultName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = defaultName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 /**
