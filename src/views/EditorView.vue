@@ -298,6 +298,10 @@ function removeTag(index: number) {
   scheduleAutosave()
 }
 
+function navigateToTag(tag: string) {
+  router.push({ name: 'tag-view', params: { tag } })
+}
+
 function goBack() {
   if (activeNote.value?.folder) {
     router.push({ name: 'explorer-folder', params: { path: activeNote.value.folder } })
@@ -444,24 +448,32 @@ onUnmounted(() => {
 
               <!-- Tags -->
               <div class="flex flex-wrap items-center gap-2 flex-1">
-                <button
+                <div
                   v-for="(tag, index) in tags"
                   :key="tag"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/50 text-on-primary-fixed text-[11px] uppercase tracking-[0.1em] font-semibold hover:bg-primary-fixed transition-colors group"
-                  @click="removeTag(index)"
+                  role="button"
+                  tabindex="0"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary-fixed/50 text-on-primary-fixed text-[11px] uppercase tracking-[0.1em] font-semibold hover:bg-primary-fixed transition-colors cursor-pointer group select-none"
+                  title="Ver notas con esta etiqueta"
+                  @click="navigateToTag(tag)"
+                  @keydown.enter.prevent="navigateToTag(tag)"
                 >
-                  {{ tag }}
-                  <UiIcon
-                    name="close"
-                    size="sm"
-                    class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]"
-                  />
-                </button>
+                  <span>{{ tag }}</span>
+                  <button
+                    type="button"
+                    class="opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 transition-all p-0.5 -mr-1 rounded text-on-primary-fixed/70 hover:text-on-primary-fixed flex items-center justify-center"
+                    title="Eliminar etiqueta"
+                    aria-label="Eliminar etiqueta"
+                    @click.stop="removeTag(index)"
+                  >
+                    <UiIcon name="close" size="sm" class="text-[12px]" />
+                  </button>
+                </div>
                 <input
                   v-model="tagInput"
                   type="text"
                   placeholder="#"
-                  class="bg-transparent border-none p-0 text-[14cpx] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
+                  class="bg-transparent border-none p-0 text-[14px] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
                   @keydown="handleTagKeydown"
                   @blur="addTag"
                 />
