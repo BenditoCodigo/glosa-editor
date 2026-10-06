@@ -9,6 +9,8 @@ export interface AINoteContext {
   updatedAt?: string
   emoji?: string
   fullContent?: string
+  sources?: string[]
+  aiInstructions?: string
 }
 
 export interface AIQuickAction {
@@ -58,6 +60,9 @@ export function buildAIBlockPrompt(params: {
   const { blockContent, userQuery, context } = params
   const tagList = context.tags && context.tags.length > 0 ? context.tags.join(', ') : 'Ninguna'
   const folderName = context.folder ? context.folder : 'Raíz'
+  const sourcesSection = context.sources && context.sources.length > 0
+    ? `\n\n[FUENTES Y REFERENCIAS / ANEXOS DEL DOCUMENTO]\n${context.sources.map(s => `- ${s}`).join('\n')}`
+    : ''
   const fullDocSection = context.fullContent?.trim()
     ? `\n\n[DOCUMENTO COMPLETO (CONTEXTO GENERAL DE LA NOTA)]\n"""\n${context.fullContent.trim()}\n"""`
     : ''
@@ -65,7 +70,7 @@ export function buildAIBlockPrompt(params: {
   return `[INFORMACIÓN DE LA NOTA]
 - Título: ${context.title || 'Sin título'}
 - Ubicación / Carpeta: ${folderName}
-- Etiquetas: ${tagList}${context.updatedAt ? `\n- Última modificación: ${context.updatedAt}` : ''}${fullDocSection}
+- Etiquetas: ${tagList}${context.updatedAt ? `\n- Última modificación: ${context.updatedAt}` : ''}${sourcesSection}${fullDocSection}
 
 [BLOQUE O FRAGMENTO SELECCIONADO (FOCO PRINCIPAL DE LA CONSULTA)]
 """
@@ -76,7 +81,7 @@ ${blockContent.trim()}
 ${userQuery.trim()}
 
 [INSTRUCCIONES IMPORTANTES]
-- Tu foco de análisis y respuesta es exclusivamente el [BLOQUE O FRAGMENTO SELECCIONADO], interpretado en armonía y relación con el [DOCUMENTO COMPLETO].
+- Tu foco de análisis y respuesta es exclusivamente el [BLOQUE O FRAGMENTO SELECCIONADO], interpretado en armonía y relación con el [DOCUMENTO COMPLETO] y sus [FUENTES Y REFERENCIAS / ANEXOS] si están presentes.
 - Responde en español con tono reflexivo, analítico, conciso y constructivo.
 - Enfócate en sugerencias, dudas críticas, preguntas de profundización y verificación de información o coherencia global.
 - NO reescribas ni sustituyas directamente el texto completo de la nota. Tu objetivo es asesorar y retroalimentar al autor.`
@@ -219,7 +224,10 @@ export function useAIBlockAssistant() {
     ]
 
     try {
-      const stream = chatStream(messages, { signal: abortController.signal })
+      const stream = chatStream(messages, {
+        signal: abortController.signal,
+        systemPrompt: liveContext.aiInstructions?.trim() || undefined,
+      })
       isStreaming.value = true
       isLoading.value = false
 

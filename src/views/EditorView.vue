@@ -13,6 +13,7 @@ import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EmojiPicker from '@/components/editor/EmojiPicker.vue'
 import ExportMenu from '@/components/editor/ExportMenu.vue'
 import AIBlockDialog from '@/components/ai/AIBlockDialog.vue'
+import NoteReferencesModal from '@/components/editor/NoteReferencesModal.vue'
 import { useExport } from '@/composables/useExport'
 import { useAIBlockAssistant } from '@/composables/useAIBlockAssistant'
 
@@ -45,6 +46,9 @@ const tags = ref<string[]>([])
 const tagInput = ref('')
 const emoji = ref<string | undefined>(undefined)
 const coverImage = ref<string | undefined>(undefined)
+const sources = ref<string[]>([])
+const aiInstructions = ref('')
+const showReferencesModal = ref(false)
 const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const isLoading = ref(true)
 const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
@@ -94,6 +98,8 @@ watch(
       tags.value = [...note.tags]
       emoji.value = note.emoji
       coverImage.value = note.coverImage
+      sources.value = note.sources ? [...note.sources] : []
+      aiInstructions.value = note.aiInstructions ?? ''
       trackActivity(note.id, 'note', 'open')
     } else {
       router.replace('/')
@@ -135,6 +141,8 @@ async function save() {
     tags: [...tags.value],
     emoji: emoji.value,
     coverImage: coverImage.value,
+    sources: sources.value.length > 0 ? [...sources.value] : undefined,
+    aiInstructions: aiInstructions.value.trim() || undefined,
   })
 
   trackActivity(activeNote.value.id, 'note', 'save')
@@ -164,6 +172,9 @@ function handleAiBlockClick(payload: { index: number; content: string; top: numb
       tags: [...tags.value],
       updatedAt: activeNote.value?.updatedAt,
       emoji: emoji.value,
+      fullContent: content.value,
+      sources: [...sources.value],
+      aiInstructions: aiInstructions.value,
     },
     getContent: () => editorRef.value?.getBlockContent(payload.index) || payload.content,
     getContext: () => ({
@@ -172,8 +183,18 @@ function handleAiBlockClick(payload: { index: number; content: string; top: numb
       tags: [...tags.value],
       updatedAt: activeNote.value?.updatedAt,
       emoji: emoji.value,
+      fullContent: content.value,
+      sources: [...sources.value],
+      aiInstructions: aiInstructions.value,
     }),
   })
+}
+
+function handleSaveReferences(payload: { sources: string[]; aiInstructions: string }) {
+  sources.value = payload.sources
+  aiInstructions.value = payload.aiInstructions
+  showReferencesModal.value = false
+  scheduleAutosave()
 }
 
 // Tag management
@@ -278,6 +299,14 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="flex items-center gap-2">
+          <UiIconButton
+            icon="menu_book"
+            ariaLabel="Fuentes e instrucciones de IA"
+            tooltip="Fuentes e instrucciones de IA"
+            size="sm"
+            :class="(sources.length > 0 || aiInstructions.trim().length > 0) && 'text-primary'"
+            @click="showReferencesModal = true"
+          />
           <UiIconButton icon="image" ariaLabel="Cover image" tooltip="Imagen de portada" size="sm" @click="handleSetCoverImage" />
           <UiButton variant="solid" size="sm" @click="save">
             <template #icon-left>
@@ -402,5 +431,14 @@ onUnmounted(() => {
     confirmLabel="Aplicar"
     @confirm="confirmCoverImage"
     @cancel="showCoverModal = false"
+  />
+
+  <!-- Modal: Fuentes e instrucciones de IA -->
+  <NoteReferencesModal
+    :open="showReferencesModal"
+    :sources="sources"
+    :aiInstructions="aiInstructions"
+    @save="handleSaveReferences"
+    @cancel="showReferencesModal = false"
   />
 </template>

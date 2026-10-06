@@ -26,6 +26,8 @@ const _FIELD_ORDER: readonly string[] = [
   'isFavorite',
   'emoji',
   'coverImage',
+  'sources',
+  'aiInstructions',
 ]
 
 /** Characters that require quoting in YAML values */
@@ -114,6 +116,14 @@ export function frontmatterToNote(
     ? frontmatter.coverImage
     : undefined
 
+  const sources = Array.isArray(frontmatter.sources) && frontmatter.sources.every((s: unknown) => typeof s === 'string')
+    ? (frontmatter.sources as string[]).filter(s => s.trim().length > 0)
+    : undefined
+
+  const aiInstructions = typeof frontmatter.aiInstructions === 'string' && frontmatter.aiInstructions.trim().length > 0
+    ? frontmatter.aiInstructions
+    : undefined
+
   const note: Note = {
     id,
     title,
@@ -127,6 +137,8 @@ export function frontmatterToNote(
 
   if (emoji !== undefined) note.emoji = emoji
   if (coverImage !== undefined) note.coverImage = coverImage
+  if (sources !== undefined && sources.length > 0) note.sources = sources
+  if (aiInstructions !== undefined) note.aiInstructions = aiInstructions
 
   return note
 }
@@ -152,6 +164,12 @@ export function serializeNote(note: Note, extraFields?: Record<string, unknown>)
   }
   if (note.coverImage != null) {
     lines.push(`coverImage: ${quoteYamlValue(note.coverImage)}`)
+  }
+  if (note.sources != null && note.sources.length > 0) {
+    lines.push(`sources: ${serializeFlowSequence(note.sources)}`)
+  }
+  if (note.aiInstructions != null && note.aiInstructions.trim().length > 0) {
+    lines.push(`aiInstructions: ${quoteYamlValue(note.aiInstructions)}`)
   }
 
   // Extra/unrecognized fields in alphabetical order

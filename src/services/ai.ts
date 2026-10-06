@@ -15,6 +15,7 @@ export interface ChatOptions {
   maxTokens?: number
   frequencyPenalty?: number
   presencePenalty?: number
+  systemPrompt?: string
   signal?: AbortSignal
 }
 
@@ -118,7 +119,8 @@ export async function chat(
   const headers = buildHeaders(ai)
   const params = mergeParameters(ai.modelParameters, options)
 
-  const fullMessages = prependSystemPrompt(ai.systemPrompt, messages)
+  const effectivePrompt = options?.systemPrompt?.trim() ? options.systemPrompt : ai.systemPrompt
+  const fullMessages = prependSystemPrompt(effectivePrompt, messages)
 
   const response = await fetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
     method: 'POST',
@@ -163,7 +165,8 @@ export async function* chatStream(
   const { ai } = store.settings
   const headers = buildHeaders(ai)
   const params = mergeParameters(ai.modelParameters, options)
-  const fullMessages = prependSystemPrompt(ai.systemPrompt, messages)
+  const effectivePrompt = options?.systemPrompt?.trim() ? options.systemPrompt : ai.systemPrompt
+  const fullMessages = prependSystemPrompt(effectivePrompt, messages)
 
   const response = await fetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
     method: 'POST',

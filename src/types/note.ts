@@ -9,6 +9,8 @@ export interface Note {
   tags: string[]
   emoji?: string
   coverImage?: string
+  sources?: string[]
+  aiInstructions?: string
 }
 
 export interface NoteMetadata {

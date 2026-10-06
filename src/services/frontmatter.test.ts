@@ -525,5 +525,21 @@ describe('Frontmatter Parser', () => {
 
       expect(restored.content).toBe('')
     })
+
+    it('round-trip with sources and aiInstructions', () => {
+      const original = makeNote({
+        sources: ['https://elpais.com/investigacion/art1', 'https://bbc.com/news/123'],
+        aiInstructions: 'Eres un editor de investigación riguroso. Contrasta fuentes y fechas.',
+      })
+      const serialized = serializeNote(original)
+      const parsed = parseMarkdownFile('test.md', serialized)
+      const restored = frontmatterToNote(parsed.frontmatter, parsed.body, null)
+
+      expect(restored.sources).toEqual([
+        'https://elpais.com/investigacion/art1',
+        'https://bbc.com/news/123',
+      ])
+      expect(restored.aiInstructions).toBe('Eres un editor de investigación riguroso. Contrasta fuentes y fechas.')
+    })
   })
 })

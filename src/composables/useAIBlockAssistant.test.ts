@@ -24,15 +24,19 @@ describe('useAIBlockAssistant', () => {
           folder: 'Ciencia/Física',
           tags: ['ciencia', 'historia'],
           updatedAt: '2026-10-05',
+          fullContent: '# Introducción a la física\n\nLa teoría de la relatividad fue formulada en 1905.\n\nFue un hito histórico.',
         },
       })
 
       expect(prompt).toContain('Título: Física Moderna')
       expect(prompt).toContain('Ubicación / Carpeta: Ciencia/Física')
       expect(prompt).toContain('Etiquetas: ciencia, historia')
+      expect(prompt).toContain('[DOCUMENTO COMPLETO (CONTEXTO GENERAL DE LA NOTA)]')
+      expect(prompt).toContain('# Introducción a la física')
+      expect(prompt).toContain('[BLOQUE O FRAGMENTO SELECCIONADO (FOCO PRINCIPAL DE LA CONSULTA)]')
       expect(prompt).toContain('La teoría de la relatividad fue formulada en 1905.')
       expect(prompt).toContain('¿Es precisa la fecha y contexto histórico?')
-      expect(prompt).toContain('NO reescribas ni sustituyas directamente el texto de la nota')
+      expect(prompt).toContain('NO reescribas ni sustituyas directamente el texto')
     })
 
     it('handles empty/default context gracefully', () => {
@@ -158,6 +162,46 @@ describe('useAIBlockAssistant', () => {
       const sentMessages = chatStreamSpy.mock.calls[0]![0]
       expect(sentMessages[0]!.content).toContain('Los tardigrados son felinos')
       expect(sentMessages[0]!.content).not.toContain('como estás?')
+    })
+
+    it('injects sources into prompt and passes document-level aiInstructions to chatStream', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.settings.ai.enabled = true
+      settingsStore.settings.ai.baseUrl = 'http://localhost:11434/v1'
+      settingsStore.settings.ai.model = 'llama3.1:8b'
+      settingsStore.settings.ai.systemPrompt = 'Global system prompt'
+
+      const chatStreamSpy = vi.spyOn(aiService, 'chatStream').mockImplementation(async function* () {
+        yield 'Respuesta analítica'
+      })
+
+      const assistant = useAIBlockAssistant()
+      assistant.openAssistant({
+        index: 0,
+        content: 'Afirmación basada en fuente externa.',
+        context: {
+          title: 'Investigación Periodística',
+          sources: [
+            'https://elpais.com/reportaje/1',
+            'https://theguardian.com/article/2',
+          ],
+          aiInstructions: 'Instrucciones específicas de este documento: actúa como fact-checker estricto.',
+        },
+      })
+
+      await assistant.ask('Verificar datos')
+
+      expect(chatStreamSpy).toHaveBeenCalled()
+      const sentMessages = chatStreamSpy.mock.calls[0]![0]
+      const options = chatStreamSpy.mock.calls[0]![1]
+
+      // Verify sources are in the prompt
+      expect(sentMessages[0]!.content).toContain('[FUENTES Y REFERENCIAS / ANEXOS DEL DOCUMENTO]')
+      expect(sentMessages[0]!.content).toContain('https://elpais.com/reportaje/1')
+      expect(sentMessages[0]!.content).toContain('https://theguardian.com/article/2')
+
+      // Verify systemPrompt option was passed and contains document-specific instructions
+      expect(options?.systemPrompt).toBe('Instrucciones específicas de este documento: actúa como fact-checker estricto.')
     })
   })
 })
