@@ -251,16 +251,21 @@ describe('AI Service - Internal Helpers', () => {
       )
     })
 
-    it('parses JSON error.message for other status codes', () => {
-      const body = JSON.stringify({ error: { message: 'Custom error details' } })
-      expect(parseErrorMessage(400, body)).toBe('Custom error details')
+    it('parses JSON error.message even on 404 or other statuses', () => {
+      const body = JSON.stringify({ error: { message: 'models/gemini-1.5-pro-latest is not found' } })
+      expect(parseErrorMessage(404, body)).toBe('models/gemini-1.5-pro-latest is not found')
+    })
+
+    it('parses array JSON error responses from providers like Google', () => {
+      const body = JSON.stringify([{ error: { message: 'Invalid model name' } }])
+      expect(parseErrorMessage(404, body)).toBe('Invalid model name')
     })
 
     it('falls back to raw body when JSON is invalid', () => {
       expect(parseErrorMessage(400, 'not json')).toBe('Error 400: not json')
     })
 
-    it('truncates long body to 200 chars', () => {
+    it('truncates long body to 200 chars when non-JSON', () => {
       const longBody = 'x'.repeat(300)
       const result = parseErrorMessage(400, longBody)
       expect(result).toBe(`Error 400: ${'x'.repeat(200)}`)

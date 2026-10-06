@@ -62,12 +62,19 @@ export async function testConnection(): Promise<AIConnectionResult> {
     if (response.ok) {
       const data = await response.json()
       const models = data.data?.map((m: { id: string }) => m.id) ?? []
-      return {
-        success: true,
-        message: `Conexión exitosa. ${models.length} modelo(s) disponible(s).`,
-        models,
-        latencyMs: Date.now() - startTime,
+      const targetModel = ai.model.trim().toLowerCase()
+      const found = models.some((m: string) => m.toLowerCase() === targetModel)
+
+      // If the model exists in the list or the list is empty, report success
+      if (models.length === 0 || found || !targetModel) {
+        return {
+          success: true,
+          message: `Conexión exitosa. ${models.length} modelo(s) disponible(s).`,
+          models,
+          latencyMs: Date.now() - startTime,
+        }
       }
+      // If model not found in the list, fall through to Attempt 2 to verify if it actually works
     }
   } catch {
     // Continue to attempt 2
@@ -234,18 +241,32 @@ function assertConfigured(): void {
 }
 
 function parseErrorMessage(status: number, body: string): string {
+  let serverMessage: string | undefined
+  try {
+    const parsed = JSON.parse(body)
+    if (Array.isArray(parsed) && parsed[0]?.error?.message) {
+      serverMessage = parsed[0].error.message
+    } else if (parsed.error?.message) {
+      serverMessage = parsed.error.message
+    } else if (typeof parsed.message === 'string') {
+      serverMessage = parsed.message
+    }
+  } catch {
+    // not JSON
+  }
+
+  if (serverMessage) {
+    return serverMessage
+  }
+
   if (status === 401 || status === 403) return 'Error de autenticación. Verifica tu API Key.'
   if (status === 404)
     return 'Modelo o endpoint no encontrado. Verifica la URL base y el nombre del modelo.'
   if (status === 429) return 'Demasiadas peticiones. Intenta de nuevo en unos segundos.'
   if (status >= 500)
     return `Error del servidor (${status}). Verifica que el servicio esté corriendo.`
-  try {
-    const parsed = JSON.parse(body)
-    return parsed.error?.message ?? `Error ${status}: ${body.slice(0, 200)}`
-  } catch {
-    return `Error ${status}: ${body.slice(0, 200)}`
-  }
+
+  return `Error ${status}: ${body.slice(0, 200)}`
 }
 
 function parseNetworkError(error: unknown): string {

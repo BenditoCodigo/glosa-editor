@@ -31,6 +31,15 @@ const showConfigGuide = ref(false)
 const isTestingConnection = ref(false)
 const connectionResult = ref<AIConnectionResult | null>(null)
 
+// Prompt test state
+const isTestingPrompt = ref(false)
+const testPromptResult = ref<{
+  success: boolean
+  content?: string
+  error?: string
+  latencyMs?: number
+} | null>(null)
+
 const canTestConnection = computed(
   () => ai.value.baseUrl.trim() !== '' && ai.value.model.trim() !== '',
 )
@@ -195,6 +204,37 @@ async function handleTestConnection() {
         connectionResult.value = null
       }
     }, 5000)
+  }
+}
+
+async function handleTestPrompt() {
+  if (isTestingPrompt.value || isTestingConnection.value || !canTestConnection.value) return
+
+  isTestingPrompt.value = true
+  testPromptResult.value = null
+
+  const startTime = Date.now()
+  try {
+    const { chat } = await import('@/services/ai')
+    const response = await chat([
+      {
+        role: 'user',
+        content:
+          'Hola mundo. Responde en una sola frase breve y amigable confirmando que estás conectado y listo para asistir en Glosa.',
+      },
+    ])
+    testPromptResult.value = {
+      success: true,
+      content: response.content.trim(),
+      latencyMs: Date.now() - startTime,
+    }
+  } catch (error) {
+    testPromptResult.value = {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    }
+  } finally {
+    isTestingPrompt.value = false
   }
 }
 
@@ -711,50 +751,105 @@ const samplingBehavior = computed(() => {
                   </button>
                 </div>
 
-                <!-- Connection test -->
-                <div class="flex items-center gap-3 pt-2">
-                  <UiButton
-                    variant="outline"
-                    size="sm"
-                    :disabled="!canTestConnection || isTestingConnection"
-                    class="rounded-xl px-4 py-2 text-sm font-medium"
-                    @click="handleTestConnection"
-                  >
-                    <template #icon-left>
-                      <UiIcon v-if="!isTestingConnection" name="power" size="sm" />
-                      <span
-                        v-else
-                        class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
-                      />
-                    </template>
-                    {{ isTestingConnection ? 'Probando...' : 'Probar conexión' }}
-                  </UiButton>
+                <!-- Connection & Prompt tests -->
+                <div class="flex flex-col gap-3 pt-2">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      :disabled="!canTestConnection || isTestingConnection || isTestingPrompt"
+                      class="rounded-xl px-4 py-2 text-sm font-medium"
+                      @click="handleTestConnection"
+                    >
+                      <template #icon-left>
+                        <UiIcon v-if="!isTestingConnection" name="power" size="sm" />
+                        <span
+                          v-else
+                          class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                        />
+                      </template>
+                      {{ isTestingConnection ? 'Probando...' : 'Probar conexión' }}
+                    </UiButton>
 
-                  <!-- Success indicator -->
-                  <Transition name="fade">
-                    <div v-if="connectionResult?.success" class="flex items-center gap-2 text-sm">
-                      <UiIcon
-                        name="check_circle"
-                        size="sm"
-                        class="text-green-600 dark:text-green-400"
-                      />
-                      <span class="text-green-700 dark:text-green-300">{{
-                        connectionResult.message
-                      }}</span>
-                      <span v-if="connectionResult.latencyMs" class="text-xs text-secondary/60"
-                        >({{ connectionResult.latencyMs }}ms)</span
+                    <UiButton
+                      variant="outline"
+                      size="sm"
+                      :disabled="!canTestConnection || isTestingConnection || isTestingPrompt"
+                      class="rounded-xl px-4 py-2 text-sm font-medium"
+                      @click="handleTestPrompt"
+                    >
+                      <template #icon-left>
+                        <UiIcon v-if="!isTestingPrompt" name="chat_bubble" size="sm" />
+                        <span
+                          v-else
+                          class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                        />
+                      </template>
+                      {{ isTestingPrompt ? 'Generando...' : 'Probar prompt' }}
+                    </UiButton>
+
+                    <!-- Connection success indicator -->
+                    <Transition name="fade">
+                      <div v-if="connectionResult?.success" class="flex items-center gap-2 text-sm">
+                        <UiIcon
+                          name="check_circle"
+                          size="sm"
+                          class="text-green-600 dark:text-green-400"
+                        />
+                        <span class="text-green-700 dark:text-green-300">{{
+                          connectionResult.message
+                        }}</span>
+                        <span v-if="connectionResult.latencyMs" class="text-xs text-secondary/60"
+                          >({{ connectionResult.latencyMs }}ms)</span
+                        >
+                      </div>
+                    </Transition>
+
+                    <!-- Connection error indicator -->
+                    <Transition name="fade">
+                      <div
+                        v-if="connectionResult && !connectionResult.success"
+                        class="flex items-center gap-2 text-sm"
                       >
+                        <UiIcon name="error" size="sm" class="text-error" />
+                        <span class="text-error">{{ connectionResult.message }}</span>
+                      </div>
+                    </Transition>
+                  </div>
+
+                  <!-- Prompt test response bubble -->
+                  <Transition name="fade">
+                    <div
+                      v-if="testPromptResult?.success"
+                      class="p-3.5 rounded-xl bg-surface-container/60 border border-outline-variant/30 text-xs text-on-surface leading-relaxed flex flex-col gap-1.5"
+                    >
+                      <div class="flex items-center justify-between text-[11px] text-secondary">
+                        <span
+                          class="font-semibold flex items-center gap-1.5 text-primary dark:text-primary-fixed-dim"
+                        >
+                          <UiIcon name="smart_toy" size="sm" class="text-[14px]" />
+                          Respuesta del modelo:
+                        </span>
+                        <span v-if="testPromptResult.latencyMs" class="text-secondary/60 font-mono">
+                          {{ testPromptResult.latencyMs }}ms
+                        </span>
+                      </div>
+                      <p
+                        class="text-xs text-on-surface leading-relaxed whitespace-pre-wrap select-text"
+                      >
+                        {{ testPromptResult.content }}
+                      </p>
                     </div>
                   </Transition>
 
-                  <!-- Error indicator -->
+                  <!-- Prompt test error -->
                   <Transition name="fade">
                     <div
-                      v-if="connectionResult && !connectionResult.success"
+                      v-if="testPromptResult && !testPromptResult.success"
                       class="flex items-center gap-2 text-sm"
                     >
                       <UiIcon name="error" size="sm" class="text-error" />
-                      <span class="text-error">{{ connectionResult.message }}</span>
+                      <span class="text-error">{{ testPromptResult.error }}</span>
                     </div>
                   </Transition>
                 </div>
