@@ -3,9 +3,7 @@ title: "Glosa: Tu Cuaderno Digital Privado, Portable y Libre"
 description: "Una plataforma personal de notas local-first en markdown que garantiza control absoluto, privacidad total y portabilidad de tus ideas."
 publishDate: 2026-07-12
 pilar: "B"
-category: "Software Libre / Herramientas de Productividad"
-technologies: ["Vue 3.5", "Tauri 2", "Tiptap", "Tailwind CSS 4", "TypeScript", "IndexedDB"]
-githubUrl: "https://github.com/bendito-codigo/libreta-abierta"
+technologies: ["Vue 3.5", "Capacitor", "Capawesome Electron", "Tiptap", "Tailwind CSS 4", "TypeScript", "IndexedDB"]
 liveUrl: "https://glosa.benditocodigo.com"
 featuredImage: "/images/projects/glosa-thumbnail.png"
 previewVideo: "/videos/projects/glosa-preview.mp4"
@@ -67,8 +65,8 @@ A nivel técnico y funcional, Glosa destaca por las siguientes características 
     *   *Breadcrumbs Navegables:* Una ruta dinámica en la parte inferior del editor/explorador que permite regresar o subir de nivel de forma sencilla.
     *   *Drag & Drop Avanzado:* Permite mover notas y carpetas completas arrastrándolas directamente sobre otras carpetas en la vista principal o en el árbol del sidebar.
 *   **Metadata Distribuida:** Para evitar bases de datos centralizadas propensas a desincronizarse, la metadata de las carpetas (nombres personalizados y estados de favoritos) se almacena localmente en cada directorio en una subcarpeta oculta `.glosa/meta.json`. De este modo, la metadata viaja de forma intrínseca con el contenido si el usuario mueve las carpetas en su disco duro.
-*   **Multiplataforma Ligero con Tauri 2:** Glosa se empaqueta como una aplicación nativa para macOS, Windows, Linux y tablets Android utilizando Tauri 2. A diferencia de soluciones basadas en Electron, Tauri utiliza la WebView nativa del sistema operativo y un núcleo en Rust, reduciendo el consumo de memoria RAM a una fracción y el peso final del instalador a unos pocos megabytes.
-*   **Inteligencia Artificial Local y Privada:** El servicio de IA (`src/services/ai.ts`) permite integrar asistentes de escritura locales de forma totalmente opcional. La aplicación consume la configuración de proveedores externos de inferencia local como Ollama, LM Studio o llama.cpp (cualquier servidor compatible con el formato de API de OpenAI). Esto posibilita resúmenes automáticos, correcciones de estilo y sugerencias creativas de manera offline, asegurando que la propiedad intelectual y el contenido de las notas nunca viajen por internet.
+*   **Multiplataforma con Capacitor y Capawesome Electron:** Glosa se empaqueta como aplicación de escritorio nativa para macOS utilizando Capacitor junto con Capawesome Electron y `electron-builder`. A través del plugin `@glosa/desktop-plugin`, la aplicación interactúa de forma nativa con el sistema de archivos del sistema operativo, el observador de cambios reactivo (`chokidar`) y habilita la comunicación sin restricciones de protocolo con modelos de inteligencia artificial locales.
+*   **Inteligencia Artificial Local y Privada:** El servicio de IA (`src/services/ai.ts` y `@glosa/desktop-plugin`) permite integrar asistentes de escritura locales de forma totalmente opcional. La aplicación consume la configuración de proveedores de inferencia local como Ollama, LM Studio o llama.cpp (o cualquier servidor compatible con el formato de API de OpenAI). Mediante puentes nativos y streaming por Server-Sent Events (SSE), posibilita resúmenes automáticos, correcciones de estilo y sugerencias creativas de manera offline, asegurando que el contenido de las notas nunca viaje por internet.
 *   **Asistente de Migración:** Al vincular una carpeta del sistema de archivos físico por primera vez en un entorno con notas previas en IndexedDB, la aplicación presenta opciones guiadas para migrar: exportando las notas del navegador como archivos físicos, importando los datos del disco duro como base de trabajo activa, o inicializando un espacio de trabajo limpio.
 
 ## Contribución y Código Abierto
@@ -80,8 +78,6 @@ Si deseas levantar el entorno de desarrollo localmente para inspeccionar la arqu
 ### Requisitos Previos
 *   **Node.js** v22 o superior
 *   **npm** v10 o superior
-*   **Rust** (instalador a través de [rustup.rs](https://rustup.rs)) y las dependencias del compilador de tu sistema (requerido únicamente para la versión Tauri de escritorio/tablet).
-*   **Android SDK / NDK / JDK 21** (si deseas realizar la compilación móvil de Android).
 
 ### Instrucciones de Configuración
 
@@ -102,24 +98,19 @@ Si deseas levantar el entorno de desarrollo localmente para inspeccionar la arqu
     ```
     *Abre `http://localhost:5173` en tu navegador. Los cambios de código se aplicarán mediante recarga en caliente (HMR).*
 
-4.  **Ejecutar la Versión de Escritorio Nativa (Con acceso al sistema de archivos local):**
+4.  **Ejecutar la Versión de Escritorio Nativa (Capacitor Electron con acceso al sistema de archivos local y streaming de IA):**
     ```bash
-    npm run tauri:dev
+    npm run cap:dev
     ```
-    *Este comando compilará el core en Rust, levantará el servidor de desarrollo Vite y lanzará la ventana nativa de la aplicación.*
+    *Este comando sincroniza los assets web y lanza la ventana nativa de escritorio.*
 
-5.  **Compilar Instalador de Producción:**
+5.  **Compilar Instalador de Producción macOS (.dmg):**
     ```bash
-    # Escritorio
-    npm run tauri:build
-    
-    # Android (Establecer variables de entorno necesarias)
-    export JAVA_HOME=$(/usr/libexec/java_home -v 21)
-    export ANDROID_HOME=~/Library/Android/sdk
-    export NDK_HOME=$ANDROID_HOME/ndk/28.0.13004108
-    npx tauri android build --debug
+    npm run build:dmg
     ```
+    *El instalador `.dmg` se generará en la carpeta `electron/dist/`.*
 
 6.  **Otras Tareas de Mantenimiento:**
     *   Ejecutar pruebas unitarias: `npm run test`
+    *   Verificar tipos de TypeScript: `npm run type-check`
     *   Verificar estilo y errores de código (Lint): `npm run lint`

@@ -9,7 +9,7 @@ Este documento describe la arquitectura y funcionamiento del pipeline de Integra
 El flujo automatizado tiene tres propósitos fundamentales:
 1. **Garantizar la calidad del código**: Ejecutar linters (Oxlint + ESLint), verificación estática de tipos (Vue TSC) y formato de código antes de cualquier despliegue o integración.
 2. **Prevenir regresiones funcionales**: Correr la suite de pruebas unitarias automatizadas (Vitest) en cada cambio.
-3. **Generar artefactos ejecutables**: Compilar y empaquetar la aplicación de escritorio Tauri para macOS, generando el instalador `.dmg` y almacenándolo en los artefactos descargables de GitHub Actions.
+3. **Generar artefactos ejecutables**: Compilar y empaquetar la aplicación de escritorio para macOS (Capacitor + Electron), generando el instalador `.dmg` y almacenándolo en los artefactos descargables de GitHub Actions.
 
 ---
 
@@ -31,14 +31,12 @@ Adicionalmente, se incluye una política de concurrencia (`cancel-in-progress: t
 flowchart TD
     A[Push / PR a main] --> B[Job: lint-and-typecheck]
     A --> C[Job: unit-tests]
-    A --> D[Job: rust-check]
     
-    B --> E{¿Todos pasaron?}
-    C --> E
-    D --> E
+    B --> D{¿Pasaron validaciones?}
+    C --> D
     
-    E -- Sí --> F[Job: build-macos]
-    F --> G[Subir Artefacto DMG]
+    D -- Sí --> E[Job: build-macos]
+    E --> F[Subir Artefacto DMG]
 ```
 
 ### Job 1: `lint-and-typecheck` (Frontend)
@@ -56,29 +54,17 @@ flowchart TD
   1. Descarga del código e instalación de dependencias con Node.js 22.
   2. Ejecución de la suite completa de tests (`npm test` con Vitest en modo `run`).
 
-### Job 3: `rust-check` (Código Nativo Rust)
-- **Entorno**: `macos-latest`
-- **Pasos**:
-  1. Instalación del toolchain de Rust estable con `clippy` y `rustfmt`.
-  2. Caché de dependencias y binarios de Cargo (`swatinem/rust-cache@v2`).
-  3. Validación de formato de código Rust (`cargo fmt --check` en `src-tauri`).
-  4. Análisis estático de código Rust (`cargo clippy -- -D warnings` en `src-tauri`).
-
-### Job 4: `build-macos` (Generación de Artefacto DMG)
+### Job 3: `build-macos` (Generación de Artefacto DMG con Capacitor Electron)
 - **Entorno**: `macos-latest` (Apple Silicon)
-- **Dependencia**: Solo se ejecuta si los tres jobs anteriores (`lint-and-typecheck`, `unit-tests`, `rust-check`) concluyen satisfactoriamente.
-- **Firma Ad-hoc y Sellado de Recursos**:
-  - Se configuró `"signingIdentity": "-"` en [`src-tauri/tauri.conf.json`](file:///Users/mau/Repos/bendito-codigo/internal/libreta-abierta/frontend/src-tauri/tauri.conf.json).
-  - Esto garantiza que Tauri aplique la firma Ad-Hoc sellando el bundle `Glosa.app`, `Info.plist` y sus recursos, evitando que macOS Gatekeeper lo detecte como un paquete dañado o con firma rota al descargarse desde internet.
+- **Dependencia**: Solo se ejecuta si los jobs de calidad (`lint-and-typecheck` y `unit-tests`) concluyen satisfactoriamente.
 - **Pasos**:
-  1. Configuración de Node.js y Rust toolchain.
-  2. Restauración de caché de Cargo.
-  3. Ejecución de `npm run tauri:build`:
-     - Compila el frontend estático optimizado con Vite.
-     - Compila el backend de Rust en perfil release (`--release`).
-     - Firma ad-hoc y sella el bundle `.app`.
-     - Empaqueta el instalador (`Glosa_x.x.x_aarch64.dmg`).
-  4. Subida del instalador `.dmg` a los artefactos de la ejecución en GitHub mediante `actions/upload-artifact@v4` con retención de 14 días.
+  1. Configuración de Node.js 22.
+  2. Instalación de dependencias (`npm ci`).
+  3. Ejecución de `npm run build:dmg`:
+     - Compila el frontend optimizado con Vite (`npm run build`).
+     - Sincroniza los assets web con la plataforma Electron (`npx cap sync @capawesome/capacitor-electron`).
+     - Compila la plataforma y empaqueta el instalador `.dmg` mediante `electron-builder`.
+  4. Subida del instalador `.dmg` (`electron/dist/*.dmg`) a los artefactos de la ejecución en GitHub mediante `actions/upload-artifact@v4` con retención de 14 días.
 
 ---
 
@@ -105,12 +91,6 @@ npm run type-check
 # 3. Correr pruebas unitarias
 npm test
 
-# 4. Formatear y validar código Rust
-cd src-tauri
-cargo fmt --check
-cargo clippy -- -D warnings
-cd ..
-
-# 5. Probar build local completo
-npm run tauri:build
+# 4. Probar build local del instalador DMG
+npm run build:dmg
 ```

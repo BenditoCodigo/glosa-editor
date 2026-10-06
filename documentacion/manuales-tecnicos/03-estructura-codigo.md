@@ -61,9 +61,11 @@ Capa de abstracción que desacopla los stores del almacenamiento concreto:
 | Archivo | Rol |
 |---------|-----|
 | `storage.ts` | Fachada pública: exporta funciones CRUD genéricas |
+| `platform/index.ts` | Abstracción de plataforma: detección de escritorio, operaciones FS y cliente de IA |
+| `ai.ts` | Servicio de Inteligencia Artificial (Ollama, LM Studio, OpenAI) |
 | `adapters/types.ts` | Interfaz `StorageAdapter` |
 | `adapters/indexeddb.ts` | Implementación con IndexedDB (Dexie) |
-| `adapters/filesystem.ts` | Implementación con archivos `.md` via Tauri |
+| `adapters/filesystem.ts` | Implementación con archivos `.md` vía Capacitor Desktop Plugin |
 | `frontmatter.ts` | Parser y serializador de frontmatter YAML |
 | `slug.ts` | Generación de slugs para nombres de archivo |
 | `activity.ts` | Tracking de actividad (qué notas se abren) |

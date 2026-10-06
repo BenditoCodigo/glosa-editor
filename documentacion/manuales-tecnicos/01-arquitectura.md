@@ -6,7 +6,7 @@ Este documento describe cómo está organizado el sistema, las decisiones técni
 
 ## Visión general
 
-Glosa es una aplicación frontend autónoma que no requiere backend para funcionar. Se ejecuta como aplicación de escritorio nativa (via Tauri) o directamente en un navegador web.
+Glosa es una aplicación frontend autónoma que no requiere backend para funcionar. Se ejecuta como aplicación de escritorio nativa (vía Capacitor + Electron) o directamente en un navegador web.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -16,9 +16,9 @@ Glosa es una aplicación frontend autónoma que no requiere backend para funcion
 │         Capa de almacenamiento          │
 │   IndexedDB ↔ Adapter ↔ Filesystem     │
 ├─────────────────────────────────────────┤
-│         Tauri (shell nativo)            │
-│   Acceso al sistema de archivos,        │
-│   empaquetado como app de escritorio    │
+│     Capacitor + Capawesome Electron     │
+│   Acceso al sistema de archivos (FS),   │
+│   streaming de IA local y empaquetado   │
 └─────────────────────────────────────────┘
 ```
 
@@ -35,7 +35,7 @@ La lógica completa vive en el frontend. No hay servidor ni API necesaria para o
 El almacenamiento es intercambiable. Una interfaz `StorageAdapter` define las operaciones (CRUD de notas y carpetas) y existen implementaciones para:
 
 - **IndexedDB** — almacenamiento en el navegador, ideal para uso rápido sin configuración
-- **Filesystem** — archivos `.md` reales en disco, accesible vía Tauri
+- **Filesystem** — archivos `.md` reales en disco, accesible vía Capacitor Desktop Plugin (`@glosa/desktop-plugin`)
 
 Ambos adapters comparten la misma interfaz. El store de Pinia no sabe qué adapter está activo.
 
@@ -51,9 +51,12 @@ Las notas se almacenan como markdown con frontmatter YAML. Este formato es:
 
 Cada carpeta puede tener un directorio `.glosa/` con un `meta.json` propio. La metadata (nombre personalizado, si es favorita) viaja con la carpeta. No hay un archivo central que pueda desincronizarse.
 
-### Tauri para acceso nativo
+### Capacitor y Capawesome Electron para acceso nativo y soporte de IA
 
-Tauri 2 permite empaquetar la aplicación web como app nativa de escritorio y tablet. Proporciona acceso al sistema de archivos, diálogos nativos y observación de cambios en archivos — sin las desventajas de peso y memoria de soluciones basadas en Chromium embebido.
+Capacitor y Capawesome Electron permiten empaquetar la aplicación web como app nativa de escritorio para macOS (formato `.dmg`). A través del plugin `@glosa/desktop-plugin`, proporciona:
+- Acceso al sistema de archivos local y selector nativo de directorios.
+- Observación de cambios externos en archivos en tiempo real con `chokidar`.
+- Puente de red para modelos locales de Inteligencia Artificial (Ollama, LM Studio) con soporte para streaming SSE y resolución de protocolos locales.
 
 ---
 
@@ -67,17 +70,15 @@ Tauri 2 permite empaquetar la aplicación web como app nativa de escritorio y ta
 | Editor | Tiptap + tiptap-markdown | Edición rica con serialización markdown |
 | Estilos | Tailwind CSS 4 | Utilidades CSS-first |
 | Tipos | TypeScript (strict) | Seguridad de tipos |
-| Desktop/Mobile | Tauri 2 | App nativa, acceso FS |
+| Desktop Shell | Capacitor + Capawesome Electron | App nativa de escritorio, acceso FS e IA |
 | Testing | Vitest + happy-dom | Tests unitarios rápidos |
 
 ---
 
 ## Plataformas soportadas
 
-- macOS (escritorio)
-- Windows (escritorio)
-- Linux (escritorio)
-- Android (tablets con pantalla ≥ 7")
+- macOS (escritorio `.dmg`)
+- Navegadores web modernos (PWA / SPA)
 
 Dispositivos con pantalla menor a 600px de ancho muestran un mensaje indicando que la aplicación requiere una pantalla más grande.
 

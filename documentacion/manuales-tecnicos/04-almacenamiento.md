@@ -42,7 +42,7 @@ Las notas y carpetas se almacenan como objetos JavaScript serializados en tablas
 
 ## Filesystem Adapter
 
-Almacenamiento en el sistema de archivos real. Solo disponible en la app de escritorio (Tauri).
+Almacenamiento en el sistema de archivos real. Disponible en la aplicación de escritorio (Capacitor Electron).
 
 ### Cómo funciona
 

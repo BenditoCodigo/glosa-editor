@@ -56,7 +56,24 @@ Si prefieres que tus notas sean archivos de texto en una carpeta de tu disco (pa
 
 ## 🛠️ Para desarrolladores
 
-Si tienes perfil técnico y quieres entender cómo está construida la aplicación, compilarla desde el código fuente o crear tu propia versión, consulta los [manuales técnicos](./documentacion/manuales-tecnicos/).
+```bash
+# 1. Instalar dependencias
+npm install
+
+# 2. Desarrollo web con IndexedDB
+npm run dev
+
+# 3. Desarrollo de escritorio nativo (Capacitor Electron con Filesystem y soporte IA local)
+npm run cap:dev
+
+# 4. Generar instalador macOS (.dmg)
+npm run build:dmg
+
+# 5. Ejecutar tests unitarios
+npm test
+```
+
+Para una guía detallada sobre arquitectura, almacenamiento, inteligencia artificial y CI/CD, consulta los [manuales técnicos](./documentacion/manuales-tecnicos/).
 
 ---
 
