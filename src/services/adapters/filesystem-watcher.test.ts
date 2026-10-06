@@ -43,7 +43,9 @@ describe('FilesystemAdapter - File Watching', () => {
     // Setup mock for watch — captures the callback and returns an unwatch function
     mockWatch.mockImplementation(async (_paths: unknown, cb: (event: WatchEvent) => void) => {
       watchCallback = cb
-      return () => { watchCallback = null }
+      return () => {
+        watchCallback = null
+      }
     })
 
     // Setup mock for readDir — return empty directory for initialization
@@ -69,10 +71,7 @@ describe('FilesystemAdapter - File Watching', () => {
     it('calls watch() with the root path and recursive option', async () => {
       await adapter.startWatching(callback)
 
-      expect(mockWatch).toHaveBeenCalledWith(
-        rootPath,
-        expect.any(Function),
-      )
+      expect(mockWatch).toHaveBeenCalledWith(rootPath, expect.any(Function))
     })
 
     it('does not start watching twice if already watching', async () => {
@@ -188,7 +187,7 @@ describe('FilesystemAdapter - File Watching', () => {
       watchCallback!(event)
 
       // Give async handlers time to execute (but they shouldn't)
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise((r) => setTimeout(r, 50))
 
       expect(mockReadTextFile).not.toHaveBeenCalled()
       expect(callback.onNoteChanged).not.toHaveBeenCalled()
@@ -318,7 +317,7 @@ describe('FilesystemAdapter - File Watching', () => {
       }
       watchCallback!(event)
 
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise((r) => setTimeout(r, 50))
       expect(callback.onNoteAdded).not.toHaveBeenCalled()
     })
 
@@ -335,7 +334,7 @@ describe('FilesystemAdapter - File Watching', () => {
       }
       watchCallback!(event)
 
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise((r) => setTimeout(r, 50))
       expect(callback.onNoteAdded).not.toHaveBeenCalled()
     })
   })
@@ -422,7 +421,7 @@ describe('FilesystemAdapter - File Watching', () => {
       }
       watchCallback!(event)
 
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise((r) => setTimeout(r, 50))
       expect(mockReadTextFile).not.toHaveBeenCalled()
       expect(callback.onNoteChanged).not.toHaveBeenCalled()
     })
@@ -437,7 +436,7 @@ describe('FilesystemAdapter - File Watching', () => {
       }
       watchCallback!(event)
 
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise((r) => setTimeout(r, 50))
       expect(callback.onNoteAdded).not.toHaveBeenCalled()
     })
   })

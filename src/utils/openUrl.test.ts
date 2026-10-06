@@ -9,7 +9,11 @@ describe('openExternalUrl', () => {
   it('calls window.open in web environment', async () => {
     const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
     await openExternalUrl('https://example.com')
-    expect(windowOpenSpy).toHaveBeenCalledWith('https://example.com', '_blank', 'noopener,noreferrer')
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      'https://example.com',
+      '_blank',
+      'noopener,noreferrer',
+    )
   })
 
   it('does nothing if url is empty', async () => {

@@ -69,26 +69,12 @@ onUnmounted(() => {
       <div
         v-if="isOpen"
         ref="menuRef"
-        class="
-          glass-panel-md
-          absolute right-0 top-full mt-2
-          min-w-[200px]
-          rounded-xl
-          py-1.5
-          shadow-lg
-          z-50
-        "
+        class="glass-panel-md absolute right-0 top-full mt-2 min-w-[200px] rounded-xl py-1.5 shadow-lg z-50"
         role="menu"
       >
         <!-- MD download -->
         <button
-          class="
-            flex items-center gap-3
-            w-full px-4 py-2.5
-            text-left text-sm text-on-surface
-            transition-colors duration-150
-            hover:bg-black/5 dark:hover:bg-white/5
-          "
+          class="flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm text-on-surface transition-colors duration-150 hover:bg-black/5 dark:hover:bg-white/5"
           role="menuitem"
           @click="handleSelect('export-md')"
         >
@@ -98,13 +84,7 @@ onUnmounted(() => {
 
         <!-- Copy as MD -->
         <button
-          class="
-            flex items-center gap-3
-            w-full px-4 py-2.5
-            text-left text-sm text-on-surface
-            transition-colors duration-150
-            hover:bg-black/5 dark:hover:bg-white/5
-          "
+          class="flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm text-on-surface transition-colors duration-150 hover:bg-black/5 dark:hover:bg-white/5"
           role="menuitem"
           @click="handleSelect('copy-md')"
         >
@@ -117,37 +97,31 @@ onUnmounted(() => {
 
         <!-- PDF (coming soon) -->
         <button
-          class="
-            flex items-center gap-3
-            w-full px-4 py-2.5
-            text-left text-sm text-on-surface/40
-            cursor-not-allowed
-          "
+          class="flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm text-on-surface/40 cursor-not-allowed"
           role="menuitem"
           disabled
         >
           <UiIcon name="picture_as_pdf" size="sm" class="text-secondary/40" />
           <div class="flex items-center gap-2">
             <span>PDF</span>
-            <span class="text-[11px] uppercase tracking-widest text-secondary/50 font-medium">próximamente</span>
+            <span class="text-[11px] uppercase tracking-widest text-secondary/50 font-medium"
+              >próximamente</span
+            >
           </div>
         </button>
 
         <!-- DOCX (coming soon) -->
         <button
-          class="
-            flex items-center gap-3
-            w-full px-4 py-2.5
-            text-left text-sm text-on-surface/40
-            cursor-not-allowed
-          "
+          class="flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm text-on-surface/40 cursor-not-allowed"
           role="menuitem"
           disabled
         >
           <UiIcon name="article" size="sm" class="text-secondary/40" />
           <div class="flex items-center gap-2">
             <span>DOCX</span>
-            <span class="text-[11px] uppercase tracking-widest text-secondary/50 font-medium">próximamente</span>
+            <span class="text-[11px] uppercase tracking-widest text-secondary/50 font-medium"
+              >próximamente</span
+            >
           </div>
         </button>
       </div>

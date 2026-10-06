@@ -99,7 +99,9 @@ describe('optimizeImageFile', () => {
     globalThis.Image = ErrorImage
 
     const file = new File(['invalid'], 'invalid.png', { type: 'image/png' })
-    await expect(optimizeImageFile(file)).rejects.toThrow('El archivo seleccionado no es una imagen válida')
+    await expect(optimizeImageFile(file)).rejects.toThrow(
+      'El archivo seleccionado no es una imagen válida',
+    )
 
     globalThis.Image = originalImage
   })

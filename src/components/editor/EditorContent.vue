@@ -169,7 +169,8 @@ const editor = useEditor({
     scrollThreshold: { top: 80, bottom: 200, left: 0, right: 0 },
     scrollMargin: { top: 80, bottom: 200, left: 0, right: 0 },
     attributes: {
-      class: 'prose max-w-none text-on-surface/90 focus:outline-none min-h-[400px] text-lg leading-relaxed',
+      class:
+        'prose max-w-none text-on-surface/90 focus:outline-none min-h-[400px] text-lg leading-relaxed',
     },
     handleClick(_view, _pos, event) {
       const target = event.target as HTMLElement | null
@@ -200,7 +201,10 @@ function getScrollContainer(): HTMLElement {
   let el: HTMLElement | null = editorContainerRef.value
   while (el && el !== document.body) {
     const style = getComputedStyle(el)
-    if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+    if (
+      (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+      el.scrollHeight > el.clientHeight
+    ) {
       return el
     }
     el = el.parentElement
@@ -612,25 +616,34 @@ function handleAiButtonClick() {
 }
 
 // Watch for active AI block highlighting
-watch(() => props.highlightedBlockIndex, (newIdx) => {
-  const children = getTiptapBlockElements()
-  children.forEach((el, idx) => {
-    if (newIdx !== null && newIdx !== undefined && idx === newIdx) {
-      el.classList.add('ai-active-block')
-    } else {
-      el.classList.remove('ai-active-block')
-    }
-  })
-}, { flush: 'post' })
+watch(
+  () => props.highlightedBlockIndex,
+  (newIdx) => {
+    const children = getTiptapBlockElements()
+    children.forEach((el, idx) => {
+      if (newIdx !== null && newIdx !== undefined && idx === newIdx) {
+        el.classList.add('ai-active-block')
+      } else {
+        el.classList.remove('ai-active-block')
+      }
+    })
+  },
+  { flush: 'post' },
+)
 
 // Update editor content when prop changes externally (e.g. loading a different note)
-watch(() => props.content, (newContent) => {
-  if (!editor.value) return
-  const currentContent = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
-  if (currentContent !== newContent) {
-    editor.value.commands.setContent(newContent, { emitUpdate: false })
-  }
-})
+watch(
+  () => props.content,
+  (newContent) => {
+    if (!editor.value) return
+    const currentContent = (
+      editor.value.storage as unknown as MarkdownStorage
+    ).markdown.getMarkdown()
+    if (currentContent !== newContent) {
+      editor.value.commands.setContent(newContent, { emitUpdate: false })
+    }
+  },
+)
 
 onMounted(() => {
   window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
@@ -849,74 +862,128 @@ defineExpose({ editor, getBlockContent })
 /* Syntax highlighting - Light mode (sage-inspired) */
 .tiptap pre .hljs-keyword,
 .tiptap pre .hljs-selector-tag,
-.tiptap pre .hljs-built_in { color: #4f6056; font-weight: 600; }
+.tiptap pre .hljs-built_in {
+  color: #4f6056;
+  font-weight: 600;
+}
 
 .tiptap pre .hljs-string,
-.tiptap pre .hljs-addition { color: #3a6b4f; }
+.tiptap pre .hljs-addition {
+  color: #3a6b4f;
+}
 
 .tiptap pre .hljs-number,
-.tiptap pre .hljs-literal { color: #8b5c2a; }
+.tiptap pre .hljs-literal {
+  color: #8b5c2a;
+}
 
 .tiptap pre .hljs-comment,
-.tiptap pre .hljs-quote { color: #737874; font-style: italic; }
+.tiptap pre .hljs-quote {
+  color: #737874;
+  font-style: italic;
+}
 
 .tiptap pre .hljs-function,
-.tiptap pre .hljs-title { color: #3a4a41; font-weight: 600; }
+.tiptap pre .hljs-title {
+  color: #3a4a41;
+  font-weight: 600;
+}
 
 .tiptap pre .hljs-variable,
 .tiptap pre .hljs-template-variable,
-.tiptap pre .hljs-attr { color: #506357; }
+.tiptap pre .hljs-attr {
+  color: #506357;
+}
 
 .tiptap pre .hljs-type,
-.tiptap pre .hljs-class { color: #5e7a68; }
+.tiptap pre .hljs-class {
+  color: #5e7a68;
+}
 
 .tiptap pre .hljs-tag,
-.tiptap pre .hljs-name { color: #4f6056; }
+.tiptap pre .hljs-name {
+  color: #4f6056;
+}
 
-.tiptap pre .hljs-attribute { color: #6b8f7a; }
+.tiptap pre .hljs-attribute {
+  color: #6b8f7a;
+}
 
 .tiptap pre .hljs-symbol,
-.tiptap pre .hljs-bullet { color: #7a5c3a; }
+.tiptap pre .hljs-bullet {
+  color: #7a5c3a;
+}
 
-.tiptap pre .hljs-deletion { color: #ba1a1a; }
+.tiptap pre .hljs-deletion {
+  color: #ba1a1a;
+}
 
-.tiptap pre .hljs-meta { color: #737874; }
+.tiptap pre .hljs-meta {
+  color: #737874;
+}
 
 /* Syntax highlighting - Dark mode */
 .dark .tiptap pre .hljs-keyword,
 .dark .tiptap pre .hljs-selector-tag,
-.dark .tiptap pre .hljs-built_in { color: #b8cbbf; font-weight: 600; }
+.dark .tiptap pre .hljs-built_in {
+  color: #b8cbbf;
+  font-weight: 600;
+}
 
 .dark .tiptap pre .hljs-string,
-.dark .tiptap pre .hljs-addition { color: #8fd4a8; }
+.dark .tiptap pre .hljs-addition {
+  color: #8fd4a8;
+}
 
 .dark .tiptap pre .hljs-number,
-.dark .tiptap pre .hljs-literal { color: #e0b080; }
+.dark .tiptap pre .hljs-literal {
+  color: #e0b080;
+}
 
 .dark .tiptap pre .hljs-comment,
-.dark .tiptap pre .hljs-quote { color: #8d918d; font-style: italic; }
+.dark .tiptap pre .hljs-quote {
+  color: #8d918d;
+  font-style: italic;
+}
 
 .dark .tiptap pre .hljs-function,
-.dark .tiptap pre .hljs-title { color: #d4e7da; font-weight: 600; }
+.dark .tiptap pre .hljs-title {
+  color: #d4e7da;
+  font-weight: 600;
+}
 
 .dark .tiptap pre .hljs-variable,
 .dark .tiptap pre .hljs-template-variable,
-.dark .tiptap pre .hljs-attr { color: #b7ccbd; }
+.dark .tiptap pre .hljs-attr {
+  color: #b7ccbd;
+}
 
 .dark .tiptap pre .hljs-type,
-.dark .tiptap pre .hljs-class { color: #a3c4ad; }
+.dark .tiptap pre .hljs-class {
+  color: #a3c4ad;
+}
 
 .dark .tiptap pre .hljs-tag,
-.dark .tiptap pre .hljs-name { color: #b8cbbf; }
+.dark .tiptap pre .hljs-name {
+  color: #b8cbbf;
+}
 
-.dark .tiptap pre .hljs-attribute { color: #9ec2a8; }
+.dark .tiptap pre .hljs-attribute {
+  color: #9ec2a8;
+}
 
 .dark .tiptap pre .hljs-symbol,
-.dark .tiptap pre .hljs-bullet { color: #d4a76a; }
+.dark .tiptap pre .hljs-bullet {
+  color: #d4a76a;
+}
 
-.dark .tiptap pre .hljs-deletion { color: #ffa0a0; }
+.dark .tiptap pre .hljs-deletion {
+  color: #ffa0a0;
+}
 
-.dark .tiptap pre .hljs-meta { color: #8d918d; }
+.dark .tiptap pre .hljs-meta {
+  color: #8d918d;
+}
 
 /* Links */
 .tiptap a {
@@ -925,7 +992,9 @@ defineExpose({ editor, getBlockContent })
   text-underline-offset: 3px;
   cursor: pointer;
   word-break: break-word;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
 }
 
 .tiptap a:hover {
@@ -948,24 +1017,24 @@ defineExpose({ editor, getBlockContent })
 }
 
 /* Task list (checks) */
-.tiptap ul[data-type="taskList"] {
+.tiptap ul[data-type='taskList'] {
   list-style: none;
   padding-left: 0;
 }
 
-.tiptap ul[data-type="taskList"] li {
+.tiptap ul[data-type='taskList'] li {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
   margin-bottom: 0.35rem;
 }
 
-.tiptap ul[data-type="taskList"] li > label {
+.tiptap ul[data-type='taskList'] li > label {
   flex-shrink: 0;
   margin-top: 0.2rem;
 }
 
-.tiptap ul[data-type="taskList"] li > label input[type="checkbox"] {
+.tiptap ul[data-type='taskList'] li > label input[type='checkbox'] {
   appearance: none;
   width: 1.1rem;
   height: 1.1rem;
@@ -975,12 +1044,12 @@ defineExpose({ editor, getBlockContent })
   position: relative;
 }
 
-.tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+.tiptap ul[data-type='taskList'] li > label input[type='checkbox']:checked {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
 }
 
-.tiptap ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+.tiptap ul[data-type='taskList'] li > label input[type='checkbox']:checked::after {
   content: '✓';
   position: absolute;
   inset: 0;
@@ -992,7 +1061,7 @@ defineExpose({ editor, getBlockContent })
   font-weight: bold;
 }
 
-.tiptap ul[data-type="taskList"] li[data-checked="true"] > div > p {
+.tiptap ul[data-type='taskList'] li[data-checked='true'] > div > p {
   text-decoration: line-through;
   opacity: 0.6;
 }

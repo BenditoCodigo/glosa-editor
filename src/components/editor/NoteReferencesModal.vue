@@ -89,28 +89,18 @@ function handleKeydown(event: KeyboardEvent) {
         @keydown="handleKeydown"
       >
         <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          @click="emit('cancel')"
-        />
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="emit('cancel')" />
 
         <!-- Modal Dialog -->
         <div
-          class="
-            glass-panel-md
-            relative z-10
-            w-full max-w-lg
-            rounded-2xl p-6 md:p-7
-            flex flex-col gap-6
-            animate-fade-up
-            shadow-2xl border border-outline/20
-            max-h-[90vh] overflow-y-auto
-          "
+          class="glass-panel-md relative z-10 w-full max-w-lg rounded-2xl p-6 md:p-7 flex flex-col gap-6 animate-fade-up shadow-2xl border border-outline/20 max-h-[90vh] overflow-y-auto"
         >
           <!-- Header -->
           <div class="flex items-start justify-between gap-4">
             <div class="flex items-center gap-3">
-              <div class="p-2.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <div
+                class="p-2.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center"
+              >
                 <UiIcon name="menu_book" size="md" />
               </div>
               <div>
@@ -122,23 +112,21 @@ function handleKeydown(event: KeyboardEvent) {
                 </p>
               </div>
             </div>
-            <UiIconButton
-              icon="close"
-              ariaLabel="Cerrar modal"
-              size="sm"
-              @click="emit('cancel')"
-            />
+            <UiIconButton icon="close" ariaLabel="Cerrar modal" size="sm" @click="emit('cancel')" />
           </div>
 
           <!-- Section 1: Fuentes y Referencias -->
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
-              <label class="text-xs font-semibold uppercase tracking-wider text-on-surface/90 flex items-center gap-1.5">
+              <label
+                class="text-xs font-semibold uppercase tracking-wider text-on-surface/90 flex items-center gap-1.5"
+              >
                 <UiIcon name="link" size="sm" class="text-primary text-[16px]" />
                 Fuentes y Referencias
               </label>
               <span class="text-[11px] text-secondary">
-                {{ localSources.length }} {{ localSources.length === 1 ? 'referencia' : 'referencias' }}
+                {{ localSources.length }}
+                {{ localSources.length === 1 ? 'referencia' : 'referencias' }}
               </span>
             </div>
 
@@ -150,17 +138,10 @@ function handleKeydown(event: KeyboardEvent) {
                   v-model="newSourceUrl"
                   type="url"
                   placeholder="https://ejemplo.com/articulo-fuente"
-                  class="
-                    glass-input
-                    w-full px-3.5 py-2.5
-                    rounded-xl
-                    text-xs text-on-surface
-                    placeholder:text-secondary/50
-                    focus:outline-none focus:ring-1 focus:ring-primary/50
-                  "
+                  class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   @keydown.enter.prevent="addSource"
                   @input="urlError = null"
-                >
+                />
               </div>
               <UiButton
                 variant="outline"
@@ -183,13 +164,7 @@ function handleKeydown(event: KeyboardEvent) {
               <div
                 v-for="(source, index) in localSources"
                 :key="index"
-                class="
-                  group flex items-center justify-between gap-2
-                  px-3 py-2 rounded-xl
-                  bg-surface-variant/30 hover:bg-surface-variant/50
-                  border border-outline/10
-                  transition-colors text-xs
-                "
+                class="group flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-surface-variant/30 hover:bg-surface-variant/50 border border-outline/10 transition-colors text-xs"
               >
                 <a
                   :href="source"
@@ -223,41 +198,36 @@ function handleKeydown(event: KeyboardEvent) {
           <!-- Section 2: Document AI Instructions -->
           <div class="flex flex-col gap-2.5">
             <div class="flex items-center justify-between">
-              <label class="text-xs font-semibold uppercase tracking-wider text-on-surface/90 flex items-center gap-1.5">
+              <label
+                class="text-xs font-semibold uppercase tracking-wider text-on-surface/90 flex items-center gap-1.5"
+              >
                 <UiIcon name="psychology" size="sm" class="text-primary text-[16px]" />
                 Instrucciones específicas de IA
               </label>
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary"
+              >
                 Prioridad alta
               </span>
             </div>
 
             <p class="text-[11px] text-secondary leading-relaxed">
-              Define el criterio editorial o de investigación para este documento. Estas instrucciones tienen <strong class="text-on-surface">prioridad absoluta</strong> sobre la configuración general.
+              Define el criterio editorial o de investigación para este documento. Estas
+              instrucciones tienen <strong class="text-on-surface">prioridad absoluta</strong> sobre
+              la configuración general.
             </p>
 
             <textarea
               v-model="localInstructions"
               rows="4"
               placeholder="Ej: Eres un editor de investigación periodística. Verifica rigurosamente las afirmaciones, contrasta datos con las fuentes listadas y señala cualquier discrepancia de fechas o nombres..."
-              class="
-                glass-input
-                w-full px-3.5 py-2.5
-                rounded-xl
-                text-xs text-on-surface
-                placeholder:text-secondary/50
-                focus:outline-none focus:ring-1 focus:ring-primary/50
-                resize-none
-                leading-relaxed
-              "
+              class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none leading-relaxed"
             />
           </div>
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 pt-2 border-t border-outline/10">
-            <UiButton variant="ghost" size="sm" @click="emit('cancel')">
-              Cancelar
-            </UiButton>
+            <UiButton variant="ghost" size="sm" @click="emit('cancel')"> Cancelar </UiButton>
             <UiButton variant="solid" size="sm" @click="handleSave">
               <template #icon-left>
                 <UiIcon name="check" size="sm" />

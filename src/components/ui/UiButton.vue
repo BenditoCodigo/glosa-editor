@@ -17,9 +17,11 @@ const sizeClasses = {
 } as const
 
 const variantClasses = {
-  solid: 'bg-primary/90 text-on-primary border border-white/20 shadow-sm hover:opacity-90 active:scale-95',
+  solid:
+    'bg-primary/90 text-on-primary border border-white/20 shadow-sm hover:opacity-90 active:scale-95',
   ghost: 'bg-transparent text-secondary hover:bg-white/20 dark:hover:bg-white/5',
-  outline: 'border border-outline-variant bg-transparent text-on-surface hover:bg-surface-container-high',
+  outline:
+    'border border-outline-variant bg-transparent text-on-surface hover:bg-surface-container-high',
 } as const
 
 const classes = computed(() => [

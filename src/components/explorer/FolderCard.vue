@@ -30,15 +30,7 @@ function handleMenuClick(event: MouseEvent) {
 
 <template>
   <div
-    class="
-      group glass-panel-md
-      relative
-      p-5 rounded-2xl
-      cursor-pointer
-      transition-all duration-200
-      hover:bg-white/50 dark:hover:bg-white/10
-      will-change-transform
-    "
+    class="group glass-panel-md relative p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/50 dark:hover:bg-white/10 will-change-transform"
     :class="active && 'border-l-4 border-l-primary bg-primary/5'"
     @dblclick="$emit('dblclick')"
     @contextmenu="handleContextMenu"

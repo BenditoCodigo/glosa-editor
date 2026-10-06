@@ -10,7 +10,13 @@ import {
 } from '@/services/platform'
 import type { Note } from '@/types/note'
 import type { Folder } from '@/types/folder'
-import type { StorageAdapter, FileEntry, FilesystemMetadata, FolderMeta, ActivityEvent } from './types'
+import type {
+  StorageAdapter,
+  FileEntry,
+  FilesystemMetadata,
+  FolderMeta,
+  ActivityEvent,
+} from './types'
 import { parseMarkdownFile, frontmatterToNote, serializeNote } from '@/services/frontmatter'
 import { slugify, resolveFilename } from '@/services/slug'
 
@@ -156,9 +162,7 @@ export class FilesystemAdapter implements StorageAdapter {
     } else {
       // New note — create file
       const folderPath = note.folder
-      const dirPath = folderPath
-        ? `${this.rootPath}/${folderPath}`
-        : this.rootPath
+      const dirPath = folderPath ? `${this.rootPath}/${folderPath}` : this.rootPath
 
       // Ensure parent directory exists
       await mkdir(dirPath, { recursive: true })
@@ -278,9 +282,7 @@ export class FilesystemAdapter implements StorageAdapter {
       // New folder — create directory with slugified name
       const existingDirNames = this.getExistingDirNamesInParent(parentPath, null)
       const dirName = this.resolveDirectoryName(slug, existingDirNames)
-      const relativePath = folder.parentFolder
-        ? `${folder.parentFolder}/${dirName}`
-        : dirName
+      const relativePath = folder.parentFolder ? `${folder.parentFolder}/${dirName}` : dirName
       const absolutePath = `${this.rootPath}/${relativePath}`
 
       await mkdir(absolutePath, { recursive: true })
@@ -302,7 +304,10 @@ export class FilesystemAdapter implements StorageAdapter {
    * Gets existing directory names in a parent directory from the folder cache,
    * excluding the specified folderId.
    */
-  private getExistingDirNamesInParent(parentAbsolutePath: string, excludeFolderId: string | null): string[] {
+  private getExistingDirNamesInParent(
+    parentAbsolutePath: string,
+    excludeFolderId: string | null,
+  ): string[] {
     const parentRelative = this.relativize(parentAbsolutePath)
     const normalizedParent = parentRelative === '' ? null : parentRelative
 
@@ -478,9 +483,7 @@ export class FilesystemAdapter implements StorageAdapter {
       if (entry.absolutePath === absolutePath) return
     }
 
-    const filename = relativePath.includes('/')
-      ? relativePath.split('/').pop()!
-      : relativePath
+    const filename = relativePath.includes('/') ? relativePath.split('/').pop()! : relativePath
 
     let content: string
     try {
@@ -498,7 +501,16 @@ export class FilesystemAdapter implements StorageAdapter {
     const note = frontmatterToNote(frontmatter, body, folderPath, filename)
 
     // Track extra fields
-    const knownKeys = new Set(['id', 'title', 'createdAt', 'updatedAt', 'tags', 'isFavorite', 'emoji', 'coverImage'])
+    const knownKeys = new Set([
+      'id',
+      'title',
+      'createdAt',
+      'updatedAt',
+      'tags',
+      'isFavorite',
+      'emoji',
+      'coverImage',
+    ])
     const extraFields: Record<string, unknown> = {}
     let hasExtra = false
     for (const [key, value] of Object.entries(frontmatter)) {
@@ -555,7 +567,16 @@ export class FilesystemAdapter implements StorageAdapter {
     const note = frontmatterToNote(frontmatter, body, folderPath, filename)
 
     // Track extra fields
-    const knownKeys = new Set(['id', 'title', 'createdAt', 'updatedAt', 'tags', 'isFavorite', 'emoji', 'coverImage'])
+    const knownKeys = new Set([
+      'id',
+      'title',
+      'createdAt',
+      'updatedAt',
+      'tags',
+      'isFavorite',
+      'emoji',
+      'coverImage',
+    ])
     const extraFields: Record<string, unknown> = {}
     let hasExtra = false
     for (const [key, value] of Object.entries(frontmatter)) {
@@ -601,9 +622,7 @@ export class FilesystemAdapter implements StorageAdapter {
     // Only register if not already known
     if (this.folderCache.has(relativePath)) return
 
-    const name = relativePath.includes('/')
-      ? relativePath.split('/').pop()!
-      : relativePath
+    const name = relativePath.includes('/') ? relativePath.split('/').pop()! : relativePath
     const parentFolder = relativePath.includes('/')
       ? relativePath.slice(0, relativePath.lastIndexOf('/'))
       : null
@@ -638,7 +657,10 @@ export class FilesystemAdapter implements StorageAdapter {
 
     // Remove child notes
     for (const [noteId, entry] of Array.from(this.fileMap.entries())) {
-      if (entry.folderPath === relativePath || (entry.folderPath && entry.folderPath.startsWith(prefix))) {
+      if (
+        entry.folderPath === relativePath ||
+        (entry.folderPath && entry.folderPath.startsWith(prefix))
+      ) {
         const wasActive = noteId === this.activeNoteId
         this.noteCache.delete(noteId)
         this.fileMap.delete(noteId)
@@ -812,7 +834,16 @@ export class FilesystemAdapter implements StorageAdapter {
     const note = frontmatterToNote(frontmatter, body, folderPath, filename)
 
     // Track unrecognized frontmatter fields
-    const knownKeys = new Set(['id', 'title', 'createdAt', 'updatedAt', 'tags', 'isFavorite', 'emoji', 'coverImage'])
+    const knownKeys = new Set([
+      'id',
+      'title',
+      'createdAt',
+      'updatedAt',
+      'tags',
+      'isFavorite',
+      'emoji',
+      'coverImage',
+    ])
     const extraFields: Record<string, unknown> = {}
     let hasExtra = false
     for (const [key, value] of Object.entries(frontmatter)) {

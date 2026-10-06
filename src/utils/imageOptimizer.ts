@@ -13,12 +13,7 @@ export async function optimizeImageFile(
   file: File | Blob,
   options: OptimizeImageOptions = {},
 ): Promise<string> {
-  const {
-    maxWidth = 1920,
-    maxHeight = 1080,
-    quality = 0.85,
-    mimeType = 'image/webp',
-  } = options
+  const { maxWidth = 1920, maxHeight = 1080, quality = 0.85, mimeType = 'image/webp' } = options
 
   // If it's an SVG, preserve vector format as Data URL directly
   if (file.type === 'image/svg+xml') {

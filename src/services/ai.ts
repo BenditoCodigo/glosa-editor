@@ -109,10 +109,7 @@ export async function testConnection(): Promise<AIConnectionResult> {
   }
 }
 
-export async function chat(
-  messages: ChatMessage[],
-  options?: ChatOptions,
-): Promise<ChatResponse> {
+export async function chat(messages: ChatMessage[], options?: ChatOptions): Promise<ChatResponse> {
   assertConfigured()
 
   const store = useSettingsStore()
@@ -148,11 +145,13 @@ export async function chat(
   return {
     content: data.choices[0]?.message?.content ?? '',
     finishReason: data.choices[0]?.finish_reason ?? 'unknown',
-    usage: data.usage ? {
-      promptTokens: data.usage.prompt_tokens,
-      completionTokens: data.usage.completion_tokens,
-      totalTokens: data.usage.total_tokens,
-    } : undefined,
+    usage: data.usage
+      ? {
+          promptTokens: data.usage.prompt_tokens,
+          completionTokens: data.usage.completion_tokens,
+          totalTokens: data.usage.total_tokens,
+        }
+      : undefined,
   }
 }
 
@@ -228,9 +227,11 @@ function assertConfigured(): void {
 
 function parseErrorMessage(status: number, body: string): string {
   if (status === 401 || status === 403) return 'Error de autenticación. Verifica tu API Key.'
-  if (status === 404) return 'Modelo o endpoint no encontrado. Verifica la URL base y el nombre del modelo.'
+  if (status === 404)
+    return 'Modelo o endpoint no encontrado. Verifica la URL base y el nombre del modelo.'
   if (status === 429) return 'Demasiadas peticiones. Intenta de nuevo en unos segundos.'
-  if (status >= 500) return `Error del servidor (${status}). Verifica que el servicio esté corriendo.`
+  if (status >= 500)
+    return `Error del servidor (${status}). Verifica que el servicio esté corriendo.`
   try {
     const parsed = JSON.parse(body)
     return parsed.error?.message ?? `Error ${status}: ${body.slice(0, 200)}`

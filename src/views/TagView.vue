@@ -157,9 +157,7 @@ function navigateToFolder(folderId: string | null) {
         <UiIconButton icon="arrow_back" ariaLabel="Back" size="sm" @click="router.push('/')" />
         <div class="flex items-center gap-3">
           <UiIcon name="label" class="text-primary" />
-          <h1 class="font-display text-2xl font-bold text-on-surface">
-            #{{ currentTag }}
-          </h1>
+          <h1 class="font-display text-2xl font-bold text-on-surface">#{{ currentTag }}</h1>
           <span class="text-sm text-secondary">
             {{ totalCount }} {{ totalCount === 1 ? 'nota' : 'notas' }}
           </span>
@@ -177,11 +175,7 @@ function navigateToFolder(folderId: string | null) {
 
       <!-- Grouped notes by folder -->
       <template v-else>
-        <section
-          v-for="group in groupedByFolder"
-          :key="group.folderId ?? 'root'"
-          class="mb-10"
-        >
+        <section v-for="group in groupedByFolder" :key="group.folderId ?? 'root'" class="mb-10">
           <!-- Folder breadcrumb header -->
           <div class="flex items-center gap-3 mb-4">
             <button
@@ -230,6 +224,9 @@ function navigateToFolder(folderId: string | null) {
     :initial-value="targetNote?.title ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameNote"
-    @cancel="showNoteRenameModal = false; targetNote = null"
+    @cancel="
+      showNoteRenameModal = false
+      targetNote = null
+    "
   />
 </template>

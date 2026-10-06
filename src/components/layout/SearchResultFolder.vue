@@ -30,10 +30,7 @@ const emit = defineEmits<Emits>()
       <p class="truncate text-sm font-medium text-on-surface">
         {{ result.name }}
       </p>
-      <p
-        v-if="result.parentPath"
-        class="truncate text-xs text-on-surface-variant"
-      >
+      <p v-if="result.parentPath" class="truncate text-xs text-on-surface-variant">
         en /{{ result.parentPath }}
       </p>
     </div>

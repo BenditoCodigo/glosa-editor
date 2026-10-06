@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { SearchResults, SearchResultItem, SearchResultNote, SearchResultFolder, SearchResultTag } from '@/types/search'
+import type {
+  SearchResults,
+  SearchResultItem,
+  SearchResultNote,
+  SearchResultFolder,
+  SearchResultTag,
+} from '@/types/search'
 import SearchResultNoteVue from './SearchResultNote.vue'
 import SearchResultFolderVue from './SearchResultFolder.vue'
 import SearchResultTagVue from './SearchResultTag.vue'
@@ -44,14 +50,7 @@ function handleHover(flatIndex: number) {
     <div
       v-if="isVisible"
       role="listbox"
-      class="
-        glass-panel-opaque
-        absolute right-0 z-50
-        min-w-80 max-w-[480px] w-full
-        mt-2 p-2
-        rounded-xl
-        text-on-glass
-      "
+      class="glass-panel-opaque absolute right-0 z-50 min-w-80 max-w-[480px] w-full mt-2 p-2 rounded-xl text-on-glass"
     >
       <!-- Results grouped by type -->
       <template v-if="results.hasResults">
@@ -65,10 +64,7 @@ function handleHover(flatIndex: number) {
             <span class="text-xs font-medium text-on-surface-variant uppercase tracking-wide">
               {{ group.label }}
             </span>
-            <span
-              v-if="group.total > 5"
-              class="text-xs text-on-surface-variant"
-            >
+            <span v-if="group.total > 5" class="text-xs text-on-surface-variant">
               {{ group.items.length }} de {{ group.total }}
             </span>
           </div>
@@ -78,21 +74,21 @@ function handleHover(flatIndex: number) {
             <template v-for="(item, itemIndex) in group.items" :key="`${group.type}-${itemIndex}`">
               <SearchResultNoteVue
                 v-if="item.type === 'note'"
-                :result="(item as SearchResultNote)"
+                :result="item as SearchResultNote"
                 :is-highlighted="highlightedIndex === getGroupOffset(groupIndex) + itemIndex"
                 @select="handleSelect"
                 @mouseenter="handleHover(getGroupOffset(groupIndex) + itemIndex)"
               />
               <SearchResultFolderVue
                 v-if="item.type === 'folder'"
-                :result="(item as SearchResultFolder)"
+                :result="item as SearchResultFolder"
                 :is-highlighted="highlightedIndex === getGroupOffset(groupIndex) + itemIndex"
                 @select="handleSelect"
                 @mouseenter="handleHover(getGroupOffset(groupIndex) + itemIndex)"
               />
               <SearchResultTagVue
                 v-if="item.type === 'tag'"
-                :result="(item as SearchResultTag)"
+                :result="item as SearchResultTag"
                 :is-highlighted="highlightedIndex === getGroupOffset(groupIndex) + itemIndex"
                 @select="handleSelect"
                 @mouseenter="handleHover(getGroupOffset(groupIndex) + itemIndex)"
@@ -103,13 +99,8 @@ function handleHover(flatIndex: number) {
       </template>
 
       <!-- No results message -->
-      <div
-        v-else-if="results.query"
-        class="flex items-center justify-center px-4 py-6"
-      >
-        <p class="text-sm text-on-surface-variant">
-          Sin resultados para '{{ results.query }}'
-        </p>
+      <div v-else-if="results.query" class="flex items-center justify-center px-4 py-6">
+        <p class="text-sm text-on-surface-variant">Sin resultados para '{{ results.query }}'</p>
       </div>
     </div>
   </Transition>
@@ -117,11 +108,15 @@ function handleHover(flatIndex: number) {
 
 <style scoped>
 .search-results-enter-active {
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 .search-results-leave-active {
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out;
 }
 
 .search-results-enter-from {

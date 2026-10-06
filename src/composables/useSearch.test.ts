@@ -190,9 +190,7 @@ describe('filterTags', () => {
   })
 
   it('returns multiple matching tags', () => {
-    const notes = [
-      makeNote({ tags: ['frontend-vue', 'frontend-react'] }),
-    ]
+    const notes = [makeNote({ tags: ['frontend-vue', 'frontend-react'] })]
     const results = filterTags(notes, 'frontend')
     expect(results).toHaveLength(2)
   })
@@ -214,7 +212,8 @@ describe('extractSnippet', () => {
   })
 
   it('returns snippet around match with context', () => {
-    const content = 'This is a long text that contains the word TypeScript in the middle of the sentence'
+    const content =
+      'This is a long text that contains the word TypeScript in the middle of the sentence'
     const snippet = extractSnippet(content, 'TypeScript')
     expect(snippet.toLowerCase()).toContain('typescript')
   })
@@ -266,8 +265,25 @@ describe('groupResults', () => {
   })
 
   it('groups results by type', () => {
-    const notes = [{ type: 'note' as const, id: '1', title: 'N', emoji: undefined, snippet: '', route: { name: 'editor', params: { id: '1' } } }]
-    const folders = [{ type: 'folder' as const, id: '1', name: 'F', parentPath: null, route: { name: 'explorer-folder', params: { path: 'F' } } }]
+    const notes = [
+      {
+        type: 'note' as const,
+        id: '1',
+        title: 'N',
+        emoji: undefined,
+        snippet: '',
+        route: { name: 'editor', params: { id: '1' } },
+      },
+    ]
+    const folders = [
+      {
+        type: 'folder' as const,
+        id: '1',
+        name: 'F',
+        parentPath: null,
+        route: { name: 'explorer-folder', params: { path: 'F' } },
+      },
+    ]
     const tags = [{ type: 'tag' as const, name: 'T', noteCount: 1 }]
 
     const result = groupResults(notes, folders, tags)
@@ -309,7 +325,16 @@ describe('groupResults', () => {
   })
 
   it('excludes empty groups', () => {
-    const notes = [{ type: 'note' as const, id: '1', title: 'N', emoji: undefined, snippet: '', route: { name: 'editor', params: { id: '1' } } }]
+    const notes = [
+      {
+        type: 'note' as const,
+        id: '1',
+        title: 'N',
+        emoji: undefined,
+        snippet: '',
+        route: { name: 'editor', params: { id: '1' } },
+      },
+    ]
     const result = groupResults(notes, [], [])
     expect(result.groups).toHaveLength(1)
     expect(result.groups[0]!.type).toBe('note')
@@ -355,9 +380,12 @@ describe('useSearch - keyboard navigation', () => {
       query.value = 'search'
 
       // Wait for debounce
-      await vi.waitFor(() => {
-        expect(flatResults.value.length).toBeGreaterThan(0)
-      }, { timeout: 500 })
+      await vi.waitFor(
+        () => {
+          expect(flatResults.value.length).toBeGreaterThan(0)
+        },
+        { timeout: 500 },
+      )
 
       navigateDown()
       expect(highlightedIndex.value).toBe(0)
@@ -373,9 +401,12 @@ describe('useSearch - keyboard navigation', () => {
       const { navigateDown, highlightedIndex, query, flatResults } = useSearch()
       query.value = 'search'
 
-      await vi.waitFor(() => {
-        expect(flatResults.value.length).toBe(2)
-      }, { timeout: 500 })
+      await vi.waitFor(
+        () => {
+          expect(flatResults.value.length).toBe(2)
+        },
+        { timeout: 500 },
+      )
 
       navigateDown() // 0
       navigateDown() // 1
@@ -402,9 +433,12 @@ describe('useSearch - keyboard navigation', () => {
       const { navigateUp, highlightedIndex, query, flatResults } = useSearch()
       query.value = 'search'
 
-      await vi.waitFor(() => {
-        expect(flatResults.value.length).toBe(3)
-      }, { timeout: 500 })
+      await vi.waitFor(
+        () => {
+          expect(flatResults.value.length).toBe(3)
+        },
+        { timeout: 500 },
+      )
 
       // From -1 (no selection), ArrowUp goes to last item
       navigateUp()
@@ -422,13 +456,16 @@ describe('useSearch - keyboard navigation', () => {
       const { navigateDown, navigateUp, highlightedIndex, query, flatResults } = useSearch()
       query.value = 'search'
 
-      await vi.waitFor(() => {
-        expect(flatResults.value.length).toBe(3)
-      }, { timeout: 500 })
+      await vi.waitFor(
+        () => {
+          expect(flatResults.value.length).toBe(3)
+        },
+        { timeout: 500 },
+      )
 
       navigateDown() // 0
       navigateDown() // 1
-      navigateUp()   // back to 0
+      navigateUp() // back to 0
       expect(highlightedIndex.value).toBe(0)
     })
   })
@@ -451,12 +488,16 @@ describe('useSearch - keyboard navigation', () => {
       const notesStore = useNotesStore()
       notesStore.notes = [makeNote({ id: 'note-1', title: 'Search target' })]
 
-      const { navigateDown, selectCurrent, query, isActive, highlightedIndex, flatResults } = useSearch()
+      const { navigateDown, selectCurrent, query, isActive, highlightedIndex, flatResults } =
+        useSearch()
       query.value = 'search'
 
-      await vi.waitFor(() => {
-        expect(flatResults.value.length).toBeGreaterThan(0)
-      }, { timeout: 500 })
+      await vi.waitFor(
+        () => {
+          expect(flatResults.value.length).toBeGreaterThan(0)
+        },
+        { timeout: 500 },
+      )
 
       navigateDown() // highlight first item
       selectCurrent()
@@ -490,7 +531,10 @@ describe('useSearch - keyboard navigation', () => {
         parentPath: null,
         route: { name: 'explorer-folder', params: { path: 'Projects' } },
       })
-      expect(mockPush).toHaveBeenCalledWith({ name: 'explorer-folder', params: { path: 'Projects' } })
+      expect(mockPush).toHaveBeenCalledWith({
+        name: 'explorer-folder',
+        params: { path: 'Projects' },
+      })
     })
 
     it('navigates to tag-view route for tags', () => {

@@ -27,28 +27,32 @@ export const DEFAULT_AI_QUICK_ACTIONS: AIQuickAction[] = [
     label: 'Verificar datos',
     icon: 'fact_check',
     description: 'Evalúa la veracidad, coherencia o precisión de los datos expuestos.',
-    query: 'Analiza el siguiente fragmento y evalúa la precisión, coherencia factual y posibles dudas sobre los datos o afirmaciones expuestas. Señala si hay datos dudosos, anacronismos o afirmaciones que requieran verificación o matización.',
+    query:
+      'Analiza el siguiente fragmento y evalúa la precisión, coherencia factual y posibles dudas sobre los datos o afirmaciones expuestas. Señala si hay datos dudosos, anacronismos o afirmaciones que requieran verificación o matización.',
   },
   {
     id: 'improve',
     label: 'Sugerencias de mejora',
     icon: 'lightbulb',
     description: 'Ideas constructivas para enriquecer o clarificar el contenido.',
-    query: 'Ofrece sugerencias constructivas para enriquecer, clarificar o estructurar mejor este fragmento en el contexto de la nota. No reescribas el texto completo, proporciona observaciones puntuales, ideas complementarias y recomendaciones prácticas.',
+    query:
+      'Ofrece sugerencias constructivas para enriquecer, clarificar o estructurar mejor este fragmento en el contexto de la nota. No reescribas el texto completo, proporciona observaciones puntuales, ideas complementarias y recomendaciones prácticas.',
   },
   {
     id: 'questions',
     label: 'Preguntas reflexivas',
     icon: 'help_outline',
     description: 'Preguntas críticas para profundizar en el pensamiento.',
-    query: 'Formula 2 o 3 preguntas reflexivas y dudas críticas a partir de este fragmento para que el autor pueda profundizar en el tema, explorar nuevas perspectivas o detectar ángulos no considerados.',
+    query:
+      'Formula 2 o 3 preguntas reflexivas y dudas críticas a partir de este fragmento para que el autor pueda profundizar en el tema, explorar nuevas perspectivas o detectar ángulos no considerados.',
   },
   {
     id: 'inconsistencies',
     label: 'Buscar contradicciones',
     icon: 'find_in_page',
     description: 'Detecta vacíos argumentales o inconsistencias lógicas.',
-    query: 'Examina si en este fragmento existen contradicciones lógicas, premisas sin justificar, sesgos o vacíos conceptuales que pudieran debilitar la idea principal dentro del contexto de la nota.',
+    query:
+      'Examina si en este fragmento existen contradicciones lógicas, premisas sin justificar, sesgos o vacíos conceptuales que pudieran debilitar la idea principal dentro del contexto de la nota.',
   },
 ]
 
@@ -60,9 +64,10 @@ export function buildAIBlockPrompt(params: {
   const { blockContent, userQuery, context } = params
   const tagList = context.tags && context.tags.length > 0 ? context.tags.join(', ') : 'Ninguna'
   const folderName = context.folder ? context.folder : 'Raíz'
-  const sourcesSection = context.sources && context.sources.length > 0
-    ? `\n\n[FUENTES Y REFERENCIAS / ANEXOS DEL DOCUMENTO]\n${context.sources.map(s => `- ${s}`).join('\n')}`
-    : ''
+  const sourcesSection =
+    context.sources && context.sources.length > 0
+      ? `\n\n[FUENTES Y REFERENCIAS / ANEXOS DEL DOCUMENTO]\n${context.sources.map((s) => `- ${s}`).join('\n')}`
+      : ''
   const fullDocSection = context.fullContent?.trim()
     ? `\n\n[DOCUMENTO COMPLETO (CONTEXTO GENERAL DE LA NOTA)]\n"""\n${context.fullContent.trim()}\n"""`
     : ''
@@ -239,7 +244,8 @@ export function useAIBlockAssistant() {
         // User cancelled generation, do nothing
         return
       }
-      error.value = err instanceof Error ? err.message : 'Ocurrió un error al comunicarse con la IA.'
+      error.value =
+        err instanceof Error ? err.message : 'Ocurrió un error al comunicarse con la IA.'
     } finally {
       isLoading.value = false
       isStreaming.value = false

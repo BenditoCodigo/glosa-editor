@@ -74,15 +74,7 @@ function handleSelect(id: string) {
   <Teleport to="body">
     <div
       ref="menuRef"
-      class="
-        glass-panel-md
-        fixed z-200
-        min-w-[180px]
-        rounded-xl
-        py-1.5
-        animate-fade-in
-        shadow-lg
-      "
+      class="glass-panel-md fixed z-200 min-w-[180px] rounded-xl py-1.5 animate-fade-in shadow-lg"
       :style="{ left: `${adjustedX}px`, top: `${adjustedY}px` }"
       role="menu"
     >
@@ -90,13 +82,7 @@ function handleSelect(id: string) {
         <div v-if="item.divider" class="h-px mx-3 my-1.5 bg-outline-variant/30" />
         <button
           v-else
-          class="
-            flex items-center gap-3
-            w-full px-4 py-2.5
-            text-left text-sm
-            transition-colors duration-150
-            hover:bg-black/5 dark:hover:bg-white/5
-          "
+          class="flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm transition-colors duration-150 hover:bg-black/5 dark:hover:bg-white/5"
           :class="item.danger ? 'text-error' : 'text-on-surface'"
           role="menuitem"
           @click="handleSelect(item.id)"

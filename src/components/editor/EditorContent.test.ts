@@ -9,7 +9,8 @@ import { Markdown } from 'tiptap-markdown'
 
 describe('Tiptap Markdown with TaskList and Link', () => {
   it('correctly parses and serializes links inside task items', () => {
-    const mdInput = '- [ ] [Calentador Eléctrico Calorex](https://www.homedepot.com.mx/p/calentador)'
+    const mdInput =
+      '- [ ] [Calentador Eléctrico Calorex](https://www.homedepot.com.mx/p/calentador)'
 
     const editor = new Editor({
       content: mdInput,
@@ -41,7 +42,9 @@ describe('Tiptap Markdown with TaskList and Link', () => {
     expect(html).toContain('href="https://www.homedepot.com.mx/p/calentador"')
     expect(html).toContain('Calentador Eléctrico Calorex')
 
-    interface MarkdownStorage { markdown: { getMarkdown: () => string } }
+    interface MarkdownStorage {
+      markdown: { getMarkdown: () => string }
+    }
     const mdOutput = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown()
     expect(mdOutput.trim()).toBe(mdInput)
 
@@ -84,7 +87,9 @@ Segundo párrafo de texto
     tr.insert(0, secondNode)
     editor.view.dispatch(tr)
 
-    interface MarkdownStorage { markdown: { getMarkdown: () => string } }
+    interface MarkdownStorage {
+      markdown: { getMarkdown: () => string }
+    }
     const mdOutput = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown()
     expect(mdOutput).toContain('Segundo párrafo de texto')
     // Check that paragraph now comes before heading
@@ -214,7 +219,9 @@ Segundo párrafo de texto
     expect(editor.state.doc.child(0).type.name).toBe('image')
     expect(editor.state.doc.child(1).textContent).toBe('54')
 
-    interface MarkdownStorage { markdown: { getMarkdown: () => string } }
+    interface MarkdownStorage {
+      markdown: { getMarkdown: () => string }
+    }
     const mdOutput = (editor.storage as unknown as MarkdownStorage).markdown.getMarkdown()
     expect(mdOutput.indexOf('![Dune]')).toBeLessThan(mdOutput.indexOf('54'))
 
@@ -234,10 +241,7 @@ Segundo párrafo de texto
 
     const editor = new Editor({
       content: mdInput,
-      extensions: [
-        StarterKit.configure({ dropcursor: false }),
-        Markdown.configure({ html: true }),
-      ],
+      extensions: [StarterKit.configure({ dropcursor: false }), Markdown.configure({ html: true })],
     })
 
     const doc = editor.state.doc

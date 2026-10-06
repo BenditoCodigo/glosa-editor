@@ -58,7 +58,7 @@ describe('AIBlockDialog.vue', () => {
     })
 
     const buttons = Array.from(document.body.querySelectorAll('button'))
-    const verifyBtn = buttons.find(b => b.textContent?.includes('Verificar datos'))
+    const verifyBtn = buttons.find((b) => b.textContent?.includes('Verificar datos'))
     expect(verifyBtn).toBeDefined()
     verifyBtn?.click()
 

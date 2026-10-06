@@ -29,15 +29,18 @@ const emit = defineEmits<{
 const inputValue = ref(initialValue)
 const inputRef = ref<HTMLInputElement | null>(null)
 
-watch(() => open, (isOpen) => {
-  if (isOpen) {
-    inputValue.value = initialValue
-    nextTick(() => {
-      inputRef.value?.focus()
-      inputRef.value?.select()
-    })
-  }
-})
+watch(
+  () => open,
+  (isOpen) => {
+    if (isOpen) {
+      inputValue.value = initialValue
+      nextTick(() => {
+        inputRef.value?.focus()
+        inputRef.value?.select()
+      })
+    }
+  },
+)
 
 function handleConfirm() {
   emit('confirm', inputValue.value)
@@ -56,25 +59,14 @@ function handleKeydown(event: KeyboardEvent) {
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="open"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      >
+      <div v-if="open" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-black/30 backdrop-blur-sm"
-          @click="emit('cancel')"
-        />
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="emit('cancel')" />
 
         <!-- Modal -->
-        <div class="
-          glass-panel-md
-          relative z-10
-          w-full max-w-sm
-          rounded-2xl p-6
-          flex flex-col gap-5
-          animate-fade-up
-        ">
+        <div
+          class="glass-panel-md relative z-10 w-full max-w-sm rounded-2xl p-6 flex flex-col gap-5 animate-fade-up"
+        >
           <!-- Header -->
           <h2 class="font-display text-lg font-semibold text-on-surface">
             {{ title }}
@@ -86,16 +78,9 @@ function handleKeydown(event: KeyboardEvent) {
             v-model="inputValue"
             type="text"
             :placeholder="placeholder"
-            class="
-              glass-input
-              w-full px-4 py-3
-              rounded-xl
-              text-sm text-on-surface
-              placeholder:text-secondary/50
-              focus:outline-none focus:ring-1 focus:ring-primary/40
-            "
+            class="glass-input w-full px-4 py-3 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
             @keydown="handleKeydown"
-          >
+          />
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3">

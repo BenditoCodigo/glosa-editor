@@ -12,9 +12,7 @@ export const useNotesStore = defineStore('notes', () => {
     [...notes.value].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
   )
 
-  const favorites = computed(() =>
-    notes.value.filter((n) => n.isFavorite),
-  )
+  const favorites = computed(() => notes.value.filter((n) => n.isFavorite))
 
   function notesByFolder(folderId: string | null) {
     return notes.value.filter((n) => n.folder === folderId)

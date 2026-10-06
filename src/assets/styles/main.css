@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* --- Dark mode por clase (toggle manual) --- */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -114,13 +114,23 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- Liquid Glass Design Tokens --- */
@@ -158,12 +168,16 @@
   backdrop-filter: blur(var(--bc-glass-blur-md));
   -webkit-backdrop-filter: blur(var(--bc-glass-blur-md));
   border: 1px solid var(--bc-glass-border-light);
-  box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.8), 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.8),
+    0 8px 32px 0 rgba(0, 0, 0, 0.05);
 
   @variant dark {
     background: rgba(30, 30, 30, 0.6);
     border-color: var(--bc-glass-border-dark);
-    box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    box-shadow:
+      inset 1px 1px 0 0 rgba(255, 255, 255, 0.1),
+      0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -172,12 +186,16 @@
   backdrop-filter: blur(var(--bc-glass-blur-lg));
   -webkit-backdrop-filter: blur(var(--bc-glass-blur-lg));
   border: 1px solid var(--bc-glass-border-light);
-  box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.8), 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.8),
+    0 8px 32px 0 rgba(0, 0, 0, 0.08);
 
   @variant dark {
     background: rgba(26, 31, 29, 0.94);
     border-color: var(--bc-glass-border-dark);
-    box-shadow: inset 1px 1px 0 0 rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    box-shadow:
+      inset 1px 1px 0 0 rgba(255, 255, 255, 0.1),
+      0 8px 32px 0 rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -186,12 +204,16 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 12px 36px -4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
 
   @variant dark {
     background: rgba(26, 31, 29, 0.94);
     border-color: rgba(255, 255, 255, 0.14);
-    box-shadow: 0 14px 42px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 14px 42px -4px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
   }
 }
 
@@ -227,9 +249,15 @@
 }
 
 @keyframes gradient-bg {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* --- Base styles --- */
@@ -242,7 +270,9 @@
 
   body {
     min-height: 100dvh;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 
   /* Custom scrollbar */
@@ -281,7 +311,9 @@
 /* --- Vue transitions --- */
 .fade-up-enter-active,
 .fade-up-leave-active {
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 .fade-up-enter-from,
@@ -302,7 +334,9 @@
 
 .slide-left-enter-active,
 .slide-left-leave-active {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease-out;
 }
 
 .slide-left-enter-from {
@@ -317,7 +351,9 @@
 
 .fade-scale-enter-active,
 .fade-scale-leave-active {
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out;
 }
 
 .fade-scale-enter-from,
@@ -328,7 +364,9 @@
 
 /* --- Reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

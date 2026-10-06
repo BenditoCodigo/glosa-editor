@@ -29,25 +29,14 @@ const emit = defineEmits<{
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="open"
-        class="fixed inset-0 z-100 flex items-center justify-center p-4"
-      >
+      <div v-if="open" class="fixed inset-0 z-100 flex items-center justify-center p-4">
         <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-black/30 backdrop-blur-sm"
-          @click="emit('cancel')"
-        />
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="emit('cancel')" />
 
         <!-- Modal -->
-        <div class="
-          glass-panel-md
-          relative z-10
-          w-full max-w-sm
-          rounded-2xl p-6
-          flex flex-col gap-5
-          animate-fade-up
-        ">
+        <div
+          class="glass-panel-md relative z-10 w-full max-w-sm rounded-2xl p-6 flex flex-col gap-5 animate-fade-up"
+        >
           <!-- Header -->
           <div class="flex items-center gap-3">
             <UiIcon

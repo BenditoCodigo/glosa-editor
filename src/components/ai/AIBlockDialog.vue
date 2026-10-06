@@ -43,7 +43,10 @@ function updatePosition() {
   let targetLeft = (viewportWidth - dialogWidth) / 2
 
   if (rect) {
-    targetLeft = Math.max(16, Math.min(rect.left + rect.width / 2 - dialogWidth / 2, viewportWidth - dialogWidth - 16))
+    targetLeft = Math.max(
+      16,
+      Math.min(rect.left + rect.width / 2 - dialogWidth / 2, viewportWidth - dialogWidth - 16),
+    )
     arrowLeft.value = Math.max(20, Math.min(rect.left + 24 - targetLeft, dialogWidth - 32))
 
     // Estimate or measure dialog height (roughly 220px to 380px)
@@ -192,51 +195,40 @@ onBeforeUnmount(() => {
         @click.stop
       >
         <div
-          class="
-            relative
-            bg-surface/95 dark:bg-surface-container-high/95
-            backdrop-blur-2xl
-            border border-outline-variant/60 dark:border-white/15
-            rounded-2xl
-            shadow-glass
-            p-4 sm:p-5
-            text-on-surface
-            flex flex-col gap-3
-          "
+          class="relative bg-surface/95 dark:bg-surface-container-high/95 backdrop-blur-2xl border border-outline-variant/60 dark:border-white/15 rounded-2xl shadow-glass p-4 sm:p-5 text-on-surface flex flex-col gap-3"
         >
           <!-- Pointer indicator: bottom arrow when placement is 'top' -->
           <div
             v-if="placement === 'top'"
-            class="
-              absolute -bottom-2 w-3.5 h-3.5 rotate-45
-              bg-surface/95 dark:bg-surface-container-high/95
-              border-r border-b border-outline-variant/60 dark:border-white/15
-            "
+            class="absolute -bottom-2 w-3.5 h-3.5 rotate-45 bg-surface/95 dark:bg-surface-container-high/95 border-r border-b border-outline-variant/60 dark:border-white/15"
             :style="{ left: `${arrowLeft}px` }"
           />
 
           <!-- Pointer indicator: top arrow when placement is 'bottom' -->
           <div
             v-if="placement === 'bottom'"
-            class="
-              absolute -top-2 w-3.5 h-3.5 rotate-45
-              bg-surface/95 dark:bg-surface-container-high/95
-              border-l border-t border-outline-variant/60 dark:border-white/15
-            "
+            class="absolute -top-2 w-3.5 h-3.5 rotate-45 bg-surface/95 dark:bg-surface-container-high/95 border-l border-t border-outline-variant/60 dark:border-white/15"
             :style="{ left: `${arrowLeft}px` }"
           />
 
           <!-- Header -->
-          <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-2.5">
+          <div
+            class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-2.5"
+          >
             <div class="flex items-center gap-2">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary">
+              <span
+                class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary"
+              >
                 <UiIcon name="auto_awesome" size="sm" class="text-[18px]" />
               </span>
               <div class="flex flex-col">
                 <span class="text-xs font-semibold text-on-surface tracking-wide">
                   Asistente de Bloque
                 </span>
-                <span v-if="blockSnippet" class="text-[11px] text-secondary/80 truncate max-w-[340px] sm:max-w-[440px] italic">
+                <span
+                  v-if="blockSnippet"
+                  class="text-[11px] text-secondary/80 truncate max-w-[340px] sm:max-w-[440px] italic"
+                >
                   “{{ blockSnippet }}”
                 </span>
               </div>
@@ -259,13 +251,7 @@ onBeforeUnmount(() => {
               v-for="action in assistant.quickActions"
               :key="action.id"
               type="button"
-              class="
-                inline-flex items-center gap-1.5
-                px-2.5 py-1 rounded-lg
-                text-xs font-medium
-                transition-all duration-150
-                border cursor-pointer
-              "
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-150 border cursor-pointer"
               :class="[
                 assistant.selectedActionId.value === action.id
                   ? 'bg-primary text-on-primary border-primary shadow-sm'
@@ -286,28 +272,17 @@ onBeforeUnmount(() => {
               :value="customPrompt"
               rows="1"
               placeholder="Pregunta algo sobre este bloque o pide sugerencias..."
-              class="
-                glass-input flex-1 px-3.5 py-2 rounded-xl text-sm
-                text-on-surface placeholder:text-secondary/50
-                focus:outline-none focus:ring-1 focus:ring-primary/50
-                resize-none min-h-[38px] max-h-[120px]
-              "
+              class="glass-input flex-1 px-3.5 py-2 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none min-h-[38px] max-h-[120px]"
               :disabled="assistant.isLoading.value || assistant.isStreaming.value"
               @input="handleInput"
             />
 
             <button
               type="button"
-              class="
-                flex items-center justify-center
-                h-[38px] px-3.5 rounded-xl
-                bg-primary text-on-primary font-medium text-xs
-                hover:bg-primary-hover active:scale-95
-                transition-all duration-150
-                disabled:opacity-40 disabled:pointer-events-none
-                shadow-sm cursor-pointer
+              class="flex items-center justify-center h-[38px] px-3.5 rounded-xl bg-primary text-on-primary font-medium text-xs hover:bg-primary-hover active:scale-95 transition-all duration-150 disabled:opacity-40 disabled:pointer-events-none shadow-sm cursor-pointer"
+              :disabled="
+                !customPrompt.trim() || assistant.isLoading.value || assistant.isStreaming.value
               "
-              :disabled="!customPrompt.trim() || assistant.isLoading.value || assistant.isStreaming.value"
               title="Enviar consulta (Enter)"
               @click="submitPrompt"
             >
@@ -317,27 +292,28 @@ onBeforeUnmount(() => {
 
           <!-- Response Area -->
           <div
-            v-if="assistant.isLoading.value || assistant.isStreaming.value || assistant.response.value || assistant.error.value || assistant.lastQuery.value"
-            class="
-              mt-1 pt-3 border-t border-outline-variant/20
-              flex flex-col gap-2.5
-              max-h-[300px] overflow-y-auto
-              pr-1
+            v-if="
+              assistant.isLoading.value ||
+              assistant.isStreaming.value ||
+              assistant.response.value ||
+              assistant.error.value ||
+              assistant.lastQuery.value
             "
+            class="mt-1 pt-3 border-t border-outline-variant/20 flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1"
           >
             <!-- User Question / Query banner -->
             <div
               v-if="assistant.lastQuery.value"
-              class="
-                flex items-start gap-2.5
-                px-3 py-2 rounded-xl
-                bg-primary/5 dark:bg-white/5
-                border border-primary/15 dark:border-white/10
-                text-xs
-              "
+              class="flex items-start gap-2.5 px-3 py-2 rounded-xl bg-primary/5 dark:bg-white/5 border border-primary/15 dark:border-white/10 text-xs"
             >
-              <div class="w-5 h-5 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                <UiIcon :name="currentAction?.icon || 'chat_bubble'" size="sm" class="text-[13px]" />
+              <div
+                class="w-5 h-5 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <UiIcon
+                  :name="currentAction?.icon || 'chat_bubble'"
+                  size="sm"
+                  class="text-[13px]"
+                />
               </div>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[10px] font-semibold text-primary uppercase tracking-wider">
@@ -350,13 +326,19 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Loading state without chunks yet -->
-            <div v-if="assistant.isLoading.value && !assistant.response.value" class="flex items-center gap-2.5 py-2 text-secondary text-xs">
+            <div
+              v-if="assistant.isLoading.value && !assistant.response.value"
+              class="flex items-center gap-2.5 py-2 text-secondary text-xs"
+            >
               <UiIcon name="auto_awesome" class="animate-spin text-primary text-[18px]" />
               <span class="animate-pulse font-medium">Analizando el bloque en contexto...</span>
             </div>
 
             <!-- Error state -->
-            <div v-if="assistant.error.value" class="flex flex-col gap-2 p-3 rounded-xl bg-error/10 border border-error/20 text-xs">
+            <div
+              v-if="assistant.error.value"
+              class="flex flex-col gap-2 p-3 rounded-xl bg-error/10 border border-error/20 text-xs"
+            >
               <div class="flex items-start gap-2 text-error">
                 <UiIcon name="error" size="sm" class="shrink-0 mt-0.5" />
                 <span>{{ assistant.error.value }}</span>
@@ -375,30 +357,24 @@ onBeforeUnmount(() => {
             <!-- Generated Formatted Markdown Response with Top-right Copy Action -->
             <div
               v-if="assistant.response.value"
-              class="
-                relative group
-                select-text cursor-text
-                bg-black/5 dark:bg-white/5 rounded-xl p-3.5
-                border border-outline-variant/20
-              "
+              class="relative group select-text cursor-text bg-black/5 dark:bg-white/5 rounded-xl p-3.5 border border-outline-variant/20"
             >
               <!-- Floating quick copy button on top-right -->
               <button
                 type="button"
-                class="
-                  absolute top-2.5 right-2.5 z-10
-                  inline-flex items-center gap-1
-                  px-2 py-1 rounded-md text-[11px] font-medium
-                  bg-surface/90 dark:bg-surface-container/90
-                  border border-outline-variant/40
-                  text-secondary hover:text-on-surface hover:bg-surface
-                  transition-all duration-150 cursor-pointer shadow-xs
-                "
+                class="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-surface/90 dark:bg-surface-container/90 border border-outline-variant/40 text-secondary hover:text-on-surface hover:bg-surface transition-all duration-150 cursor-pointer shadow-xs"
                 :title="copied ? 'Copiado al portapapeles' : 'Copiar respuesta (Markdown)'"
                 @click="copyResponse"
               >
-                <UiIcon :name="copied ? 'check' : 'content_copy'" size="sm" class="text-[13px]" :class="copied && 'text-green-600 dark:text-green-400'" />
-                <span :class="copied && 'text-green-600 dark:text-green-400 font-semibold'">{{ copied ? 'Copiado' : 'Copiar' }}</span>
+                <UiIcon
+                  :name="copied ? 'check' : 'content_copy'"
+                  size="sm"
+                  class="text-[13px]"
+                  :class="copied && 'text-green-600 dark:text-green-400'"
+                />
+                <span :class="copied && 'text-green-600 dark:text-green-400 font-semibold'">{{
+                  copied ? 'Copiado' : 'Copiar'
+                }}</span>
               </button>
 
               <div
@@ -408,9 +384,15 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Response Actions Footer -->
-            <div v-if="assistant.response.value || assistant.isStreaming.value" class="flex items-center justify-between gap-2 pt-0.5">
+            <div
+              v-if="assistant.response.value || assistant.isStreaming.value"
+              class="flex items-center justify-between gap-2 pt-0.5"
+            >
               <div class="flex items-center gap-1.5">
-                <span v-if="assistant.isStreaming.value" class="inline-flex items-center gap-1.5 text-[11px] text-primary animate-pulse font-medium">
+                <span
+                  v-if="assistant.isStreaming.value"
+                  class="inline-flex items-center gap-1.5 text-[11px] text-primary animate-pulse font-medium"
+                >
                   <span class="w-1.5 h-1.5 rounded-full bg-primary" />
                   Generando respuesta...
                 </span>
@@ -421,12 +403,7 @@ onBeforeUnmount(() => {
                 <button
                   v-if="assistant.isStreaming.value"
                   type="button"
-                  class="
-                    inline-flex items-center gap-1
-                    px-2.5 py-1 rounded-lg text-xs font-medium
-                    text-secondary hover:text-error hover:bg-error/10
-                    transition-colors cursor-pointer
-                  "
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-secondary hover:text-error hover:bg-error/10 transition-colors cursor-pointer"
                   @click="assistant.stopGeneration"
                 >
                   <UiIcon name="stop" size="sm" class="text-[14px]" />
@@ -437,11 +414,7 @@ onBeforeUnmount(() => {
                 <button
                   v-if="assistant.response.value && !assistant.isStreaming.value"
                   type="button"
-                  class="
-                    inline-flex items-center gap-1
-                    px-2.5 py-1 rounded-lg text-xs font-medium
-                    transition-colors cursor-pointer
-                  "
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                   :class="[
                     copied
                       ? 'bg-green-500/15 text-green-700 dark:text-green-300 font-semibold'
@@ -457,12 +430,7 @@ onBeforeUnmount(() => {
                 <button
                   v-if="assistant.response.value && !assistant.isStreaming.value"
                   type="button"
-                  class="
-                    inline-flex items-center gap-1
-                    px-2.5 py-1 rounded-lg text-xs font-medium
-                    text-secondary hover:text-on-surface hover:bg-black/5 dark:hover:bg-white/10
-                    transition-colors cursor-pointer
-                  "
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-secondary hover:text-on-surface hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                   @click="assistant.clearResponse"
                 >
                   <UiIcon name="refresh" size="sm" class="text-[14px]" />

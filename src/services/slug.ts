@@ -56,7 +56,5 @@ export function resolveFilename(slug: string, existingFiles: string[]): string {
     }
   }
 
-  throw new Error(
-    `Cannot resolve filename for slug "${slug}": all 99 suffix attempts exhausted`,
-  )
+  throw new Error(`Cannot resolve filename for slug "${slug}": all 99 suffix attempts exhausted`)
 }

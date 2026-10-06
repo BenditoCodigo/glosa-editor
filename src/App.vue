@@ -61,31 +61,34 @@ async function activateAdapterOnLaunch() {
       return
     }
 
-    const { activateFilesystemAdapter, startFilesystemWatcher } = await import('@/services/activateFilesystemAdapter')
+    const { activateFilesystemAdapter, startFilesystemWatcher } =
+      await import('@/services/activateFilesystemAdapter')
     const adapter = await activateFilesystemAdapter(folderPath)
 
     // Start watching for external changes after stores are loaded
     await startFilesystemWatcher(adapter, {
       onNoteChanged(note) {
-        const idx = notesStore.notes.findIndex(n => n.id === note.id)
+        const idx = notesStore.notes.findIndex((n) => n.id === note.id)
         if (idx !== -1) notesStore.notes[idx] = note
       },
       onNoteRemoved(noteId, wasActive) {
-        notesStore.notes = notesStore.notes.filter(n => n.id !== noteId)
+        notesStore.notes = notesStore.notes.filter((n) => n.id !== noteId)
         if (wasActive) notesStore.activeNote = null
       },
       onNoteAdded(note) {
-        if (!notesStore.notes.find(n => n.id === note.id)) {
+        if (!notesStore.notes.find((n) => n.id === note.id)) {
           notesStore.notes.push(note)
         }
       },
       onFolderAdded(folder) {
-        if (!foldersStore.folders.find(f => f.id === folder.id)) {
+        if (!foldersStore.folders.find((f) => f.id === folder.id)) {
           foldersStore.folders.push(folder)
         }
       },
       onFolderRemoved(folderId) {
-        foldersStore.folders = foldersStore.folders.filter(f => f.id !== folderId && !f.id.startsWith(`${folderId}/`))
+        foldersStore.folders = foldersStore.folders.filter(
+          (f) => f.id !== folderId && !f.id.startsWith(`${folderId}/`),
+        )
       },
     })
   } catch (err) {
@@ -100,9 +103,7 @@ const breadcrumbs = computed(() => {
     return [{ label: 'Inicio' }]
   }
 
-  const segments: { label: string; path?: string }[] = [
-    { label: 'Inicio', path: '/' },
-  ]
+  const segments: { label: string; path?: string }[] = [{ label: 'Inicio', path: '/' }]
 
   if (route.name === 'settings') {
     segments.push({ label: 'Configuración' })
@@ -161,10 +162,7 @@ function handleBreadcrumbNavigate(path: string) {
 
         <!-- Breadcrumbs (floating at bottom) -->
         <div class="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
-          <AppBreadcrumbs
-            :segments="breadcrumbs"
-            @navigate="handleBreadcrumbNavigate"
-          />
+          <AppBreadcrumbs :segments="breadcrumbs" @navigate="handleBreadcrumbNavigate" />
         </div>
       </main>
     </div>

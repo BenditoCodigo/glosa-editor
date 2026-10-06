@@ -24,7 +24,8 @@ describe('useAIBlockAssistant', () => {
           folder: 'Ciencia/Física',
           tags: ['ciencia', 'historia'],
           updatedAt: '2026-10-05',
-          fullContent: '# Introducción a la física\n\nLa teoría de la relatividad fue formulada en 1905.\n\nFue un hito histórico.',
+          fullContent:
+            '# Introducción a la física\n\nLa teoría de la relatividad fue formulada en 1905.\n\nFue un hito histórico.',
         },
       })
 
@@ -57,7 +58,7 @@ describe('useAIBlockAssistant', () => {
 
   describe('DEFAULT_AI_QUICK_ACTIONS', () => {
     it('includes verification, suggestions, reflective questions and inconsistencies', () => {
-      const ids = DEFAULT_AI_QUICK_ACTIONS.map(a => a.id)
+      const ids = DEFAULT_AI_QUICK_ACTIONS.map((a) => a.id)
       expect(ids).toContain('verify')
       expect(ids).toContain('improve')
       expect(ids).toContain('questions')
@@ -137,9 +138,11 @@ describe('useAIBlockAssistant', () => {
 
       const { ref } = await import('vue')
       const liveText = ref('como estás?')
-      const chatStreamSpy = vi.spyOn(aiService, 'chatStream').mockImplementation(async function* () {
-        yield 'Respuesta'
-      })
+      const chatStreamSpy = vi
+        .spyOn(aiService, 'chatStream')
+        .mockImplementation(async function* () {
+          yield 'Respuesta'
+        })
 
       const assistant = useAIBlockAssistant()
       assistant.openAssistant({
@@ -171,9 +174,11 @@ describe('useAIBlockAssistant', () => {
       settingsStore.settings.ai.model = 'llama3.1:8b'
       settingsStore.settings.ai.systemPrompt = 'Global system prompt'
 
-      const chatStreamSpy = vi.spyOn(aiService, 'chatStream').mockImplementation(async function* () {
-        yield 'Respuesta analítica'
-      })
+      const chatStreamSpy = vi
+        .spyOn(aiService, 'chatStream')
+        .mockImplementation(async function* () {
+          yield 'Respuesta analítica'
+        })
 
       const assistant = useAIBlockAssistant()
       assistant.openAssistant({
@@ -181,11 +186,9 @@ describe('useAIBlockAssistant', () => {
         content: 'Afirmación basada en fuente externa.',
         context: {
           title: 'Investigación Periodística',
-          sources: [
-            'https://elpais.com/reportaje/1',
-            'https://theguardian.com/article/2',
-          ],
-          aiInstructions: 'Instrucciones específicas de este documento: actúa como fact-checker estricto.',
+          sources: ['https://elpais.com/reportaje/1', 'https://theguardian.com/article/2'],
+          aiInstructions:
+            'Instrucciones específicas de este documento: actúa como fact-checker estricto.',
         },
       })
 
@@ -201,7 +204,9 @@ describe('useAIBlockAssistant', () => {
       expect(sentMessages[0]!.content).toContain('https://theguardian.com/article/2')
 
       // Verify systemPrompt option was passed and contains document-specific instructions
-      expect(options?.systemPrompt).toBe('Instrucciones específicas de este documento: actúa como fact-checker estricto.')
+      expect(options?.systemPrompt).toBe(
+        'Instrucciones específicas de este documento: actúa como fact-checker estricto.',
+      )
     })
   })
 })

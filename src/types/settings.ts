@@ -13,11 +13,11 @@ export interface EditorSettings {
 }
 
 export interface AIModelParameters {
-  temperature: number      // 0 - 2, default 0.7
-  topP: number             // 0 - 1, default 0.9
-  maxTokens: number        // 256 - 8192, default 2048
+  temperature: number // 0 - 2, default 0.7
+  topP: number // 0 - 1, default 0.9
+  maxTokens: number // 256 - 8192, default 2048
   frequencyPenalty: number // -2 - 2, default 0
-  presencePenalty: number  // -2 - 2, default 0
+  presencePenalty: number // -2 - 2, default 0
 }
 
 export interface AICustomHeader {

@@ -15,9 +15,12 @@ describe('Settings Store - AI Settings', () => {
   })
 
   it('merges stored AI settings with defaults on load', () => {
-    localStorage.setItem('glosa-settings', JSON.stringify({
-      ai: { enabled: true, baseUrl: 'http://localhost:11434/v1' },
-    }))
+    localStorage.setItem(
+      'glosa-settings',
+      JSON.stringify({
+        ai: { enabled: true, baseUrl: 'http://localhost:11434/v1' },
+      }),
+    )
     setActivePinia(createPinia())
     const store = useSettingsStore()
 
@@ -28,9 +31,12 @@ describe('Settings Store - AI Settings', () => {
   })
 
   it('merges stored modelParameters with defaults on load', () => {
-    localStorage.setItem('glosa-settings', JSON.stringify({
-      ai: { modelParameters: { temperature: 1.2 } },
-    }))
+    localStorage.setItem(
+      'glosa-settings',
+      JSON.stringify({
+        ai: { modelParameters: { temperature: 1.2 } },
+      }),
+    )
     setActivePinia(createPinia())
     const store = useSettingsStore()
 
@@ -101,7 +107,7 @@ describe('Settings Store - AI Settings', () => {
     store.updateAI({ enabled: true, baseUrl: 'http://localhost:11434/v1', model: 'llama3.1:8b' })
 
     // Wait for the watcher to flush
-    await new Promise(resolve => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
     const stored = JSON.parse(localStorage.getItem('glosa-settings')!)
     expect(stored.ai.enabled).toBe(true)

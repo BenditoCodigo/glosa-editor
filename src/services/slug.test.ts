@@ -160,9 +160,7 @@ describe('Slug Utility', () => {
         existing.push(`my-note-${i}.md`)
       }
 
-      expect(() => resolveFilename('my-note', existing)).toThrow(
-        /all 99 suffix attempts exhausted/,
-      )
+      expect(() => resolveFilename('my-note', existing)).toThrow(/all 99 suffix attempts exhausted/)
     })
 
     it('works with untitled slug', () => {

@@ -102,7 +102,9 @@ describe('Folders Store', () => {
     const store = useFoldersStore()
     await db.folders.put(makeFolder({ id: 'root', name: 'Root', parentFolder: null }))
     await db.folders.put(makeFolder({ id: 'child', name: 'Child', parentFolder: 'root' }))
-    await db.folders.put(makeFolder({ id: 'grandchild', name: 'Grandchild', parentFolder: 'child' }))
+    await db.folders.put(
+      makeFolder({ id: 'grandchild', name: 'Grandchild', parentFolder: 'child' }),
+    )
     await store.loadAll()
 
     const path = store.getFolderPath('grandchild')

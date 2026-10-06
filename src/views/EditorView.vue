@@ -36,7 +36,9 @@ async function handleCopyMd() {
   const ok = await copyAsMarkdown(activeNote.value)
   if (ok) {
     copyFeedback.value = true
-    setTimeout(() => { copyFeedback.value = false }, 2000)
+    setTimeout(() => {
+      copyFeedback.value = false
+    }, 2000)
   }
 }
 
@@ -81,24 +83,28 @@ function handleScroll(event: Event) {
   isHeaderScrolledOut.value = scrollTop > 40
 }
 
-watch(editorAreaRef, (el) => {
-  if (attachedScrollParent) {
-    attachedScrollParent.removeEventListener('scroll', handleScroll)
-    attachedScrollParent = null
-  }
-  if (!el) return
-  // Walk up to find the scrolling ancestor
-  let scrollParent: HTMLElement | null = el.parentElement
-  while (scrollParent) {
-    const style = getComputedStyle(scrollParent)
-    if (style.overflowY === 'auto' || style.overflowY === 'scroll') break
-    scrollParent = scrollParent.parentElement
-  }
-  if (scrollParent) {
-    attachedScrollParent = scrollParent
-    scrollParent.addEventListener('scroll', handleScroll, { passive: true })
-  }
-}, { flush: 'post' })
+watch(
+  editorAreaRef,
+  (el) => {
+    if (attachedScrollParent) {
+      attachedScrollParent.removeEventListener('scroll', handleScroll)
+      attachedScrollParent = null
+    }
+    if (!el) return
+    // Walk up to find the scrolling ancestor
+    let scrollParent: HTMLElement | null = el.parentElement
+    while (scrollParent) {
+      const style = getComputedStyle(scrollParent)
+      if (style.overflowY === 'auto' || style.overflowY === 'scroll') break
+      scrollParent = scrollParent.parentElement
+    }
+    if (scrollParent) {
+      attachedScrollParent = scrollParent
+      scrollParent.addEventListener('scroll', handleScroll, { passive: true })
+    }
+  },
+  { flush: 'post' },
+)
 
 // Load note when route changes
 watch(
@@ -178,7 +184,12 @@ function handleContentUpdate(newContent: string) {
   scheduleAutosave()
 }
 
-function handleAiBlockClick(payload: { index: number; content: string; top: number; rect: DOMRect | null }) {
+function handleAiBlockClick(payload: {
+  index: number
+  content: string
+  top: number
+  rect: DOMRect | null
+}) {
   aiAssistant.openAssistant({
     index: payload.index,
     content: payload.content,
@@ -294,15 +305,29 @@ onUnmounted(() => {
       <!-- Editor header -->
       <div class="relative z-30 flex items-center justify-between px-6 lg:px-12 py-2">
         <div class="flex items-center gap-3">
-          <UiIconButton icon="arrow_back" ariaLabel="Back to explorer" tooltip="Volver" size="sm" @click="goBack" />
+          <UiIconButton
+            icon="arrow_back"
+            ariaLabel="Back to explorer"
+            tooltip="Volver"
+            size="sm"
+            @click="goBack"
+          />
           <div class="flex items-center gap-2 text-secondary">
             <UiIcon
-              :name="saveStatus === 'saving' ? 'sync' : saveStatus === 'saved' ? 'cloud_done' : 'edit'"
+              :name="
+                saveStatus === 'saving' ? 'sync' : saveStatus === 'saved' ? 'cloud_done' : 'edit'
+              "
               size="sm"
               :class="saveStatus === 'saving' && 'animate-spin'"
             />
             <span class="text-xs opacity-70">
-              {{ saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Guardando' }}
+              {{
+                saveStatus === 'saved'
+                  ? 'Guardado'
+                  : saveStatus === 'saving'
+                    ? 'Guardando...'
+                    : 'Guardando'
+              }}
             </span>
           </div>
 
@@ -335,7 +360,13 @@ onUnmounted(() => {
             :class="(sources.length > 0 || aiInstructions.trim().length > 0) && 'text-primary'"
             @click="showReferencesModal = true"
           />
-          <UiIconButton icon="image" ariaLabel="Cover image" tooltip="Imagen de portada" size="sm" @click="handleSetCoverImage" />
+          <UiIconButton
+            icon="image"
+            ariaLabel="Cover image"
+            tooltip="Imagen de portada"
+            size="sm"
+            @click="handleSetCoverImage"
+          />
           <UiButton variant="solid" size="sm" @click="save">
             <template #icon-left>
               <UiIcon name="save" size="sm" />
@@ -369,10 +400,14 @@ onUnmounted(() => {
               alt=""
               class="w-full h-full object-cover will-change-transform transform-gpu"
               :style="{ transform: `translateY(${coverTranslateY}px) scale(${coverScale})` }"
-            >
+            />
             <!-- Bottom fade so the glass panel blends smoothly -->
-            <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/90 to-transparent dark:hidden"></div>
-            <div class="absolute inset-x-0 bottom-0 h-24 hidden dark:block bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div
+              class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/90 to-transparent dark:hidden"
+            ></div>
+            <div
+              class="absolute inset-x-0 bottom-0 h-24 hidden dark:block bg-gradient-to-t from-black/70 to-transparent"
+            ></div>
           </div>
 
           <!-- Glass editor panel -->
@@ -390,18 +425,15 @@ onUnmounted(() => {
                 <button
                   v-for="(tag, index) in tags"
                   :key="tag"
-                  class="
-                    inline-flex items-center gap-1
-                    px-2.5 py-1 rounded-md
-                    bg-primary-fixed/50 text-on-primary-fixed
-                    text-[11px] uppercase tracking-[0.1em] font-semibold
-                    hover:bg-primary-fixed transition-colors
-                    group
-                  "
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/50 text-on-primary-fixed text-[11px] uppercase tracking-[0.1em] font-semibold hover:bg-primary-fixed transition-colors group"
                   @click="removeTag(index)"
                 >
                   {{ tag }}
-                  <UiIcon name="close" size="sm" class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]" />
+                  <UiIcon
+                    name="close"
+                    size="sm"
+                    class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]"
+                  />
                 </button>
                 <input
                   v-model="tagInput"
@@ -410,7 +442,7 @@ onUnmounted(() => {
                   class="bg-transparent border-none p-0 text-[14cpx] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
                   @keydown="handleTagKeydown"
                   @blur="addTag"
-                >
+                />
               </div>
             </div>
 
@@ -420,14 +452,7 @@ onUnmounted(() => {
               :value="title"
               placeholder="Título de la nota"
               rows="1"
-              class="
-                w-full bg-transparent border-none p-0 mb-8
-                focus:ring-0 focus:outline-none
-                font-display text-4xl md:text-5xl font-bold text-on-surface
-                leading-tight tracking-tight
-                placeholder:text-outline-variant
-                resize-none overflow-hidden
-              "
+              class="w-full bg-transparent border-none p-0 mb-8 focus:ring-0 focus:outline-none font-display text-4xl md:text-5xl font-bold text-on-surface leading-tight tracking-tight placeholder:text-outline-variant resize-none overflow-hidden"
               @input="handleTitleInput"
             />
 
@@ -444,7 +469,9 @@ onUnmounted(() => {
       </div>
 
       <!-- Floating bottom dock: Editor toolbar + Companion bubble on scroll -->
-      <div class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none max-w-[calc(100vw-2rem)]">
+      <div
+        class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none max-w-[calc(100vw-2rem)]"
+      >
         <div class="pointer-events-auto shrink-0">
           <EditorToolbar :editor="editorRef?.editor" />
         </div>
@@ -460,27 +487,40 @@ onUnmounted(() => {
         >
           <div
             v-if="isHeaderScrolledOut"
-            class="
-              pointer-events-auto
-              glass-toolbar
-              rounded-full p-2
-              flex items-center gap-1
-              shadow-2xl shrink-0
-              transition-all duration-200
-            "
+            class="pointer-events-auto glass-toolbar rounded-full p-2 flex items-center gap-1 shadow-2xl shrink-0 transition-all duration-200"
           >
             <!-- Save status & cloud feedback -->
             <div
               class="flex items-center gap-1.5 px-2 py-1 select-none text-secondary"
-              :title="saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Cambios sin guardar'"
+              :title="
+                saveStatus === 'saved'
+                  ? 'Guardado'
+                  : saveStatus === 'saving'
+                    ? 'Guardando...'
+                    : 'Cambios sin guardar'
+              "
             >
               <UiIcon
-                :name="saveStatus === 'saving' ? 'sync' : saveStatus === 'saved' ? 'cloud_done' : 'edit'"
+                :name="
+                  saveStatus === 'saving' ? 'sync' : saveStatus === 'saved' ? 'cloud_done' : 'edit'
+                "
                 size="sm"
-                :class="saveStatus === 'saving' ? 'animate-spin text-primary' : saveStatus === 'saved' ? 'text-primary' : 'text-secondary/70'"
+                :class="
+                  saveStatus === 'saving'
+                    ? 'animate-spin text-primary'
+                    : saveStatus === 'saved'
+                      ? 'text-primary'
+                      : 'text-secondary/70'
+                "
               />
               <span class="text-xs opacity-75 font-medium whitespace-nowrap hidden sm:inline">
-                {{ saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Guardando' }}
+                {{
+                  saveStatus === 'saved'
+                    ? 'Guardado'
+                    : saveStatus === 'saving'
+                      ? 'Guardando...'
+                      : 'Guardando'
+                }}
               </span>
             </div>
 

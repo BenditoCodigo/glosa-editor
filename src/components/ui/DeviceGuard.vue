@@ -19,7 +19,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="isSmallScreen" class="bg-fluid-gradient fixed inset-0 z-50 flex items-center justify-center p-6">
+  <div
+    v-if="isSmallScreen"
+    class="bg-fluid-gradient fixed inset-0 z-50 flex items-center justify-center p-6"
+  >
     <div class="glass-panel flex flex-col items-center gap-6 max-w-sm p-8 rounded-2xl text-center">
       <!-- Icon -->
       <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
@@ -32,7 +35,8 @@ onUnmounted(() => {
           Dispositivo no compatible
         </h2>
         <p class="text-sm text-on-surface-variant leading-relaxed">
-          Glosa está diseñada para tablets y escritorio. Utiliza un dispositivo con pantalla de al menos 7 pulgadas para la mejor experiencia.
+          Glosa está diseñada para tablets y escritorio. Utiliza un dispositivo con pantalla de al
+          menos 7 pulgadas para la mejor experiencia.
         </p>
       </div>
 

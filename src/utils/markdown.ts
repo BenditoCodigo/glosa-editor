@@ -16,19 +16,40 @@ function parseInline(text: string): string {
   let result = text
 
   // Inline code: `code`
-  result = result.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono text-xs text-primary font-medium">$1</code>')
+  result = result.replace(
+    /`([^`]+)`/g,
+    '<code class="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono text-xs text-primary font-medium">$1</code>',
+  )
 
   // Bold + Italic: ***text*** or ___text___
-  result = result.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong class="font-semibold text-on-surface"><em>$1</em></strong>')
-  result = result.replace(/___([^_]+)___/g, '<strong class="font-semibold text-on-surface"><em>$1</em></strong>')
+  result = result.replace(
+    /\*\*\*([^*]+)\*\*\*/g,
+    '<strong class="font-semibold text-on-surface"><em>$1</em></strong>',
+  )
+  result = result.replace(
+    /___([^_]+)___/g,
+    '<strong class="font-semibold text-on-surface"><em>$1</em></strong>',
+  )
 
   // Bold: **text** or __text__
-  result = result.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-on-surface">$1</strong>')
-  result = result.replace(/__([^_]+)__/g, '<strong class="font-semibold text-on-surface">$1</strong>')
+  result = result.replace(
+    /\*\*([^*]+)\*\*/g,
+    '<strong class="font-semibold text-on-surface">$1</strong>',
+  )
+  result = result.replace(
+    /__([^_]+)__/g,
+    '<strong class="font-semibold text-on-surface">$1</strong>',
+  )
 
   // Italic: *text* or _text_ (when not part of a list or bold)
-  result = result.replace(/(^|[^\w*])\*([^*]+)\*([^\w*]|$)/g, '$1<em class="italic text-on-surface/90">$2</em>$3')
-  result = result.replace(/(^|[^\w_])_([^_]+)_([^\w_]|$)/g, '$1<em class="italic text-on-surface/90">$2</em>$3')
+  result = result.replace(
+    /(^|[^\w*])\*([^*]+)\*([^\w*]|$)/g,
+    '$1<em class="italic text-on-surface/90">$2</em>$3',
+  )
+  result = result.replace(
+    /(^|[^\w_])_([^_]+)_([^\w_]|$)/g,
+    '$1<em class="italic text-on-surface/90">$2</em>$3',
+  )
 
   // Strikethrough: ~~text~~
   result = result.replace(/~~([^~]+)~~/g, '<del class="opacity-60">$1</del>')
@@ -44,14 +65,19 @@ export function renderMarkdown(markdown: string): string {
 
   // 2. Separate into code blocks and normal text blocks
   const codeBlocks: string[] = []
-  const textWithPlaceholders = sanitized.replace(/```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-    const codeId = `__CODE_BLOCK_${codeBlocks.length}__`
-    const langBadge = lang ? `<span class="text-[10px] text-secondary/60 uppercase tracking-wider font-mono block mb-1">${lang}</span>` : ''
-    codeBlocks.push(
-      `<pre class="my-2 p-3 rounded-lg bg-black/10 dark:bg-white/5 font-mono text-xs text-on-surface overflow-x-auto border border-outline-variant/30">${langBadge}<code>${code.trim()}</code></pre>`
-    )
-    return `\n\n${codeId}\n\n`
-  })
+  const textWithPlaceholders = sanitized.replace(
+    /```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g,
+    (_, lang, code) => {
+      const codeId = `__CODE_BLOCK_${codeBlocks.length}__`
+      const langBadge = lang
+        ? `<span class="text-[10px] text-secondary/60 uppercase tracking-wider font-mono block mb-1">${lang}</span>`
+        : ''
+      codeBlocks.push(
+        `<pre class="my-2 p-3 rounded-lg bg-black/10 dark:bg-white/5 font-mono text-xs text-on-surface overflow-x-auto border border-outline-variant/30">${langBadge}<code>${code.trim()}</code></pre>`,
+      )
+      return `\n\n${codeId}\n\n`
+    },
+  )
 
   // 3. Process line by line for block-level elements
   const rawLines = textWithPlaceholders.split('\n')
@@ -63,13 +89,13 @@ export function renderMarkdown(markdown: string): string {
   function flushList() {
     if (inUnorderedList && currentListItems.length > 0) {
       outputBlocks.push(
-        `<ul class="list-disc list-outside ml-4 space-y-1.5 my-2 text-on-surface/90">${currentListItems.join('')}</ul>`
+        `<ul class="list-disc list-outside ml-4 space-y-1.5 my-2 text-on-surface/90">${currentListItems.join('')}</ul>`,
       )
       currentListItems = []
       inUnorderedList = false
     } else if (inOrderedList && currentListItems.length > 0) {
       outputBlocks.push(
-        `<ol class="list-decimal list-outside ml-4 space-y-1.5 my-2 text-on-surface/90">${currentListItems.join('')}</ol>`
+        `<ol class="list-decimal list-outside ml-4 space-y-1.5 my-2 text-on-surface/90">${currentListItems.join('')}</ol>`,
       )
       currentListItems = []
       inOrderedList = false
@@ -119,19 +145,27 @@ export function renderMarkdown(markdown: string): string {
 
     // Headings: `#`, `##`, `###`, `####`
     if (trimmed.startsWith('#### ')) {
-      outputBlocks.push(`<h5 class="font-semibold text-xs text-on-surface mt-3 mb-1 uppercase tracking-wide">${parseInline(trimmed.slice(5))}</h5>`)
+      outputBlocks.push(
+        `<h5 class="font-semibold text-xs text-on-surface mt-3 mb-1 uppercase tracking-wide">${parseInline(trimmed.slice(5))}</h5>`,
+      )
       continue
     }
     if (trimmed.startsWith('### ')) {
-      outputBlocks.push(`<h4 class="font-semibold text-sm text-on-surface mt-3 mb-1.5">${parseInline(trimmed.slice(4))}</h4>`)
+      outputBlocks.push(
+        `<h4 class="font-semibold text-sm text-on-surface mt-3 mb-1.5">${parseInline(trimmed.slice(4))}</h4>`,
+      )
       continue
     }
     if (trimmed.startsWith('## ')) {
-      outputBlocks.push(`<h3 class="font-bold text-base text-on-surface mt-3.5 mb-1.5">${parseInline(trimmed.slice(3))}</h3>`)
+      outputBlocks.push(
+        `<h3 class="font-bold text-base text-on-surface mt-3.5 mb-1.5">${parseInline(trimmed.slice(3))}</h3>`,
+      )
       continue
     }
     if (trimmed.startsWith('# ')) {
-      outputBlocks.push(`<h2 class="font-bold text-lg text-on-surface mt-4 mb-2">${parseInline(trimmed.slice(2))}</h2>`)
+      outputBlocks.push(
+        `<h2 class="font-bold text-lg text-on-surface mt-4 mb-2">${parseInline(trimmed.slice(2))}</h2>`,
+      )
       continue
     }
 
@@ -139,13 +173,15 @@ export function renderMarkdown(markdown: string): string {
     if (trimmed.startsWith('&gt; ') || trimmed.startsWith('> ')) {
       const quoteText = trimmed.replace(/^(&gt;|>)\s*/, '')
       outputBlocks.push(
-        `<blockquote class="border-l-2 border-primary/50 pl-3 my-2 text-secondary italic">${parseInline(quoteText)}</blockquote>`
+        `<blockquote class="border-l-2 border-primary/50 pl-3 my-2 text-secondary italic">${parseInline(quoteText)}</blockquote>`,
       )
       continue
     }
 
     // Regular paragraph
-    outputBlocks.push(`<p class="my-1.5 text-on-surface/90 leading-relaxed">${parseInline(trimmed)}</p>`)
+    outputBlocks.push(
+      `<p class="my-1.5 text-on-surface/90 leading-relaxed">${parseInline(trimmed)}</p>`,
+    )
   }
 
   flushList()

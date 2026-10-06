@@ -178,13 +178,9 @@ function confirmImage(url: string) {
 
 <template>
   <!-- Main toolbar only -->
-  <div class="
-    glass-toolbar
-    rounded-full p-2
-    flex items-center gap-1
-    shadow-2xl
-    transition-all duration-200
-  ">
+  <div
+    class="glass-toolbar rounded-full p-2 flex items-center gap-1 shadow-2xl transition-all duration-200"
+  >
     <!-- Heading selector (expands on hover) -->
     <div class="relative" @mouseenter="showHeadings = true" @mouseleave="showHeadings = false">
       <UiIconButton
@@ -198,21 +194,10 @@ function confirmImage(url: string) {
       <!-- Heading options H1-H4 (expand upward, H1 overlaps the trigger button) -->
       <div
         v-show="showHeadings"
-        class="
-          absolute bottom-0 left-1/2 -translate-x-1/2
-          flex flex-col-reverse items-center gap-1.5
-        "
+        class="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col-reverse items-center gap-1.5"
       >
         <button
-          class="
-            w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
-            border border-white/80 dark:border-white/20
-            shadow-xl
-            text-sm font-bold text-on-surface
-            transition-all duration-150
-            hover:bg-primary hover:text-on-primary hover:scale-110
-          "
+          class="w-9 h-9 rounded-full flex items-center justify-center bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl border border-white/80 dark:border-white/20 shadow-xl text-sm font-bold text-on-surface transition-all duration-150 hover:bg-primary hover:text-on-primary hover:scale-110"
           :class="editor?.isActive('heading', { level: 1 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 1"
           @click="toggleHeading(1)"
@@ -220,15 +205,7 @@ function confirmImage(url: string) {
           H1
         </button>
         <button
-          class="
-            w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
-            border border-white/80 dark:border-white/20
-            shadow-xl
-            text-sm font-bold text-on-surface
-            transition-all duration-150
-            hover:bg-primary hover:text-on-primary hover:scale-110
-          "
+          class="w-9 h-9 rounded-full flex items-center justify-center bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl border border-white/80 dark:border-white/20 shadow-xl text-sm font-bold text-on-surface transition-all duration-150 hover:bg-primary hover:text-on-primary hover:scale-110"
           :class="editor?.isActive('heading', { level: 2 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 2"
           @click="toggleHeading(2)"
@@ -236,15 +213,7 @@ function confirmImage(url: string) {
           H2
         </button>
         <button
-          class="
-            w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
-            border border-white/80 dark:border-white/20
-            shadow-xl
-            text-[13px] font-bold text-on-surface
-            transition-all duration-150
-            hover:bg-primary hover:text-on-primary hover:scale-110
-          "
+          class="w-9 h-9 rounded-full flex items-center justify-center bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl border border-white/80 dark:border-white/20 shadow-xl text-[13px] font-bold text-on-surface transition-all duration-150 hover:bg-primary hover:text-on-primary hover:scale-110"
           :class="editor?.isActive('heading', { level: 3 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 3"
           @click="toggleHeading(3)"
@@ -252,15 +221,7 @@ function confirmImage(url: string) {
           H3
         </button>
         <button
-          class="
-            w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
-            border border-white/80 dark:border-white/20
-            shadow-xl
-            text-xs font-bold text-on-surface
-            transition-all duration-150
-            hover:bg-primary hover:text-on-primary hover:scale-110
-          "
+          class="w-9 h-9 rounded-full flex items-center justify-center bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl border border-white/80 dark:border-white/20 shadow-xl text-xs font-bold text-on-surface transition-all duration-150 hover:bg-primary hover:text-on-primary hover:scale-110"
           :class="editor?.isActive('heading', { level: 4 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 4"
           @click="toggleHeading(4)"

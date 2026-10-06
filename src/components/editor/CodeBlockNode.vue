@@ -8,7 +8,9 @@ const showLanguages = ref(false)
 const copied = ref(false)
 
 const languages = computed(() =>
-  (props.extension.options as { lowlight: { listLanguages: () => string[] } }).lowlight.listLanguages(),
+  (
+    props.extension.options as { lowlight: { listLanguages: () => string[] } }
+  ).lowlight.listLanguages(),
 )
 
 const currentLanguage = computed(() => props.node.attrs.language || 'plaintext')
@@ -22,14 +24,18 @@ async function copyCode() {
   const text = props.node.textContent || ''
   await navigator.clipboard.writeText(text)
   copied.value = true
-  setTimeout(() => { copied.value = false }, 2000)
+  setTimeout(() => {
+    copied.value = false
+  }, 2000)
 }
 </script>
 
 <template>
   <NodeViewWrapper as="div" class="code-block-wrapper relative my-4">
     <!-- Controls bar -->
-    <div class="flex items-center justify-between px-3 py-1.5 border-b border-outline-variant/50 bg-black/5 dark:bg-white/5 rounded-t-lg">
+    <div
+      class="flex items-center justify-between px-3 py-1.5 border-b border-outline-variant/50 bg-black/5 dark:bg-white/5 rounded-t-lg"
+    >
       <!-- Language selector -->
       <div class="relative">
         <button
@@ -57,11 +63,7 @@ async function copyCode() {
         </div>
 
         <!-- Click outside to close -->
-        <div
-          v-if="showLanguages"
-          class="fixed inset-0 z-40"
-          @click="showLanguages = false"
-        />
+        <div v-if="showLanguages" class="fixed inset-0 z-40" @click="showLanguages = false" />
       </div>
 
       <!-- Copy button -->
@@ -69,7 +71,9 @@ async function copyCode() {
         class="text-[11px] font-medium text-secondary hover:text-primary transition-colors px-2 py-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-1"
         @click="copyCode"
       >
-        <span class="material-symbols-outlined text-[14px]">{{ copied ? 'check' : 'content_copy' }}</span>
+        <span class="material-symbols-outlined text-[14px]">{{
+          copied ? 'check' : 'content_copy'
+        }}</span>
         <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
       </button>
     </div>

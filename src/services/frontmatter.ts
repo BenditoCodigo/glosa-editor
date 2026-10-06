@@ -66,9 +66,10 @@ export function parseMarkdownFile(filename: string, content: string): ParsedNote
   // Body starts after closing delimiter + newline separator
   const bodyStart = closingIndex + 1 + FRONTMATTER_DELIMITER.length
   // The first newline after closing --- is the separator (not part of body)
-  const body = trimmedContent[bodyStart] === '\n'
-    ? trimmedContent.slice(bodyStart + 1)
-    : trimmedContent.slice(bodyStart)
+  const body =
+    trimmedContent[bodyStart] === '\n'
+      ? trimmedContent.slice(bodyStart + 1)
+      : trimmedContent.slice(bodyStart)
 
   return { frontmatter, body }
 }
@@ -84,45 +85,53 @@ export function frontmatterToNote(
 ): Note {
   const now = new Date().toISOString()
 
-  const id = typeof frontmatter.id === 'string' && frontmatter.id.length > 0
-    ? frontmatter.id
-    : crypto.randomUUID()
+  const id =
+    typeof frontmatter.id === 'string' && frontmatter.id.length > 0
+      ? frontmatter.id
+      : crypto.randomUUID()
 
-  const title = typeof frontmatter.title === 'string' && frontmatter.title.length > 0
-    ? frontmatter.title
-    : deriveTitle(filename)
+  const title =
+    typeof frontmatter.title === 'string' && frontmatter.title.length > 0
+      ? frontmatter.title
+      : deriveTitle(filename)
 
-  const createdAt = typeof frontmatter.createdAt === 'string' && ISO_DATE_PATTERN.test(frontmatter.createdAt)
-    ? frontmatter.createdAt
-    : now
+  const createdAt =
+    typeof frontmatter.createdAt === 'string' && ISO_DATE_PATTERN.test(frontmatter.createdAt)
+      ? frontmatter.createdAt
+      : now
 
-  const updatedAt = typeof frontmatter.updatedAt === 'string' && ISO_DATE_PATTERN.test(frontmatter.updatedAt)
-    ? frontmatter.updatedAt
-    : now
+  const updatedAt =
+    typeof frontmatter.updatedAt === 'string' && ISO_DATE_PATTERN.test(frontmatter.updatedAt)
+      ? frontmatter.updatedAt
+      : now
 
-  const tags = Array.isArray(frontmatter.tags) && frontmatter.tags.every((t: unknown) => typeof t === 'string')
-    ? frontmatter.tags as string[]
-    : []
+  const tags =
+    Array.isArray(frontmatter.tags) && frontmatter.tags.every((t: unknown) => typeof t === 'string')
+      ? (frontmatter.tags as string[])
+      : []
 
-  const isFavorite = typeof frontmatter.isFavorite === 'boolean'
-    ? frontmatter.isFavorite
-    : false
+  const isFavorite = typeof frontmatter.isFavorite === 'boolean' ? frontmatter.isFavorite : false
 
-  const emoji = typeof frontmatter.emoji === 'string' && frontmatter.emoji.length > 0
-    ? frontmatter.emoji
-    : undefined
+  const emoji =
+    typeof frontmatter.emoji === 'string' && frontmatter.emoji.length > 0
+      ? frontmatter.emoji
+      : undefined
 
-  const coverImage = typeof frontmatter.coverImage === 'string' && frontmatter.coverImage.length > 0
-    ? frontmatter.coverImage
-    : undefined
+  const coverImage =
+    typeof frontmatter.coverImage === 'string' && frontmatter.coverImage.length > 0
+      ? frontmatter.coverImage
+      : undefined
 
-  const sources = Array.isArray(frontmatter.sources) && frontmatter.sources.every((s: unknown) => typeof s === 'string')
-    ? (frontmatter.sources as string[]).filter(s => s.trim().length > 0)
-    : undefined
+  const sources =
+    Array.isArray(frontmatter.sources) &&
+    frontmatter.sources.every((s: unknown) => typeof s === 'string')
+      ? (frontmatter.sources as string[]).filter((s) => s.trim().length > 0)
+      : undefined
 
-  const aiInstructions = typeof frontmatter.aiInstructions === 'string' && frontmatter.aiInstructions.trim().length > 0
-    ? frontmatter.aiInstructions
-    : undefined
+  const aiInstructions =
+    typeof frontmatter.aiInstructions === 'string' && frontmatter.aiInstructions.trim().length > 0
+      ? frontmatter.aiInstructions
+      : undefined
 
   const note: Note = {
     id,
@@ -277,11 +286,7 @@ function unescapeYamlString(s: string, quote: '"' | "'"): string {
     return s.replace(/''/g, "'")
   }
   // Double-quoted: handle common escapes
-  return s
-    .replace(/\\n/g, '\n')
-    .replace(/\\t/g, '\t')
-    .replace(/\\"/g, '"')
-    .replace(/\\\\/g, '\\')
+  return s.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"').replace(/\\\\/g, '\\')
 }
 
 // --- Internal YAML serializer ---
@@ -318,7 +323,7 @@ function quoteYamlValue(value: string): string {
 
 function serializeFlowSequence(items: string[]): string {
   if (items.length === 0) return '[]'
-  const serialized = items.map(item => {
+  const serialized = items.map((item) => {
     // Quote items that contain special characters
     if (YAML_SPECIAL_CHARS.test(item) || item.includes(',') || item === '') {
       return `"${item.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
@@ -334,7 +339,7 @@ function serializeYamlValue(value: unknown): string {
   if (typeof value === 'number') return String(value)
   if (typeof value === 'string') return quoteYamlValue(value)
   if (Array.isArray(value)) {
-    return serializeFlowSequence(value.map(v => String(v)))
+    return serializeFlowSequence(value.map((v) => String(v)))
   }
   return quoteYamlValue(String(value))
 }

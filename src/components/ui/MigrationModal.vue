@@ -26,8 +26,8 @@ const exportTotal = ref(0)
 const errorMessage = ref('')
 const failedNoteTitle = ref('')
 
-const progressLabel = computed(() =>
-  `${exportProgress.value} de ${exportTotal.value} notas exportadas`,
+const progressLabel = computed(
+  () => `${exportProgress.value} de ${exportTotal.value} notas exportadas`,
 )
 
 const progressPercent = computed(() =>
@@ -92,9 +92,8 @@ async function handleExport() {
         exportProgress.value++
       } catch (err: unknown) {
         failedNoteTitle.value = note.title
-        errorMessage.value = err instanceof Error
-          ? err.message
-          : 'Error desconocido al escribir la nota.'
+        errorMessage.value =
+          err instanceof Error ? err.message : 'Error desconocido al escribir la nota.'
         step.value = 'error'
         return
       }
@@ -106,9 +105,8 @@ async function handleExport() {
 
     emit('complete', 'export')
   } catch (err: unknown) {
-    errorMessage.value = err instanceof Error
-      ? err.message
-      : 'Error inesperado durante la exportación.'
+    errorMessage.value =
+      err instanceof Error ? err.message : 'Error inesperado durante la exportación.'
     step.value = 'error'
   }
 }
@@ -120,11 +118,12 @@ async function handleImport() {
     emit('complete', 'import')
   } catch (err: unknown) {
     console.error('[Glosa] Error en handleImport:', err)
-    errorMessage.value = err instanceof Error
-      ? err.message
-      : typeof err === 'string'
-        ? err
-        : 'Error al leer la carpeta seleccionada.'
+    errorMessage.value =
+      err instanceof Error
+        ? err.message
+        : typeof err === 'string'
+          ? err
+          : 'Error al leer la carpeta seleccionada.'
     step.value = 'error'
   }
 }
@@ -138,9 +137,8 @@ async function handleStartEmpty() {
     setAdapter(adapter)
     emit('complete', 'empty')
   } catch (err: unknown) {
-    errorMessage.value = err instanceof Error
-      ? err.message
-      : 'Error al inicializar el almacenamiento.'
+    errorMessage.value =
+      err instanceof Error ? err.message : 'Error al inicializar el almacenamiento.'
     step.value = 'error'
   }
 }
@@ -162,18 +160,14 @@ function handleCancel() {
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="open"
-        class="fixed inset-0 z-100 flex items-center justify-center p-4"
-      >
+      <div v-if="open" class="fixed inset-0 z-100 flex items-center justify-center p-4">
         <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-black/30 backdrop-blur-sm"
-          @click="handleCancel"
-        />
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="handleCancel" />
 
         <!-- Modal -->
-        <div class="glass-panel-md relative z-10 w-full max-w-md rounded-2xl p-6 flex flex-col gap-5 animate-fade-up">
+        <div
+          class="glass-panel-md relative z-10 w-full max-w-md rounded-2xl p-6 flex flex-col gap-5 animate-fade-up"
+        >
           <!-- Choose step -->
           <template v-if="step === 'choose'">
             <div class="flex items-center gap-3">
@@ -182,22 +176,14 @@ function handleCancel() {
             </div>
 
             <p class="text-sm text-secondary">
-              Tienes {{ noteCount }} {{ noteCount === 1 ? 'nota' : 'notas' }} en almacenamiento local.
-              ¿Cómo deseas iniciar la carpeta vinculada?
+              Tienes {{ noteCount }} {{ noteCount === 1 ? 'nota' : 'notas' }} en almacenamiento
+              local. ¿Cómo deseas iniciar la carpeta vinculada?
             </p>
 
             <div class="flex flex-col gap-3">
               <!-- Export option -->
               <button
-                class="
-                  flex items-start gap-3
-                  p-4 rounded-xl
-                  text-left
-                  border border-outline-variant/30
-                  transition-all duration-200
-                  hover:border-primary/50 hover:bg-primary/5
-                  dark:hover:bg-primary/10
-                "
+                class="flex items-start gap-3 p-4 rounded-xl text-left border border-outline-variant/30 transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10"
                 @click="handleExport"
               >
                 <UiIcon name="upload_file" class="text-primary mt-0.5 shrink-0" />
@@ -211,15 +197,7 @@ function handleCancel() {
 
               <!-- Import option -->
               <button
-                class="
-                  flex items-start gap-3
-                  p-4 rounded-xl
-                  text-left
-                  border border-outline-variant/30
-                  transition-all duration-200
-                  hover:border-primary/50 hover:bg-primary/5
-                  dark:hover:bg-primary/10
-                "
+                class="flex items-start gap-3 p-4 rounded-xl text-left border border-outline-variant/30 transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10"
                 @click="handleImport"
               >
                 <UiIcon name="download" class="text-primary mt-0.5 shrink-0" />
@@ -233,15 +211,7 @@ function handleCancel() {
 
               <!-- Start empty option -->
               <button
-                class="
-                  flex items-start gap-3
-                  p-4 rounded-xl
-                  text-left
-                  border border-outline-variant/30
-                  transition-all duration-200
-                  hover:border-primary/50 hover:bg-primary/5
-                  dark:hover:bg-primary/10
-                "
+                class="flex items-start gap-3 p-4 rounded-xl text-left border border-outline-variant/30 transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10"
                 @click="handleStartEmpty"
               >
                 <UiIcon name="note_add" class="text-primary mt-0.5 shrink-0" />
@@ -255,9 +225,7 @@ function handleCancel() {
             </div>
 
             <div class="flex items-center justify-end">
-              <UiButton variant="ghost" size="sm" @click="handleCancel">
-                Cancelar
-              </UiButton>
+              <UiButton variant="ghost" size="sm" @click="handleCancel"> Cancelar </UiButton>
             </div>
           </template>
 
@@ -285,12 +253,15 @@ function handleCancel() {
           <template v-if="step === 'error'">
             <div class="flex items-center gap-3">
               <UiIcon name="error" class="text-error" />
-              <h2 class="font-display text-lg font-semibold text-on-surface">Error en la migración</h2>
+              <h2 class="font-display text-lg font-semibold text-on-surface">
+                Error en la migración
+              </h2>
             </div>
 
             <div class="flex flex-col gap-2">
               <p v-if="failedNoteTitle" class="text-sm text-secondary">
-                Falló al exportar: <span class="font-medium text-on-surface">{{ failedNoteTitle }}</span>
+                Falló al exportar:
+                <span class="font-medium text-on-surface">{{ failedNoteTitle }}</span>
               </p>
               <p class="text-sm text-error/80">{{ errorMessage }}</p>
               <p v-if="exportProgress > 0" class="text-xs text-secondary/60">
@@ -299,9 +270,7 @@ function handleCancel() {
             </div>
 
             <div class="flex items-center justify-end gap-3">
-              <UiButton variant="ghost" size="sm" @click="handleCancel">
-                Cancelar
-              </UiButton>
+              <UiButton variant="ghost" size="sm" @click="handleCancel"> Cancelar </UiButton>
               <UiButton variant="solid" size="sm" @click="handleRetry">
                 <template #icon-left>
                   <UiIcon name="refresh" size="sm" />

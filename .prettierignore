@@ -1,0 +1,11 @@
+dist
+dist-ssr
+coverage
+electron/app
+electron/dist
+packages/*/dist
+packages/*/electron
+node_modules
+.agents
+.kiro
+.vscode

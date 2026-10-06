@@ -21,7 +21,9 @@ describe('NoteReferencesModal', () => {
     expect(wrapper.text()).toContain('https://example.com/source1')
     expect(wrapper.text()).toContain('https://example.com/source2')
     const textarea = wrapper.find('textarea')
-    expect((textarea.element as HTMLTextAreaElement).value).toBe('Instrucción de prueba para el modelo.')
+    expect((textarea.element as HTMLTextAreaElement).value).toBe(
+      'Instrucción de prueba para el modelo.',
+    )
   })
 
   it('allows adding and removing sources', async () => {
@@ -41,7 +43,7 @@ describe('NoteReferencesModal', () => {
     const input = wrapper.find('input[type="url"]')
     await input.setValue('bbc.com/news/123')
 
-    const addButton = wrapper.findAll('button').find(b => b.text().includes('Agregar'))
+    const addButton = wrapper.findAll('button').find((b) => b.text().includes('Agregar'))
     expect(addButton).toBeDefined()
     await addButton?.trigger('click')
 
@@ -73,7 +75,7 @@ describe('NoteReferencesModal', () => {
     const textarea = wrapper.find('textarea')
     await textarea.setValue('Nueva instrucción periodística')
 
-    const saveButton = wrapper.findAll('button').find(b => b.text().includes('Guardar cambios'))
+    const saveButton = wrapper.findAll('button').find((b) => b.text().includes('Guardar cambios'))
     expect(saveButton).toBeDefined()
     await saveButton?.trigger('click')
 
@@ -98,7 +100,7 @@ describe('NoteReferencesModal', () => {
       },
     })
 
-    const cancelButton = wrapper.findAll('button').find(b => b.text().includes('Cancelar'))
+    const cancelButton = wrapper.findAll('button').find((b) => b.text().includes('Cancelar'))
     expect(cancelButton).toBeDefined()
     await cancelButton?.trigger('click')
 

@@ -77,11 +77,7 @@ export async function getMostActiveFolder(sinceDays: number): Promise<string | n
 }
 
 export async function getRecentlyActiveNotes(limit: number): Promise<string[]> {
-  const events = await db.activity
-    .where('targetType')
-    .equals('note')
-    .reverse()
-    .sortBy('timestamp')
+  const events = await db.activity.where('targetType').equals('note').reverse().sortBy('timestamp')
 
   const seen = new Set<string>()
   const result: string[] = []

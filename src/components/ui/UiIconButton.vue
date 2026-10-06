@@ -11,7 +11,14 @@ interface Props {
   tooltip?: string
 }
 
-const { icon, variant = 'ghost', size = 'md', ariaLabel, filled = false, tooltip } = defineProps<Props>()
+const {
+  icon,
+  variant = 'ghost',
+  size = 'md',
+  ariaLabel,
+  filled = false,
+  tooltip,
+} = defineProps<Props>()
 
 const sizeClasses = {
   sm: 'w-8 h-8',

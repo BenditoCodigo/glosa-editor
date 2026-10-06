@@ -25,16 +25,10 @@ const emit = defineEmits<Emits>()
     @click="emit('select', result)"
   >
     <!-- Icon: emoji or default note icon -->
-    <span
-      v-if="result.emoji"
-      class="flex items-center justify-center w-8 h-8 text-lg shrink-0"
-    >
+    <span v-if="result.emoji" class="flex items-center justify-center w-8 h-8 text-lg shrink-0">
       {{ result.emoji }}
     </span>
-    <span
-      v-else
-      class="flex items-center justify-center w-8 h-8 shrink-0 text-on-surface-variant"
-    >
+    <span v-else class="flex items-center justify-center w-8 h-8 shrink-0 text-on-surface-variant">
       <UiIcon name="description" size="md" />
     </span>
 

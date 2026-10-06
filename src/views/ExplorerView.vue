@@ -33,18 +33,14 @@ const currentFolderId = computed<string | null>(() => {
 // Current folder object
 const currentFolder = computed<Folder | undefined>(() => {
   if (!currentFolderId.value) return undefined
-  return foldersStore.folders.find(f => f.id === currentFolderId.value)
+  return foldersStore.folders.find((f) => f.id === currentFolderId.value)
 })
 
 // Folders in current directory
-const currentFolders = computed(() =>
-  foldersStore.foldersByParent(currentFolderId.value),
-)
+const currentFolders = computed(() => foldersStore.foldersByParent(currentFolderId.value))
 
 // Notes in current directory
-const currentNotes = computed(() =>
-  notesStore.notesByFolder(currentFolderId.value),
-)
+const currentNotes = computed(() => notesStore.notesByFolder(currentFolderId.value))
 
 const isLoading = computed(() => notesLoading.value || foldersLoading.value)
 
@@ -203,7 +199,9 @@ async function confirmRenameFolder(name: string) {
 
     // If we're inside the renamed folder, navigate to its new ID
     if (currentFolderId.value === oldId) {
-      const renamed = foldersStore.folders.find((f) => f.name === name.trim() && f.parentFolder === targetFolder.value!.parentFolder)
+      const renamed = foldersStore.folders.find(
+        (f) => f.name === name.trim() && f.parentFolder === targetFolder.value!.parentFolder,
+      )
       if (renamed && renamed.id !== oldId) {
         router.replace({ name: 'explorer-folder', params: { path: renamed.id } })
       }
@@ -239,7 +237,6 @@ async function confirmDeleteFolder() {
   }
   targetFolder.value = null
 }
-
 </script>
 
 <template>
@@ -309,7 +306,9 @@ async function confirmDeleteFolder() {
         <!-- Folders Section -->
         <section v-if="currentFolders.length > 0" class="mb-12">
           <div class="flex items-center gap-4 mb-6">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Carpetas</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Carpetas
+            </h2>
             <div class="h-px flex-1 bg-white/30"></div>
           </div>
 
@@ -391,7 +390,10 @@ async function confirmDeleteFolder() {
     :initial-value="targetFolder?.name ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameFolder"
-    @cancel="showRenameModal = false; targetFolder = null"
+    @cancel="
+      showRenameModal = false
+      targetFolder = null
+    "
   />
 
   <!-- Modal: Renombrar nota -->
@@ -402,7 +404,10 @@ async function confirmDeleteFolder() {
     :initial-value="targetNote?.title ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameNote"
-    @cancel="showNoteRenameModal = false; targetNote = null"
+    @cancel="
+      showNoteRenameModal = false
+      targetNote = null
+    "
   />
 
   <!-- Modal: Confirmar eliminación -->
@@ -413,6 +418,9 @@ async function confirmDeleteFolder() {
     confirm-label="Eliminar"
     :danger="true"
     @confirm="confirmDeleteFolder"
-    @cancel="showDeleteConfirm = false; targetFolder = null"
+    @cancel="
+      showDeleteConfirm = false
+      targetFolder = null
+    "
   />
 </template>

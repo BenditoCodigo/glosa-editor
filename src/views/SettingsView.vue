@@ -14,7 +14,8 @@ import { DEFAULT_SYSTEM_PROMPT } from '@/types'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
-const { profile, theme, storageProvider, editor, isFileSystemSupported, filesystemPath, ai } = storeToRefs(settingsStore)
+const { profile, theme, storageProvider, editor, isFileSystemSupported, filesystemPath, ai } =
+  storeToRefs(settingsStore)
 
 // Local state for avatar preview
 const avatarInput = ref<HTMLInputElement | null>(null)
@@ -30,7 +31,9 @@ const showConfigGuide = ref(false)
 const isTestingConnection = ref(false)
 const connectionResult = ref<AIConnectionResult | null>(null)
 
-const canTestConnection = computed(() => ai.value.baseUrl.trim() !== '' && ai.value.model.trim() !== '')
+const canTestConnection = computed(
+  () => ai.value.baseUrl.trim() !== '' && ai.value.model.trim() !== '',
+)
 
 // Migration modal state
 const showMigrationModal = ref(false)
@@ -39,11 +42,33 @@ const migrationNoteCount = ref(0)
 const previousProviderBeforeMigration = ref<StorageProvider>('indexeddb')
 const previousPathBeforeMigration = ref<string | null>(null)
 
-const storageOptions = computed<{ id: StorageProvider; label: string; description: string; available: boolean }[]>(() => [
-  { id: 'indexeddb', label: 'IndexedDB (local)', description: 'Almacenamiento en el navegador. Ideal para pruebas y uso personal.', available: true },
-  { id: 'filesystem', label: 'Sistema de archivos', description: 'Archivos .md en tu disco local. Requiere la app de escritorio.', available: isFileSystemSupported.value },
-  { id: 's3', label: 'Amazon S3', description: 'Bucket S3 privado para almacenamiento en la nube.', available: false },
-  { id: 'webdav', label: 'WebDAV / NAS', description: 'Servidor WebDAV, Nextcloud, Synology, etc.', available: false },
+const storageOptions = computed<
+  { id: StorageProvider; label: string; description: string; available: boolean }[]
+>(() => [
+  {
+    id: 'indexeddb',
+    label: 'IndexedDB (local)',
+    description: 'Almacenamiento en el navegador. Ideal para pruebas y uso personal.',
+    available: true,
+  },
+  {
+    id: 'filesystem',
+    label: 'Sistema de archivos',
+    description: 'Archivos .md en tu disco local. Requiere la app de escritorio.',
+    available: isFileSystemSupported.value,
+  },
+  {
+    id: 's3',
+    label: 'Amazon S3',
+    description: 'Bucket S3 privado para almacenamiento en la nube.',
+    available: false,
+  },
+  {
+    id: 'webdav',
+    label: 'WebDAV / NAS',
+    description: 'Servidor WebDAV, Nextcloud, Synology, etc.',
+    available: false,
+  },
 ])
 
 const themeOptions: { id: ThemeMode; label: string; icon: string }[] = [
@@ -115,7 +140,10 @@ async function handleMigrationComplete() {
 function handleMigrationCancel() {
   showMigrationModal.value = false
   // Revert settings to before the folder was selected
-  settingsStore.cancelMigration(previousPathBeforeMigration.value, previousProviderBeforeMigration.value)
+  settingsStore.cancelMigration(
+    previousPathBeforeMigration.value,
+    previousProviderBeforeMigration.value,
+  )
 }
 
 async function handleUnlinkFolder() {
@@ -212,7 +240,9 @@ function handleMaxTokensInput(event: Event) {
         <!-- 1. Perfil de usuario -->
         <section>
           <div class="flex items-center gap-4 mb-5">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Perfil</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Perfil
+            </h2>
             <div class="h-px flex-1 bg-outline-variant/30"></div>
           </div>
 
@@ -221,14 +251,7 @@ function handleMaxTokensInput(event: Event) {
               <!-- Avatar -->
               <div class="flex flex-col items-center gap-2">
                 <button
-                  class="
-                    relative w-20 h-20 rounded-full overflow-hidden
-                    bg-primary-container
-                    flex items-center justify-center
-                    text-on-primary-container font-bold text-2xl
-                    hover:opacity-80 transition-opacity
-                    ring-2 ring-white/20
-                  "
+                  class="relative w-20 h-20 rounded-full overflow-hidden bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-2xl hover:opacity-80 transition-opacity ring-2 ring-white/20"
                   title="Cambiar avatar"
                   @click="handleAvatarClick"
                 >
@@ -237,9 +260,11 @@ function handleMaxTokensInput(event: Event) {
                     :src="profile.avatarUrl"
                     alt="Avatar"
                     class="absolute inset-0 w-full h-full object-cover"
-                  >
+                  />
                   <span v-else>{{ settingsStore.userInitial }}</span>
-                  <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+                  <div
+                    class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
+                  >
                     <UiIcon name="photo_camera" class="text-white" />
                   </div>
                 </button>
@@ -256,29 +281,26 @@ function handleMaxTokensInput(event: Event) {
                   accept="image/*"
                   class="hidden"
                   @change="handleAvatarChange"
-                >
+                />
               </div>
 
               <!-- Username -->
               <div class="flex-1">
-                <label class="block text-xs font-medium text-secondary mb-2">Nombre de usuario</label>
+                <label class="block text-xs font-medium text-secondary mb-2"
+                  >Nombre de usuario</label
+                >
                 <input
                   :value="profile.username"
                   type="text"
                   placeholder="Tu nombre"
-                  class="
-                    glass-input
-                    w-full max-w-xs px-4 py-2.5
-                    rounded-xl
-                    text-sm text-on-surface
-                    placeholder:text-secondary/50
-                    focus:outline-none focus:ring-1 focus:ring-primary/40
+                  class="glass-input w-full max-w-xs px-4 py-2.5 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  @input="
+                    settingsStore.updateProfile({
+                      username: ($event.target as HTMLInputElement).value,
+                    })
                   "
-                  @input="settingsStore.updateProfile({ username: ($event.target as HTMLInputElement).value })"
-                >
-                <p class="mt-2 text-xs text-secondary/60">
-                  Se mostrará en tus notas exportadas.
-                </p>
+                />
+                <p class="mt-2 text-xs text-secondary/60">Se mostrará en tus notas exportadas.</p>
               </div>
             </div>
           </div>
@@ -287,7 +309,9 @@ function handleMaxTokensInput(event: Event) {
         <!-- 2. Almacenamiento -->
         <section>
           <div class="flex items-center gap-4 mb-5">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Almacenamiento</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Almacenamiento
+            </h2>
             <div class="h-px flex-1 bg-outline-variant/30"></div>
           </div>
 
@@ -296,12 +320,7 @@ function handleMaxTokensInput(event: Event) {
               <button
                 v-for="option in storageOptions"
                 :key="option.id"
-                class="
-                  relative flex flex-col gap-1.5
-                  p-4 rounded-xl
-                  text-left transition-all duration-200
-                  border
-                "
+                class="relative flex flex-col gap-1.5 p-4 rounded-xl text-left transition-all duration-200 border"
                 :class="[
                   storageProvider === option.id
                     ? 'border-primary bg-primary/5 dark:bg-primary/20 dark:border-primary-fixed-dim'
@@ -314,7 +333,11 @@ function handleMaxTokensInput(event: Event) {
                 <div class="flex items-center gap-2">
                   <div
                     class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center"
-                    :class="storageProvider === option.id ? 'border-primary dark:border-primary-fixed-dim' : 'border-outline-variant'"
+                    :class="
+                      storageProvider === option.id
+                        ? 'border-primary dark:border-primary-fixed-dim'
+                        : 'border-outline-variant'
+                    "
                   >
                     <div
                       v-if="storageProvider === option.id"
@@ -356,7 +379,9 @@ function handleMaxTokensInput(event: Event) {
         <!-- 3. Apariencia -->
         <section>
           <div class="flex items-center gap-4 mb-5">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Apariencia</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Apariencia
+            </h2>
             <div class="h-px flex-1 bg-outline-variant/30"></div>
           </div>
 
@@ -366,15 +391,11 @@ function handleMaxTokensInput(event: Event) {
               <button
                 v-for="option in themeOptions"
                 :key="option.id"
-                class="
-                  flex items-center gap-2
-                  px-4 py-2.5 rounded-xl
-                  text-sm font-medium
-                  border transition-all duration-200
-                "
-                :class="theme === option.id
-                  ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim dark:border-primary-fixed-dim'
-                  : 'border-outline-variant/30 text-secondary hover:border-outline-variant/60 hover:text-on-surface'
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200"
+                :class="
+                  theme === option.id
+                    ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim dark:border-primary-fixed-dim'
+                    : 'border-outline-variant/30 text-secondary hover:border-outline-variant/60 hover:text-on-surface'
                 "
                 @click="handleThemeChange(option.id)"
               >
@@ -388,7 +409,9 @@ function handleMaxTokensInput(event: Event) {
         <!-- 4. Editor -->
         <section>
           <div class="flex items-center gap-4 mb-5">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Editor</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Editor
+            </h2>
             <div class="h-px flex-1 bg-outline-variant/30"></div>
           </div>
 
@@ -397,25 +420,19 @@ function handleMaxTokensInput(event: Event) {
             <div class="flex items-center justify-between">
               <div>
                 <span class="text-sm font-medium text-on-surface">Autoguardado</span>
-                <p class="text-xs text-secondary/60 mt-0.5">Guardar cambios automáticamente mientras escribes.</p>
+                <p class="text-xs text-secondary/60 mt-0.5">
+                  Guardar cambios automáticamente mientras escribes.
+                </p>
               </div>
               <button
-                class="
-                  relative w-11 h-6 rounded-full
-                  transition-colors duration-200
-                "
+                class="relative w-11 h-6 rounded-full transition-colors duration-200"
                 :class="editor.autosaveEnabled ? 'bg-primary' : 'bg-outline-variant/50'"
                 role="switch"
                 :aria-checked="editor.autosaveEnabled"
                 @click="settingsStore.updateEditor({ autosaveEnabled: !editor.autosaveEnabled })"
               >
                 <span
-                  class="
-                    absolute top-0.5 left-0.5
-                    w-5 h-5 rounded-full
-                    bg-white shadow-sm
-                    transition-transform duration-200
-                  "
+                  class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
                   :class="editor.autosaveEnabled && 'translate-x-5'"
                 />
               </button>
@@ -423,19 +440,18 @@ function handleMaxTokensInput(event: Event) {
 
             <!-- Autosave interval -->
             <div v-if="editor.autosaveEnabled" class="pl-0">
-              <label class="block text-xs font-medium text-secondary mb-2">Intervalo de autoguardado</label>
+              <label class="block text-xs font-medium text-secondary mb-2"
+                >Intervalo de autoguardado</label
+              >
               <div class="flex gap-2">
                 <button
                   v-for="interval in autosaveIntervals"
                   :key="interval.value"
-                  class="
-                    px-3 py-1.5 rounded-lg
-                    text-xs font-medium
-                    border transition-all duration-200
-                  "
-                  :class="editor.autosaveInterval === interval.value
-                    ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim dark:border-primary-fixed-dim'
-                    : 'border-outline-variant/30 text-secondary hover:border-outline-variant/60'
+                  class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200"
+                  :class="
+                    editor.autosaveInterval === interval.value
+                      ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim dark:border-primary-fixed-dim'
+                      : 'border-outline-variant/30 text-secondary hover:border-outline-variant/60'
                   "
                   @click="settingsStore.updateEditor({ autosaveInterval: interval.value })"
                 >
@@ -448,25 +464,19 @@ function handleMaxTokensInput(event: Event) {
             <div class="flex items-center justify-between">
               <div>
                 <span class="text-sm font-medium text-on-surface">Conteo de palabras</span>
-                <p class="text-xs text-secondary/60 mt-0.5">Mostrar palabras y caracteres en el editor.</p>
+                <p class="text-xs text-secondary/60 mt-0.5">
+                  Mostrar palabras y caracteres en el editor.
+                </p>
               </div>
               <button
-                class="
-                  relative w-11 h-6 rounded-full
-                  transition-colors duration-200
-                "
+                class="relative w-11 h-6 rounded-full transition-colors duration-200"
                 :class="editor.showWordCount ? 'bg-primary' : 'bg-outline-variant/50'"
                 role="switch"
                 :aria-checked="editor.showWordCount"
                 @click="settingsStore.updateEditor({ showWordCount: !editor.showWordCount })"
               >
                 <span
-                  class="
-                    absolute top-0.5 left-0.5
-                    w-5 h-5 rounded-full
-                    bg-white shadow-sm
-                    transition-transform duration-200
-                  "
+                  class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
                   :class="editor.showWordCount && 'translate-x-5'"
                 />
               </button>
@@ -477,7 +487,9 @@ function handleMaxTokensInput(event: Event) {
         <!-- 5. Inteligencia Artificial -->
         <section>
           <div class="flex items-center gap-4 mb-5">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Inteligencia Artificial</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Inteligencia Artificial
+            </h2>
             <div class="h-px flex-1 bg-outline-variant/30"></div>
           </div>
 
@@ -486,7 +498,9 @@ function handleMaxTokensInput(event: Event) {
             <div class="flex items-center justify-between">
               <div>
                 <span class="text-sm font-medium text-on-surface">Habilitar asistente de IA</span>
-                <p class="text-xs text-secondary/60 mt-0.5">Conecta un modelo de lenguaje local o remoto.</p>
+                <p class="text-xs text-secondary/60 mt-0.5">
+                  Conecta un modelo de lenguaje local o remoto.
+                </p>
               </div>
               <button
                 class="relative w-11 h-6 rounded-full transition-colors duration-200"
@@ -513,8 +527,10 @@ function handleMaxTokensInput(event: Event) {
                     type="text"
                     placeholder="http://localhost:11434/v1"
                     class="glass-input w-full px-4 py-2.5 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
-                    @input="settingsStore.updateAI({ baseUrl: ($event.target as HTMLInputElement).value })"
-                  >
+                    @input="
+                      settingsStore.updateAI({ baseUrl: ($event.target as HTMLInputElement).value })
+                    "
+                  />
                 </div>
 
                 <!-- Model -->
@@ -525,8 +541,10 @@ function handleMaxTokensInput(event: Event) {
                     type="text"
                     placeholder="llama3.1:8b"
                     class="glass-input w-full px-4 py-2.5 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
-                    @input="settingsStore.updateAI({ model: ($event.target as HTMLInputElement).value })"
-                  >
+                    @input="
+                      settingsStore.updateAI({ model: ($event.target as HTMLInputElement).value })
+                    "
+                  />
                 </div>
 
                 <!-- API Key -->
@@ -538,8 +556,12 @@ function handleMaxTokensInput(event: Event) {
                       :type="showApiKey ? 'text' : 'password'"
                       placeholder="sk-... (opcional)"
                       class="glass-input w-full px-4 py-2.5 pr-10 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
-                      @input="settingsStore.updateAI({ apiKey: ($event.target as HTMLInputElement).value })"
-                    >
+                      @input="
+                        settingsStore.updateAI({
+                          apiKey: ($event.target as HTMLInputElement).value,
+                        })
+                      "
+                    />
                     <button
                       class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg text-secondary/60 hover:text-secondary transition-colors"
                       type="button"
@@ -553,7 +575,9 @@ function handleMaxTokensInput(event: Event) {
 
                 <!-- Custom Headers -->
                 <div>
-                  <label class="block text-xs font-medium text-secondary mb-2">Headers personalizados</label>
+                  <label class="block text-xs font-medium text-secondary mb-2"
+                    >Headers personalizados</label
+                  >
                   <div v-if="ai.headers.length > 0" class="space-y-2 mb-3">
                     <div
                       v-for="(header, index) in ai.headers"
@@ -565,23 +589,36 @@ function handleMaxTokensInput(event: Event) {
                         type="text"
                         placeholder="Header name"
                         class="glass-input flex-1 px-3 py-2 rounded-lg text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
-                        @input="settingsStore.updateAIHeader(index, { ...header, key: ($event.target as HTMLInputElement).value })"
-                      >
+                        @input="
+                          settingsStore.updateAIHeader(index, {
+                            ...header,
+                            key: ($event.target as HTMLInputElement).value,
+                          })
+                        "
+                      />
                       <div class="relative flex-1">
                         <input
                           :value="header.value"
                           :type="showHeaderValues[index] ? 'text' : 'password'"
                           placeholder="Value"
                           class="glass-input w-full px-3 py-2 pr-8 rounded-lg text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
-                          @input="settingsStore.updateAIHeader(index, { ...header, value: ($event.target as HTMLInputElement).value })"
-                        >
+                          @input="
+                            settingsStore.updateAIHeader(index, {
+                              ...header,
+                              value: ($event.target as HTMLInputElement).value,
+                            })
+                          "
+                        />
                         <button
                           class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-secondary/60 hover:text-secondary transition-colors"
                           type="button"
                           :aria-label="showHeaderValues[index] ? 'Ocultar valor' : 'Mostrar valor'"
                           @click="toggleHeaderValueVisibility(index)"
                         >
-                          <UiIcon :name="showHeaderValues[index] ? 'visibility_off' : 'visibility'" size="sm" />
+                          <UiIcon
+                            :name="showHeaderValues[index] ? 'visibility_off' : 'visibility'"
+                            size="sm"
+                          />
                         </button>
                       </div>
                       <button
@@ -607,36 +644,42 @@ function handleMaxTokensInput(event: Event) {
                 <!-- Connection test -->
                 <div class="flex items-center gap-3 pt-2">
                   <button
-                    class="
-                      inline-flex items-center gap-2
-                      px-4 py-2 rounded-xl
-                      text-sm font-medium
-                      border border-primary/30 text-primary
-                      hover:bg-primary/10
-                      transition-all duration-200
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                    "
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     type="button"
                     :disabled="!canTestConnection || isTestingConnection"
                     @click="handleTestConnection"
                   >
                     <UiIcon v-if="!isTestingConnection" name="power" size="sm" />
-                    <span v-else class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <span
+                      v-else
+                      class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+                    />
                     <span>{{ isTestingConnection ? 'Probando...' : 'Probar conexión' }}</span>
                   </button>
 
                   <!-- Success indicator -->
                   <Transition name="fade">
                     <div v-if="connectionResult?.success" class="flex items-center gap-2 text-sm">
-                      <UiIcon name="check_circle" size="sm" class="text-green-600 dark:text-green-400" />
-                      <span class="text-green-700 dark:text-green-300">{{ connectionResult.message }}</span>
-                      <span v-if="connectionResult.latencyMs" class="text-xs text-secondary/60">({{ connectionResult.latencyMs }}ms)</span>
+                      <UiIcon
+                        name="check_circle"
+                        size="sm"
+                        class="text-green-600 dark:text-green-400"
+                      />
+                      <span class="text-green-700 dark:text-green-300">{{
+                        connectionResult.message
+                      }}</span>
+                      <span v-if="connectionResult.latencyMs" class="text-xs text-secondary/60"
+                        >({{ connectionResult.latencyMs }}ms)</span
+                      >
                     </div>
                   </Transition>
 
                   <!-- Error indicator -->
                   <Transition name="fade">
-                    <div v-if="connectionResult && !connectionResult.success" class="flex items-center gap-2 text-sm">
+                    <div
+                      v-if="connectionResult && !connectionResult.success"
+                      class="flex items-center gap-2 text-sm"
+                    >
                       <UiIcon name="error" size="sm" class="text-error" />
                       <span class="text-error">{{ connectionResult.message }}</span>
                     </div>
@@ -646,33 +689,30 @@ function handleMaxTokensInput(event: Event) {
                 <!-- System Prompt -->
                 <div class="pt-3">
                   <div class="flex items-center gap-4 mb-3">
-                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Instrucciones del sistema</span>
+                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest"
+                      >Instrucciones del sistema</span
+                    >
                     <div class="h-px flex-1 bg-outline-variant/20"></div>
                   </div>
                   <textarea
                     :value="ai.systemPrompt"
                     :placeholder="DEFAULT_SYSTEM_PROMPT"
-                    class="
-                      glass-input
-                      w-full px-4 py-3
-                      rounded-xl
-                      text-sm text-on-surface leading-relaxed
-                      placeholder:text-secondary/40
-                      focus:outline-none focus:ring-1 focus:ring-primary/40
-                      resize-none
-                    "
+                    class="glass-input w-full px-4 py-3 rounded-xl text-sm text-on-surface leading-relaxed placeholder:text-secondary/40 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
                     style="min-height: 120px"
                     @input="handleSystemPromptInput"
                   />
                   <p class="mt-2 text-xs text-secondary/60">
-                    Define el comportamiento del modelo. Puedes indicar idioma, tono, y tipo de asistencia que deseas.
+                    Define el comportamiento del modelo. Puedes indicar idioma, tono, y tipo de
+                    asistencia que deseas.
                   </p>
                 </div>
 
                 <!-- Model Parameters -->
                 <div class="pt-3">
                   <div class="flex items-center gap-4 mb-4">
-                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Parámetros del modelo</span>
+                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest"
+                      >Parámetros del modelo</span
+                    >
                     <div class="h-px flex-1 bg-outline-variant/20"></div>
                   </div>
 
@@ -681,7 +721,9 @@ function handleMaxTokensInput(event: Event) {
                     <div>
                       <div class="flex items-center justify-between mb-1.5">
                         <label class="text-xs font-medium text-secondary">Temperature</label>
-                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.temperature.toFixed(1) }}</span>
+                        <span class="text-xs font-mono text-on-surface">{{
+                          ai.modelParameters.temperature.toFixed(1)
+                        }}</span>
                       </div>
                       <input
                         type="range"
@@ -691,14 +733,16 @@ function handleMaxTokensInput(event: Event) {
                         step="0.1"
                         class="w-full accent-primary"
                         @input="handleSliderInput('temperature', $event)"
-                      >
+                      />
                     </div>
 
                     <!-- Top P -->
                     <div>
                       <div class="flex items-center justify-between mb-1.5">
                         <label class="text-xs font-medium text-secondary">Top P</label>
-                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.topP.toFixed(2) }}</span>
+                        <span class="text-xs font-mono text-on-surface">{{
+                          ai.modelParameters.topP.toFixed(2)
+                        }}</span>
                       </div>
                       <input
                         type="range"
@@ -708,14 +752,16 @@ function handleMaxTokensInput(event: Event) {
                         step="0.05"
                         class="w-full accent-primary"
                         @input="handleSliderInput('topP', $event)"
-                      >
+                      />
                     </div>
 
                     <!-- Max Tokens -->
                     <div>
                       <div class="flex items-center justify-between mb-1.5">
                         <label class="text-xs font-medium text-secondary">Max Tokens</label>
-                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.maxTokens }}</span>
+                        <span class="text-xs font-mono text-on-surface">{{
+                          ai.modelParameters.maxTokens
+                        }}</span>
                       </div>
                       <input
                         type="number"
@@ -724,14 +770,16 @@ function handleMaxTokensInput(event: Event) {
                         max="8192"
                         class="glass-input w-full px-4 py-2 rounded-xl text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/40"
                         @change="handleMaxTokensInput"
-                      >
+                      />
                     </div>
 
                     <!-- Frequency Penalty -->
                     <div>
                       <div class="flex items-center justify-between mb-1.5">
                         <label class="text-xs font-medium text-secondary">Frequency Penalty</label>
-                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.frequencyPenalty.toFixed(1) }}</span>
+                        <span class="text-xs font-mono text-on-surface">{{
+                          ai.modelParameters.frequencyPenalty.toFixed(1)
+                        }}</span>
                       </div>
                       <input
                         type="range"
@@ -741,14 +789,16 @@ function handleMaxTokensInput(event: Event) {
                         step="0.1"
                         class="w-full accent-primary"
                         @input="handleSliderInput('frequencyPenalty', $event)"
-                      >
+                      />
                     </div>
 
                     <!-- Presence Penalty -->
                     <div>
                       <div class="flex items-center justify-between mb-1.5">
                         <label class="text-xs font-medium text-secondary">Presence Penalty</label>
-                        <span class="text-xs font-mono text-on-surface">{{ ai.modelParameters.presencePenalty.toFixed(1) }}</span>
+                        <span class="text-xs font-mono text-on-surface">{{
+                          ai.modelParameters.presencePenalty.toFixed(1)
+                        }}</span>
                       </div>
                       <input
                         type="range"
@@ -758,18 +808,13 @@ function handleMaxTokensInput(event: Event) {
                         step="0.1"
                         class="w-full accent-primary"
                         @input="handleSliderInput('presencePenalty', $event)"
-                      >
+                      />
                     </div>
                   </div>
 
                   <!-- Reset button -->
                   <button
-                    class="
-                      mt-5 flex items-center gap-1.5
-                      text-xs font-medium text-secondary
-                      hover:text-on-surface
-                      transition-colors
-                    "
+                    class="mt-5 flex items-center gap-1.5 text-xs font-medium text-secondary hover:text-on-surface transition-colors"
                     type="button"
                     @click="settingsStore.resetAIModelParameters()"
                   >
@@ -791,25 +836,57 @@ function handleMaxTokensInput(event: Event) {
                       class="text-secondary/60 transition-transform duration-200"
                       :class="showConfigGuide && 'rotate-90'"
                     />
-                    <span class="text-[11px] font-semibold text-secondary uppercase tracking-widest group-hover:text-on-surface transition-colors">
+                    <span
+                      class="text-[11px] font-semibold text-secondary uppercase tracking-widest group-hover:text-on-surface transition-colors"
+                    >
                       Guía de configuración
                     </span>
                     <div class="h-px flex-1 bg-outline-variant/20"></div>
                   </button>
 
                   <Transition name="fade-up">
-                    <div v-if="showConfigGuide" class="mt-4 space-y-5 text-sm text-secondary leading-relaxed">
+                    <div
+                      v-if="showConfigGuide"
+                      class="mt-4 space-y-5 text-sm text-secondary leading-relaxed"
+                    >
                       <!-- Ollama -->
                       <div>
-                        <h4 class="font-medium text-on-surface mb-2">Ollama (recomendado para uso local)</h4>
+                        <h4 class="font-medium text-on-surface mb-2">
+                          Ollama (recomendado para uso local)
+                        </h4>
                         <ol class="list-decimal list-inside space-y-1 text-xs">
-                          <li>Instala Ollama desde <span class="font-mono text-primary">ollama.com</span></li>
-                          <li>Ejecuta: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">ollama pull llama3.1:8b</code></li>
-                          <li>Ollama corre automáticamente en <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:11434</code></li>
-                          <li>URL Base: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:11434/v1</code></li>
-                          <li>Modelo: el nombre que descargaste (ej: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">llama3.1:8b</code>)</li>
+                          <li>
+                            Instala Ollama desde
+                            <span class="font-mono text-primary">ollama.com</span>
+                          </li>
+                          <li>
+                            Ejecuta:
+                            <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded"
+                              >ollama pull llama3.1:8b</code
+                            >
+                          </li>
+                          <li>
+                            Ollama corre automáticamente en
+                            <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded"
+                              >http://localhost:11434</code
+                            >
+                          </li>
+                          <li>
+                            URL Base:
+                            <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded"
+                              >http://localhost:11434/v1</code
+                            >
+                          </li>
+                          <li>
+                            Modelo: el nombre que descargaste (ej:
+                            <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded"
+                              >llama3.1:8b</code
+                            >)
+                          </li>
                         </ol>
-                        <p class="mt-1.5 text-xs text-secondary/60 italic">Ollama debe estar corriendo antes de probar la conexión.</p>
+                        <p class="mt-1.5 text-xs text-secondary/60 italic">
+                          Ollama debe estar corriendo antes de probar la conexión.
+                        </p>
                       </div>
 
                       <!-- llama.cpp -->
@@ -817,7 +894,12 @@ function handleMaxTokensInput(event: Event) {
                         <h4 class="font-medium text-on-surface mb-2">llama.cpp</h4>
                         <ol class="list-decimal list-inside space-y-1 text-xs">
                           <li>Descarga e inicia llama-server con tu modelo GGUF</li>
-                          <li>URL Base: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:8080/v1</code></li>
+                          <li>
+                            URL Base:
+                            <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded"
+                              >http://localhost:8080/v1</code
+                            >
+                          </li>
                           <li>Modelo: el nombre que configuraste al iniciar el servidor</li>
                         </ol>
                       </div>
@@ -828,16 +910,29 @@ function handleMaxTokensInput(event: Event) {
                         <ol class="list-decimal list-inside space-y-1 text-xs">
                           <li>Descarga un modelo desde la interfaz de LM Studio</li>
                           <li>Activa el servidor local en la pestaña "Local Server"</li>
-                          <li>URL Base: <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">http://localhost:1234/v1</code></li>
+                          <li>
+                            URL Base:
+                            <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded"
+                              >http://localhost:1234/v1</code
+                            >
+                          </li>
                           <li>Modelo: el que tengas cargado</li>
                         </ol>
                       </div>
 
                       <!-- Generic -->
                       <div>
-                        <h4 class="font-medium text-on-surface mb-2">Cualquier endpoint OpenAI-compatible</h4>
+                        <h4 class="font-medium text-on-surface mb-2">
+                          Cualquier endpoint OpenAI-compatible
+                        </h4>
                         <p class="text-xs">
-                          Si usas un proxy (LiteLLM, custom gateway) o servicio cloud, configura la URL base y API Key según la documentación del proveedor. Cualquier servidor que exponga el formato <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded">/v1/chat/completions</code> es compatible.
+                          Si usas un proxy (LiteLLM, custom gateway) o servicio cloud, configura la
+                          URL base y API Key según la documentación del proveedor. Cualquier
+                          servidor que exponga el formato
+                          <code class="font-mono bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded"
+                            >/v1/chat/completions</code
+                          >
+                          es compatible.
                         </p>
                       </div>
                     </div>
@@ -851,7 +946,9 @@ function handleMaxTokensInput(event: Event) {
         <!-- 6. Datos -->
         <section>
           <div class="flex items-center gap-4 mb-5">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Datos</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Datos
+            </h2>
             <div class="h-px flex-1 bg-outline-variant/30"></div>
           </div>
 
@@ -870,16 +967,26 @@ function handleMaxTokensInput(event: Event) {
                 Importar notas
               </UiButton>
             </div>
-            <p class="text-xs text-secondary/50">Exportar e importar estarán disponibles próximamente.</p>
+            <p class="text-xs text-secondary/50">
+              Exportar e importar estarán disponibles próximamente.
+            </p>
 
             <div class="pt-4 border-t border-outline-variant/20">
-              <UiButton variant="ghost" size="sm" class="text-error hover:bg-error/10" @click="handleDeleteAllData">
+              <UiButton
+                variant="ghost"
+                size="sm"
+                class="text-error hover:bg-error/10"
+                @click="handleDeleteAllData"
+              >
                 <template #icon-left>
                   <UiIcon name="delete_forever" size="sm" />
                 </template>
                 Borrar todos los datos
               </UiButton>
-              <p class="mt-1 text-xs text-secondary/50">Esta acción es irreversible. Se eliminarán todas las notas, carpetas y configuraciones.</p>
+              <p class="mt-1 text-xs text-secondary/50">
+                Esta acción es irreversible. Se eliminarán todas las notas, carpetas y
+                configuraciones.
+              </p>
             </div>
           </div>
         </section>
@@ -887,14 +994,18 @@ function handleMaxTokensInput(event: Event) {
         <!-- 7. Acerca de -->
         <section>
           <div class="flex items-center gap-4 mb-5">
-            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Acerca de</h2>
+            <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+              Acerca de
+            </h2>
             <div class="h-px flex-1 bg-outline-variant/30"></div>
           </div>
 
           <div class="glass-panel-md rounded-2xl p-6">
             <div class="space-y-3">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm">
+                <div
+                  class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm"
+                >
                   G
                 </div>
                 <div>
@@ -905,9 +1016,7 @@ function handleMaxTokensInput(event: Event) {
               <p class="text-sm text-secondary">
                 Plataforma personal de notas en markdown. Privada, local, tuya.
               </p>
-              <p class="text-xs text-secondary/60">
-                Hecho con 💚 por Bendito Código
-              </p>
+              <p class="text-xs text-secondary/60">Hecho con 💚 por Bendito Código</p>
             </div>
           </div>
         </section>
@@ -926,19 +1035,27 @@ function handleMaxTokensInput(event: Event) {
           class="absolute inset-0 bg-black/30 backdrop-blur-sm"
           @click="showDeleteConfirm = false"
         />
-        <div class="glass-panel-md relative z-10 w-full max-w-sm rounded-2xl p-6 flex flex-col gap-5 animate-fade-up">
+        <div
+          class="glass-panel-md relative z-10 w-full max-w-sm rounded-2xl p-6 flex flex-col gap-5 animate-fade-up"
+        >
           <div class="flex items-center gap-3">
             <UiIcon name="warning" class="text-error" />
             <h2 class="font-display text-lg font-semibold text-on-surface">¿Borrar todo?</h2>
           </div>
           <p class="text-sm text-secondary">
-            Se eliminarán permanentemente todas las notas, carpetas y configuraciones. Esta acción no se puede deshacer.
+            Se eliminarán permanentemente todas las notas, carpetas y configuraciones. Esta acción
+            no se puede deshacer.
           </p>
           <div class="flex items-center justify-end gap-3">
             <UiButton variant="ghost" size="sm" @click="showDeleteConfirm = false">
               Cancelar
             </UiButton>
-            <UiButton variant="solid" size="sm" class="!bg-error hover:!bg-error/80" @click="confirmDeleteAll">
+            <UiButton
+              variant="solid"
+              size="sm"
+              class="!bg-error hover:!bg-error/80"
+              @click="confirmDeleteAll"
+            >
               <template #icon-left>
                 <UiIcon name="delete_forever" size="sm" />
               </template>

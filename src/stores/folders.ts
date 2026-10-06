@@ -12,9 +12,7 @@ export const useFoldersStore = defineStore('folders', () => {
     [...folders.value].sort((a, b) => a.name.localeCompare(b.name)),
   )
 
-  const favorites = computed(() =>
-    folders.value.filter((f) => f.isFavorite),
-  )
+  const favorites = computed(() => folders.value.filter((f) => f.isFavorite))
 
   function foldersByParent(parentId: string | null) {
     return folders.value.filter((f) => f.parentFolder === parentId)

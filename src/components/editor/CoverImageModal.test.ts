@@ -34,7 +34,7 @@ describe('CoverImageModal', () => {
       },
     })
 
-    const removeBtn = wrapper.findAll('button').find(b => b.text().includes('Eliminar portada'))
+    const removeBtn = wrapper.findAll('button').find((b) => b.text().includes('Eliminar portada'))
     expect(removeBtn).toBeDefined()
     await removeBtn!.trigger('click')
 
@@ -53,7 +53,7 @@ describe('CoverImageModal', () => {
       },
     })
 
-    const cancelBtn = wrapper.findAll('button').find(b => b.text().includes('Cancelar'))
+    const cancelBtn = wrapper.findAll('button').find((b) => b.text().includes('Cancelar'))
     expect(cancelBtn).toBeDefined()
     await cancelBtn!.trigger('click')
 

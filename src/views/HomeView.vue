@@ -25,9 +25,7 @@ const featuredNote = ref<Note | null>(null)
 const featuredFolder = ref<Folder | null>(null)
 const recentNotes = ref<Note[]>([])
 const recentFavorites = computed(() =>
-  [...favorites.value]
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 5),
+  [...favorites.value].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5),
 )
 
 function stripHtml(html: string): string {
@@ -84,46 +82,50 @@ function folderNoteCount(folderId: string): number {
 }
 
 // Load featured content when notes are available
-watch(notes, async (currentNotes) => {
-  if (currentNotes.length === 0) {
-    featuredNote.value = null
-    featuredFolder.value = null
-    recentNotes.value = []
-    return
-  }
+watch(
+  notes,
+  async (currentNotes) => {
+    if (currentNotes.length === 0) {
+      featuredNote.value = null
+      featuredFolder.value = null
+      recentNotes.value = []
+      return
+    }
 
-  // Featured note
-  const mostActiveNoteId = await getMostActiveNote(7)
-  if (mostActiveNoteId) {
-    featuredNote.value = currentNotes.find((n) => n.id === mostActiveNoteId) || null
-  }
-  if (!featuredNote.value && currentNotes.length > 0) {
-    const sorted = [...currentNotes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    featuredNote.value = sorted[0] || null
-  }
+    // Featured note
+    const mostActiveNoteId = await getMostActiveNote(7)
+    if (mostActiveNoteId) {
+      featuredNote.value = currentNotes.find((n) => n.id === mostActiveNoteId) || null
+    }
+    if (!featuredNote.value && currentNotes.length > 0) {
+      const sorted = [...currentNotes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      featuredNote.value = sorted[0] || null
+    }
 
-  // Featured folder
-  const mostActiveFolderId = await getMostActiveFolder(7)
-  if (mostActiveFolderId) {
-    featuredFolder.value = folders.value.find((f) => f.id === mostActiveFolderId) || null
-  }
-  if (!featuredFolder.value && folders.value.length > 0) {
-    featuredFolder.value = folders.value[0] || null
-  }
+    // Featured folder
+    const mostActiveFolderId = await getMostActiveFolder(7)
+    if (mostActiveFolderId) {
+      featuredFolder.value = folders.value.find((f) => f.id === mostActiveFolderId) || null
+    }
+    if (!featuredFolder.value && folders.value.length > 0) {
+      featuredFolder.value = folders.value[0] || null
+    }
 
-  // Recent notes
-  const recentIds = await getRecentlyActiveNotes(3)
-  const recentFromActivity = recentIds
-    .map((id) => currentNotes.find((n) => n.id === id))
-    .filter((n): n is Note => !!n)
+    // Recent notes
+    const recentIds = await getRecentlyActiveNotes(3)
+    const recentFromActivity = recentIds
+      .map((id) => currentNotes.find((n) => n.id === id))
+      .filter((n): n is Note => !!n)
 
-  if (recentFromActivity.length >= 3) {
-    recentNotes.value = recentFromActivity
-  } else {
-    const sorted = [...currentNotes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    recentNotes.value = sorted.slice(0, 3)
-  }
-}, { immediate: true })
+    if (recentFromActivity.length >= 3) {
+      recentNotes.value = recentFromActivity
+    } else {
+      const sorted = [...currentNotes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      recentNotes.value = sorted.slice(0, 3)
+    }
+  },
+  { immediate: true },
+)
 
 function openNote(noteId: string) {
   router.push({ name: 'editor', params: { id: noteId } })
@@ -209,13 +211,7 @@ function closeNoteContextMenu() {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
           <!-- Large featured note: col-span-8 -->
           <div
-            class="
-              glass-panel-md
-              relative md:col-span-8
-              h-[400px] overflow-hidden
-              rounded-2xl cursor-pointer
-              group
-            "
+            class="glass-panel-md relative md:col-span-8 h-[400px] overflow-hidden rounded-2xl cursor-pointer group"
             @dblclick="featuredNote && openNote(featuredNote.id)"
           >
             <!-- Cover image -->
@@ -224,18 +220,25 @@ function closeNoteContextMenu() {
               :src="featuredNote.coverImage"
               alt=""
               class="absolute inset-0 w-full h-full object-cover z-0 group-hover:scale-105 transition-transform duration-700"
-            >
+            />
 
             <!-- Gradient overlay -->
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"
+            ></div>
 
             <!-- Content -->
             <div class="relative z-20 flex flex-col justify-end h-full p-8">
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/50 text-on-primary-fixed text-[10px] uppercase tracking-widest font-bold w-fit mb-4">
+              <span
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-fixed/50 text-on-primary-fixed text-[10px] uppercase tracking-widest font-bold w-fit mb-4"
+              >
                 <UiIcon name="auto_awesome" size="sm" />
                 Nota destacada
               </span>
-              <h2 v-if="featuredNote" class="font-display text-2xl md:text-3xl font-bold text-white leading-tight mb-2">
+              <h2
+                v-if="featuredNote"
+                class="font-display text-2xl md:text-3xl font-bold text-white leading-tight mb-2"
+              >
                 {{ featuredNote.title }}
               </h2>
               <p v-if="featuredNote" class="text-white/70 text-sm line-clamp-2">
@@ -253,33 +256,34 @@ function closeNoteContextMenu() {
             >
               <div>
                 <UiIcon name="folder" class="text-primary mb-2" />
-                <h3 v-if="featuredFolder" class="font-display text-lg font-bold text-on-surface leading-tight">
+                <h3
+                  v-if="featuredFolder"
+                  class="font-display text-lg font-bold text-on-surface leading-tight"
+                >
                   {{ featuredFolder.name }}
                 </h3>
                 <p v-if="featuredFolder" class="text-secondary text-xs mt-1">
-                  {{ folderNoteCount(featuredFolder.id) }} elementos · Actualizado {{ relativeDate(featuredFolder.updatedAt) }}
+                  {{ folderNoteCount(featuredFolder.id) }} elementos · Actualizado
+                  {{ relativeDate(featuredFolder.updatedAt) }}
                 </p>
               </div>
-              <p v-if="!featuredFolder" class="text-secondary/40 text-sm italic">Sin carpetas aún</p>
+              <p v-if="!featuredFolder" class="text-secondary/40 text-sm italic">
+                Sin carpetas aún
+              </p>
             </div>
 
             <!-- Weekly summary -->
             <div class="glass-panel-md h-[190px] rounded-2xl p-6 flex flex-col justify-between">
               <div>
                 <UiIcon name="auto_awesome" class="text-primary mb-2" />
-                <h3 class="font-display text-lg font-bold text-on-surface leading-tight">Resumen semanal</h3>
+                <h3 class="font-display text-lg font-bold text-on-surface leading-tight">
+                  Resumen semanal
+                </h3>
                 <p class="text-secondary text-xs mt-1">Resúmenes con IA próximamente</p>
               </div>
               <button
                 disabled
-                class="
-                  inline-flex items-center justify-center
-                  h-8 px-4
-                  text-xs font-medium
-                  rounded-lg
-                  bg-primary/20 text-primary/50
-                  opacity-50 cursor-not-allowed
-                "
+                class="inline-flex items-center justify-center h-8 px-4 text-xs font-medium rounded-lg bg-primary/20 text-primary/50 opacity-50 cursor-not-allowed"
               >
                 Generar resumen
               </button>
@@ -295,7 +299,10 @@ function closeNoteContextMenu() {
           >
             <div class="flex items-center gap-2">
               <UiIcon name="description" size="sm" class="text-secondary" />
-              <span v-if="note.tags.length > 0" class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary">
+              <span
+                v-if="note.tags.length > 0"
+                class="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-[10px] uppercase font-bold text-secondary"
+              >
                 {{ note.tags[0] }}
               </span>
             </div>
@@ -315,7 +322,9 @@ function closeNoteContextMenu() {
       <!-- Recent Favorites section -->
       <section v-if="recentFavorites.length > 0">
         <div class="flex items-center gap-4 mb-6">
-          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Favoritos recientes</h2>
+          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+            Favoritos recientes
+          </h2>
           <div class="h-px flex-1 bg-white/30"></div>
         </div>
 
@@ -350,6 +359,9 @@ function closeNoteContextMenu() {
     :initial-value="targetNote?.title ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameNote"
-    @cancel="showNoteRenameModal = false; targetNote = null"
+    @cancel="
+      showNoteRenameModal = false
+      targetNote = null
+    "
   />
 </template>

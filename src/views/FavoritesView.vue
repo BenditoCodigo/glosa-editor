@@ -105,7 +105,9 @@ function closeNoteContextMenu() {
       <!-- Favorite Folders -->
       <section v-if="favoriteFolders.length > 0" class="mb-12">
         <div class="flex items-center gap-4 mb-6">
-          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">Carpetas</h2>
+          <h2 class="text-[11px] font-semibold text-secondary uppercase tracking-widest">
+            Carpetas
+          </h2>
           <div class="h-px flex-1 bg-white/30"></div>
         </div>
 
@@ -144,7 +146,9 @@ function closeNoteContextMenu() {
       >
         <UiIcon name="star" size="lg" class="text-secondary/40 mb-4" />
         <p class="text-secondary text-lg">Sin favoritos aún</p>
-        <p class="text-secondary/60 text-sm mt-1">Marca notas o carpetas con estrella para verlas aquí</p>
+        <p class="text-secondary/60 text-sm mt-1">
+          Marca notas o carpetas con estrella para verlas aquí
+        </p>
       </div>
     </div>
   </div>
@@ -167,6 +171,9 @@ function closeNoteContextMenu() {
     :initial-value="targetNote?.title ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameNote"
-    @cancel="showNoteRenameModal = false; targetNote = null"
+    @cancel="
+      showNoteRenameModal = false
+      targetNote = null
+    "
   />
 </template>

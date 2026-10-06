@@ -26,7 +26,11 @@ export function matches(text: string, query: string): boolean {
 }
 
 /** Filter notes where query matches title, content, or any tag */
-export function filterNotes(notes: Note[], query: string, _folders: Folder[] = []): SearchResultNote[] {
+export function filterNotes(
+  notes: Note[],
+  query: string,
+  _folders: Folder[] = [],
+): SearchResultNote[] {
   if (!query) return []
 
   return notes
@@ -189,7 +193,6 @@ function buildFolderPath(folder: Folder, allFolders: Folder[]): string {
 
   return path.join('/')
 }
-
 
 /** Reactive search composable with debounce and grouped results */
 export function useSearch() {

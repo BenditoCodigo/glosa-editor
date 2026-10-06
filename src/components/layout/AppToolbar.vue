@@ -110,15 +110,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <header class="
-    sticky top-0 z-40
-    flex items-center justify-between
-    pt-2 lg:pt-4 pb-4 lg:pb-6 px-4 lg:px-6
-    pointer-events-none
-    bg-transparent
-  ">
+  <header
+    class="sticky top-0 z-40 flex items-center justify-between pt-2 lg:pt-4 pb-4 lg:pb-6 px-4 lg:px-6 pointer-events-none bg-transparent"
+  >
     <!-- Left group (glass pill) -->
-    <div class="glass-panel-md flex items-center gap-1 px-2 py-1.5 rounded-full pointer-events-auto">
+    <div
+      class="glass-panel-md flex items-center gap-1 px-2 py-1.5 rounded-full pointer-events-auto"
+    >
       <UiIconButton
         icon="menu"
         ariaLabel="Toggle sidebar"
@@ -136,10 +134,16 @@ onUnmounted(() => {
     </div>
 
     <!-- Right group (glass pill) -->
-    <div class="glass-panel-md flex items-center gap-1 px-2 py-1.5 rounded-full pointer-events-auto">
+    <div
+      class="glass-panel-md flex items-center gap-1 px-2 py-1.5 rounded-full pointer-events-auto"
+    >
       <!-- Search -->
       <div ref="searchContainer" class="relative hidden md:block">
-        <UiIcon name="search" size="sm" class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
+        <UiIcon
+          name="search"
+          size="sm"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary"
+        />
         <input
           ref="searchInput"
           v-model="search.query.value"
@@ -149,7 +153,7 @@ onUnmounted(() => {
           @focus="handleFocus"
           @blur="handleBlur"
           @keydown="handleKeydown"
-        >
+        />
 
         <!-- Search results panel -->
         <div @mousedown="handlePanelMousedown">
@@ -176,7 +180,7 @@ onUnmounted(() => {
           :src="settingsStore.profile.avatarUrl"
           alt="Avatar"
           class="w-full h-full object-cover"
-        >
+        />
         <span v-else>{{ settingsStore.userInitial }}</span>
       </button>
     </div>

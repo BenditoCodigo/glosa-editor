@@ -1,6 +1,15 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import type { AppSettings, UserProfile, EditorSettings, ThemeMode, StorageProvider, AISettings, AIModelParameters, AICustomHeader } from '@/types'
+import type {
+  AppSettings,
+  UserProfile,
+  EditorSettings,
+  ThemeMode,
+  StorageProvider,
+  AISettings,
+  AIModelParameters,
+  AICustomHeader,
+} from '@/types'
 import { DEFAULT_SETTINGS, DEFAULT_AI_SETTINGS, DEFAULT_AI_MODEL_PARAMETERS } from '@/types'
 import { isDesktop } from '@/services/platform'
 
@@ -14,7 +23,11 @@ function loadFromStorage(): AppSettings {
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
-        ai: { ...DEFAULT_AI_SETTINGS, ...parsed.ai, modelParameters: { ...DEFAULT_AI_MODEL_PARAMETERS, ...parsed.ai?.modelParameters } },
+        ai: {
+          ...DEFAULT_AI_SETTINGS,
+          ...parsed.ai,
+          modelParameters: { ...DEFAULT_AI_MODEL_PARAMETERS, ...parsed.ai?.modelParameters },
+        },
       }
     }
   } catch {
@@ -76,9 +89,13 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(settings, (val) => saveToStorage(val), { deep: true })
 
   // Apply theme whenever theme setting changes
-  watch(theme, () => {
-    applyThemeToDocument(effectiveTheme.value)
-  }, { immediate: true })
+  watch(
+    theme,
+    () => {
+      applyThemeToDocument(effectiveTheme.value)
+    },
+    { immediate: true },
+  )
 
   // Listen for system theme changes when mode is 'system'
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -212,7 +229,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // No migration needed — activate directly (zero notes or re-linking)
     try {
-      const { activateFilesystemAdapter, startFilesystemWatcher } = await import('@/services/activateFilesystemAdapter')
+      const { activateFilesystemAdapter, startFilesystemWatcher } =
+        await import('@/services/activateFilesystemAdapter')
       const adapter = await activateFilesystemAdapter(selected)
 
       // Reload stores with data from the new adapter
@@ -225,25 +243,27 @@ export const useSettingsStore = defineStore('settings', () => {
       // Start watching for external changes
       await startFilesystemWatcher(adapter, {
         onNoteChanged(note) {
-          const idx = notesStore.notes.findIndex(n => n.id === note.id)
+          const idx = notesStore.notes.findIndex((n) => n.id === note.id)
           if (idx !== -1) notesStore.notes[idx] = note
         },
         onNoteRemoved(noteId, wasActive) {
-          notesStore.notes = notesStore.notes.filter(n => n.id !== noteId)
+          notesStore.notes = notesStore.notes.filter((n) => n.id !== noteId)
           if (wasActive) notesStore.activeNote = null
         },
         onNoteAdded(note) {
-          if (!notesStore.notes.find(n => n.id === note.id)) {
+          if (!notesStore.notes.find((n) => n.id === note.id)) {
             notesStore.notes.push(note)
           }
         },
         onFolderAdded(folder) {
-          if (!foldersStore.folders.find(f => f.id === folder.id)) {
+          if (!foldersStore.folders.find((f) => f.id === folder.id)) {
             foldersStore.folders.push(folder)
           }
         },
         onFolderRemoved(folderId) {
-          foldersStore.folders = foldersStore.folders.filter(f => f.id !== folderId && !f.id.startsWith(`${folderId}/`))
+          foldersStore.folders = foldersStore.folders.filter(
+            (f) => f.id !== folderId && !f.id.startsWith(`${folderId}/`),
+          )
         },
       })
     } catch (err) {

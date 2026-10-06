@@ -86,10 +86,7 @@ describe('Frontmatter Parser', () => {
     })
 
     it('parses quoted string values', () => {
-      const content = makeMarkdown(
-        'title: "My Note: A Story"\nid: "123"\n',
-        'Body',
-      )
+      const content = makeMarkdown('title: "My Note: A Story"\nid: "123"\n', 'Body')
       const result = parseMarkdownFile('test.md', content)
 
       expect(result.frontmatter.title).toBe('My Note: A Story')
@@ -97,10 +94,7 @@ describe('Frontmatter Parser', () => {
     })
 
     it('parses single-quoted string values', () => {
-      const content = makeMarkdown(
-        "title: 'Hello World'\n",
-        'Body',
-      )
+      const content = makeMarkdown("title: 'Hello World'\n", 'Body')
       const result = parseMarkdownFile('test.md', content)
       expect(result.frontmatter.title).toBe('Hello World')
     })
@@ -410,9 +404,9 @@ describe('Frontmatter Parser', () => {
       const result = serializeNote(note, extra)
 
       const lines = result.split('\n')
-      const alphaIdx = lines.findIndex(l => l.startsWith('alpha:'))
-      const middleIdx = lines.findIndex(l => l.startsWith('middle:'))
-      const zebraIdx = lines.findIndex(l => l.startsWith('zebra:'))
+      const alphaIdx = lines.findIndex((l) => l.startsWith('alpha:'))
+      const middleIdx = lines.findIndex((l) => l.startsWith('middle:'))
+      const zebraIdx = lines.findIndex((l) => l.startsWith('zebra:'))
 
       expect(alphaIdx).toBeLessThan(middleIdx)
       expect(middleIdx).toBeLessThan(zebraIdx)
@@ -539,7 +533,9 @@ describe('Frontmatter Parser', () => {
         'https://elpais.com/investigacion/art1',
         'https://bbc.com/news/123',
       ])
-      expect(restored.aiInstructions).toBe('Eres un editor de investigación riguroso. Contrasta fuentes y fechas.')
+      expect(restored.aiInstructions).toBe(
+        'Eres un editor de investigación riguroso. Contrasta fuentes y fechas.',
+      )
     })
   })
 })
