@@ -54,24 +54,36 @@ const isLoading = ref(true)
 const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
 const titleRef = ref<HTMLTextAreaElement | null>(null)
 const coverScale = ref(1)
+const isHeaderScrolledOut = ref(false)
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+let attachedScrollParent: HTMLElement | null = null
 
-// Zoom cover image on scroll (max 1.4x)
+// Scroll handler for zoom and header visibility detection
 // The actual scroll container is in App.vue (flex-1 overflow-y-auto), not in this component.
 // We find the nearest scrollable ancestor and listen on it.
 const editorAreaRef = ref<HTMLElement | null>(null)
 
-function handleCoverZoom(event: Event) {
-  if (!coverImage.value) return
+function handleScroll(event: Event) {
   const target = event.target as HTMLElement
-  const viewportHeight = target.clientHeight
-  // Scale from 1 to 1.4 over one full viewport height of scroll
-  const progress = Math.min(target.scrollTop / viewportHeight, 1)
-  coverScale.value = 1 + progress * 0.2
+  const scrollTop = target.scrollTop
+
+  if (coverImage.value) {
+    const viewportHeight = target.clientHeight
+    // Scale from 1 to 1.4 over one full viewport height of scroll
+    const progress = Math.min(scrollTop / viewportHeight, 1)
+    coverScale.value = 1 + progress * 0.2
+  }
+
+  // Header scrolls out when user scrolls past the top header height (~40px)
+  isHeaderScrolledOut.value = scrollTop > 40
 }
 
 watch(editorAreaRef, (el) => {
+  if (attachedScrollParent) {
+    attachedScrollParent.removeEventListener('scroll', handleScroll)
+    attachedScrollParent = null
+  }
   if (!el) return
   // Walk up to find the scrolling ancestor
   let scrollParent: HTMLElement | null = el.parentElement
@@ -81,7 +93,8 @@ watch(editorAreaRef, (el) => {
     scrollParent = scrollParent.parentElement
   }
   if (scrollParent) {
-    scrollParent.addEventListener('scroll', handleCoverZoom, { passive: true })
+    attachedScrollParent = scrollParent
+    scrollParent.addEventListener('scroll', handleScroll, { passive: true })
   }
 }, { flush: 'post' })
 
@@ -91,6 +104,7 @@ watch(
   async (id) => {
     if (!id || typeof id !== 'string') return
     isLoading.value = true
+    isHeaderScrolledOut.value = false
     const note = await notesStore.loadNote(id)
     if (note) {
       title.value = note.title
@@ -250,6 +264,10 @@ function goBack() {
 }
 
 onUnmounted(() => {
+  if (attachedScrollParent) {
+    attachedScrollParent.removeEventListener('scroll', handleScroll)
+    attachedScrollParent = null
+  }
   if (autosaveTimer) clearTimeout(autosaveTimer)
   if (saveStatus.value !== 'saved') save()
 })
@@ -415,9 +433,70 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Floating toolbar -->
-      <div class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50">
-        <EditorToolbar :editor="editorRef?.editor" />
+      <!-- Floating bottom dock: Editor toolbar + Companion bubble on scroll -->
+      <div class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none max-w-[calc(100vw-2rem)]">
+        <div class="pointer-events-auto shrink-0">
+          <EditorToolbar :editor="editorRef?.editor" />
+        </div>
+
+        <!-- Scroll companion bubble: Save status, Save button, Fuentes button -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="opacity-0 scale-90 translate-x-3"
+          enter-to-class="opacity-100 scale-100 translate-x-0"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="opacity-100 scale-100 translate-x-0"
+          leave-to-class="opacity-0 scale-90 translate-x-3"
+        >
+          <div
+            v-if="isHeaderScrolledOut"
+            class="
+              pointer-events-auto
+              glass-panel-md
+              rounded-full p-2
+              flex items-center gap-1
+              transition-opacity duration-300
+              opacity-80 hover:opacity-100
+              shadow-lg shrink-0
+            "
+          >
+            <!-- Save status & cloud feedback -->
+            <div
+              class="flex items-center gap-1.5 px-2 py-1 select-none text-secondary"
+              :title="saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Cambios sin guardar'"
+            >
+              <UiIcon
+                :name="saveStatus === 'saving' ? 'sync' : saveStatus === 'saved' ? 'cloud_done' : 'edit'"
+                size="sm"
+                :class="saveStatus === 'saving' ? 'animate-spin text-primary' : saveStatus === 'saved' ? 'text-primary' : 'text-secondary/70'"
+              />
+              <span class="text-xs opacity-75 font-medium whitespace-nowrap hidden sm:inline">
+                {{ saveStatus === 'saved' ? 'Guardado' : saveStatus === 'saving' ? 'Guardando...' : 'Guardando' }}
+              </span>
+            </div>
+
+            <div class="w-px h-5 bg-outline-variant/50 mx-0.5" />
+
+            <!-- Save button (disk) -->
+            <UiIconButton
+              icon="save"
+              ariaLabel="Guardar nota"
+              tooltip="Guardar"
+              size="sm"
+              @click="save"
+            />
+
+            <!-- Fuentes e instrucciones button -->
+            <UiIconButton
+              icon="menu_book"
+              ariaLabel="Fuentes e instrucciones de IA"
+              tooltip="Fuentes e instrucciones de IA"
+              size="sm"
+              :class="(sources.length > 0 || aiInstructions.trim().length > 0) && 'text-primary'"
+              @click="showReferencesModal = true"
+            />
+          </div>
+        </Transition>
       </div>
     </template>
   </div>
