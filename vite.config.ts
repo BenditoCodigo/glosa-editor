@@ -16,6 +16,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@glosa/desktop-plugin': fileURLToPath(
+        new URL('./packages/glosa-desktop/src/index.ts', import.meta.url),
+      ),
     },
   },
   test: {

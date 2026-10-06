@@ -1,8 +1,8 @@
 import { Capacitor } from '@capacitor/core'
 import { GlosaDesktop } from '@glosa/desktop-plugin'
-import type { DirEntry, StatResult, FsChangeEvent } from '@glosa/desktop-plugin'
+import type { DirEntry, StatResult, FsChangeEvent, AiStreamChunkEvent } from '@glosa/desktop-plugin'
 
-export type { DirEntry, StatResult, FsChangeEvent }
+export type { DirEntry, StatResult, FsChangeEvent, AiStreamChunkEvent }
 
 /**
  * Detects whether the app is running in a desktop environment (Capacitor Electron).
@@ -156,7 +156,7 @@ export async function watchDirectory(
 ): Promise<() => void> {
   try {
     const { watchId } = await GlosaDesktop.startWatch({ path })
-    const handle = await GlosaDesktop.addListener('fsChange', (event) => {
+    const handle = await GlosaDesktop.addListener('fsChange', (event: FsChangeEvent) => {
       if (event.watchId === watchId) {
         callback(event)
       }
@@ -273,7 +273,7 @@ export async function* platformStream(
     let streamError: Error | null = null
     let resolveWait: (() => void) | null = null
 
-    const handle = await GlosaDesktop.addListener('aiStreamChunk', (event) => {
+    const handle = await GlosaDesktop.addListener('aiStreamChunk', (event: AiStreamChunkEvent) => {
       if (event.streamId !== streamId) return
       if (event.error) {
         streamError = new Error(event.error)

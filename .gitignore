@@ -9,9 +9,10 @@ lerna-debug.log*
 
 node_modules
 .DS_Store
-dist
-dist-ssr
-coverage
+/dist
+/dist-ssr
+/coverage
+!packages/**/dist/**
 *.local
 
 # Editor directories and files
