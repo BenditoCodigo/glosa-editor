@@ -229,6 +229,11 @@ function cancelRenameNote() {
   targetNote.value = null
 }
 
+function cancelDeleteFolder() {
+  showDeleteConfirm.value = false
+  targetFolder.value = null
+}
+
 async function confirmDeleteFolder() {
   showDeleteConfirm.value = false
   if (targetFolder.value) {
@@ -422,9 +427,6 @@ async function confirmDeleteFolder() {
     confirm-label="Eliminar"
     :danger="true"
     @confirm="confirmDeleteFolder"
-    @cancel="
-      showDeleteConfirm = false
-      targetFolder = null
-    "
+    @cancel="cancelDeleteFolder"
   />
 </template>
