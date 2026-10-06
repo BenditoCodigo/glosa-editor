@@ -38,6 +38,21 @@ describe('Anchor Engine', () => {
       expect(anchor.prefix).toContain('Había una vez en un ')
       expect(anchor.suffix).toContain(' donde los relojes')
     })
+
+    it('correctly aligns exactText when from/to has ProseMirror block offset discrepancy', () => {
+      const doc = 'No soy muy inteligente o especial, me considero más como una persona curiosa.'
+      const exactText = 'especial'
+      // Suppose ProseMirror reports from=27 instead of real index 25
+      const shiftedFrom = 27
+      const shiftedTo = 35
+
+      const anchor = createAnnotationAnchor(doc, shiftedFrom, shiftedTo, 0, exactText)
+
+      expect(anchor.exact).toBe('especial')
+      expect(anchor.approxStartOffset).toBe(doc.indexOf('especial'))
+      expect(anchor.prefix).toBe(doc.slice(0, doc.indexOf('especial')))
+      expect(anchor.suffix).toBe(doc.slice(doc.indexOf('especial') + 'especial'.length, doc.indexOf('especial') + 'especial'.length + 32))
+    })
   })
 
   describe('findAnchorPosition', () => {

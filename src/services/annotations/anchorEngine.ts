@@ -20,10 +20,41 @@ export function createAnnotationAnchor(
   from: number,
   to: number,
   blockIndex?: number,
+  exactText?: string,
 ): WriterAnnotationAnchor {
-  const safeFrom = Math.max(0, Math.min(from, docText.length))
-  const safeTo = Math.max(safeFrom, Math.min(to, docText.length))
-  const exact = docText.slice(safeFrom, safeTo)
+  let safeFrom = Math.max(0, Math.min(from, docText.length))
+  let safeTo = Math.max(safeFrom, Math.min(to, docText.length))
+  let exact = exactText !== undefined && exactText.length > 0 ? exactText : docText.slice(safeFrom, safeTo)
+
+  // If exactText was specified, find its true offset in docText closest to `from`
+  // (accounting for ProseMirror position offsets vs string index)
+  if (exactText && exactText.trim().length > 0) {
+    if (docText.slice(safeFrom, safeFrom + exactText.length) === exactText) {
+      safeTo = safeFrom + exactText.length
+      exact = exactText
+    } else {
+      let bestIndex = -1
+      let minDistance = Infinity
+      let searchPos = 0
+      while (searchPos < docText.length) {
+        const found = docText.indexOf(exactText, searchPos)
+        if (found === -1) break
+        const dist = Math.abs(found - from)
+        if (dist < minDistance) {
+          minDistance = dist
+          bestIndex = found
+        }
+        searchPos = found + 1
+      }
+
+      if (bestIndex !== -1) {
+        safeFrom = bestIndex
+        safeTo = bestIndex + exactText.length
+        exact = exactText
+      }
+    }
+  }
+
   const prefix = docText.slice(Math.max(0, safeFrom - CONTEXT_WINDOW_SIZE), safeFrom)
   const suffix = docText.slice(safeTo, Math.min(docText.length, safeTo + CONTEXT_WINDOW_SIZE))
 

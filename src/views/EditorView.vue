@@ -269,6 +269,7 @@ function handleSaveAnnotation(payload: { comment: string; color: WriterAnnotatio
       selectedRange.value.from,
       selectedRange.value.to,
       selectedRange.value.blockIndex,
+      selectedRange.value.text,
     )
     const newAnnotation: WriterAnnotation = {
       id: newId,
@@ -334,7 +335,7 @@ function handleReanchorAnnotation(annotation: WriterAnnotation) {
     alert('Por favor selecciona el nuevo texto en el editor antes de re-anclar la glosa.')
     return
   }
-  const anchor = createAnnotationAnchor(sel.docText, sel.from, sel.to, sel.blockIndex)
+  const anchor = createAnnotationAnchor(sel.docText, sel.from, sel.to, sel.blockIndex, sel.text)
   annotation.anchor = anchor
   annotation.updatedAt = new Date().toISOString()
   editorRef.value?.applyAnnotationMark(annotation.id, annotation.color || 'amber', annotation.resolved)
