@@ -166,6 +166,8 @@ const editor = useEditor({
     BlockSelectAll,
   ],
   editorProps: {
+    scrollThreshold: { top: 80, bottom: 200, left: 0, right: 0 },
+    scrollMargin: { top: 80, bottom: 200, left: 0, right: 0 },
     attributes: {
       class: 'prose max-w-none text-on-surface/90 focus:outline-none min-h-[400px] text-lg leading-relaxed',
     },
@@ -187,8 +189,60 @@ const editor = useEditor({
   onUpdate: ({ editor: e }) => {
     const md = (e.storage as unknown as MarkdownStorage).markdown.getMarkdown()
     emit('update:content', md)
+    ensureCursorVisible()
+  },
+  onSelectionUpdate: () => {
+    ensureCursorVisible()
   },
 })
+
+function getScrollContainer(): HTMLElement {
+  let el: HTMLElement | null = editorContainerRef.value
+  while (el && el !== document.body) {
+    const style = getComputedStyle(el)
+    if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+      return el
+    }
+    el = el.parentElement
+  }
+  const fallback = editorContainerRef.value?.closest('.overflow-y-auto') as HTMLElement | null
+  return fallback || (document.scrollingElement as HTMLElement) || document.documentElement
+}
+
+function ensureCursorVisible() {
+  if (!editor.value?.view) return
+  const view = editor.value.view
+  const { state } = view
+  const { selection } = state
+
+  let coords: { top: number; bottom: number; left: number; right: number } | null = null
+  try {
+    coords = view.coordsAtPos(selection.from)
+  } catch {
+    return
+  }
+  if (!coords) return
+
+  const container = getScrollContainer()
+  const isWindow = container === document.documentElement || container === document.body
+  const containerRect = isWindow
+    ? { top: 0, bottom: window.innerHeight }
+    : container.getBoundingClientRect()
+
+  // Safe bottom margin (180px) to keep the cursor and active line well above
+  // the floating bottom toolbar (bottom-16 = 64px + toolbar height 48px + margin)
+  const BOTTOM_SAFETY_MARGIN = 180
+  const threshold = containerRect.bottom - BOTTOM_SAFETY_MARGIN
+
+  if (coords.bottom > threshold) {
+    const diff = coords.bottom - threshold
+    if (isWindow) {
+      window.scrollBy({ top: diff })
+    } else {
+      container.scrollTop += diff
+    }
+  }
+}
 
 // Helper to get all top-level DOM block elements inside the editor
 function getTiptapBlockElements(): HTMLElement[] {
@@ -646,7 +700,12 @@ defineExpose({ editor, getBlockContent })
     </div>
 
     <!-- Tiptap Editor Content -->
-    <EditorContent :editor="editor" @click="handleEditorClick" />
+    <EditorContent
+      :editor="editor"
+      @click="handleEditorClick"
+      @input="ensureCursorVisible"
+      @keyup="ensureCursorVisible"
+    />
   </div>
 </template>
 
