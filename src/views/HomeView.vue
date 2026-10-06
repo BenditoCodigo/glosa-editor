@@ -187,6 +187,11 @@ async function confirmRenameNote(name: string) {
   targetNote.value = null
 }
 
+function cancelRenameNote() {
+  showNoteRenameModal.value = false
+  targetNote.value = null
+}
+
 function closeNoteContextMenu() {
   noteContextMenu.value = null
   targetNote.value = null
@@ -359,9 +364,6 @@ function closeNoteContextMenu() {
     :initial-value="targetNote?.title ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameNote"
-    @cancel="
-      showNoteRenameModal = false
-      targetNote = null
-    "
+    @cancel="cancelRenameNote"
   />
 </template>

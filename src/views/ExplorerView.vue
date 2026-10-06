@@ -219,6 +219,16 @@ async function confirmRenameNote(name: string) {
   targetNote.value = null
 }
 
+function cancelRenameFolder() {
+  showRenameModal.value = false
+  targetFolder.value = null
+}
+
+function cancelRenameNote() {
+  showNoteRenameModal.value = false
+  targetNote.value = null
+}
+
 async function confirmDeleteFolder() {
   showDeleteConfirm.value = false
   if (targetFolder.value) {
@@ -390,10 +400,7 @@ async function confirmDeleteFolder() {
     :initial-value="targetFolder?.name ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameFolder"
-    @cancel="
-      showRenameModal = false
-      targetFolder = null
-    "
+    @cancel="cancelRenameFolder"
   />
 
   <!-- Modal: Renombrar nota -->
@@ -404,10 +411,7 @@ async function confirmDeleteFolder() {
     :initial-value="targetNote?.title ?? ''"
     confirm-label="Renombrar"
     @confirm="confirmRenameNote"
-    @cancel="
-      showNoteRenameModal = false
-      targetNote = null
-    "
+    @cancel="cancelRenameNote"
   />
 
   <!-- Modal: Confirmar eliminación -->
