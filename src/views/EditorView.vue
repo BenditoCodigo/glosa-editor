@@ -12,13 +12,16 @@ import EditorContentComponent from '@/components/editor/EditorContent.vue'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EmojiPicker from '@/components/editor/EmojiPicker.vue'
 import ExportMenu from '@/components/editor/ExportMenu.vue'
+import AIBlockDialog from '@/components/ai/AIBlockDialog.vue'
 import { useExport } from '@/composables/useExport'
+import { useAIBlockAssistant } from '@/composables/useAIBlockAssistant'
 
 const route = useRoute()
 const router = useRouter()
 const notesStore = useNotesStore()
 const { activeNote } = storeToRefs(notesStore)
 const { downloadAsMarkdown, copyAsMarkdown } = useExport()
+const aiAssistant = useAIBlockAssistant()
 
 const copyFeedback = ref(false)
 
@@ -147,6 +150,22 @@ function handleTitleInput(event: Event) {
 function handleContentUpdate(newContent: string) {
   content.value = newContent
   scheduleAutosave()
+}
+
+function handleAiBlockClick(payload: { index: number; content: string; top: number; rect: DOMRect | null }) {
+  aiAssistant.openAssistant({
+    index: payload.index,
+    content: payload.content,
+    top: payload.top,
+    rect: payload.rect,
+    context: {
+      title: title.value || activeNote.value?.title || 'Sin título',
+      folder: activeNote.value?.folder,
+      tags: [...tags.value],
+      updatedAt: activeNote.value?.updatedAt,
+      emoji: emoji.value,
+    },
+  })
 }
 
 // Tag management
@@ -293,63 +312,68 @@ onUnmounted(() => {
 
           <!-- Glass editor panel -->
           <div class="relative z-[1] glass-panel-md rounded-2xl p-8 md:p-12">
-          <!-- Emoji + Tags editor -->
-          <div class="flex items-center gap-3 mb-4">
-            <!-- Emoji picker -->
-            <EmojiPicker :currentEmoji="emoji" @select="handleEmojiSelect" />
+            <!-- AI Block Dialog -->
+            <AIBlockDialog :assistant="aiAssistant" />
 
-            <!-- Tags -->
-            <div class="flex flex-wrap items-center gap-2 flex-1">
-              <button
-                v-for="(tag, index) in tags"
-                :key="tag"
-                class="
-                  inline-flex items-center gap-1
-                  px-2.5 py-1 rounded-md
-                  bg-primary-fixed/50 text-on-primary-fixed
-                  text-[11px] uppercase tracking-[0.1em] font-semibold
-                  hover:bg-primary-fixed transition-colors
-                  group
-                "
-                @click="removeTag(index)"
-              >
-                {{ tag }}
-                <UiIcon name="close" size="sm" class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]" />
-              </button>
-              <input
-                v-model="tagInput"
-                type="text"
-                placeholder="#"
-                class="bg-transparent border-none p-0 text-[14cpx] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
-                @keydown="handleTagKeydown"
-                @blur="addTag"
-              >
+            <!-- Emoji + Tags editor -->
+            <div class="flex items-center gap-3 mb-4">
+              <!-- Emoji picker -->
+              <EmojiPicker :currentEmoji="emoji" @select="handleEmojiSelect" />
+
+              <!-- Tags -->
+              <div class="flex flex-wrap items-center gap-2 flex-1">
+                <button
+                  v-for="(tag, index) in tags"
+                  :key="tag"
+                  class="
+                    inline-flex items-center gap-1
+                    px-2.5 py-1 rounded-md
+                    bg-primary-fixed/50 text-on-primary-fixed
+                    text-[11px] uppercase tracking-[0.1em] font-semibold
+                    hover:bg-primary-fixed transition-colors
+                    group
+                  "
+                  @click="removeTag(index)"
+                >
+                  {{ tag }}
+                  <UiIcon name="close" size="sm" class="opacity-0 group-hover:opacity-100 transition-opacity text-[12px]" />
+                </button>
+                <input
+                  v-model="tagInput"
+                  type="text"
+                  placeholder="#"
+                  class="bg-transparent border-none p-0 text-[14cpx] uppercase tracking-[0.1em] text-secondary/60 placeholder:text-secondary/30 focus:outline-none focus:ring-0 w-20"
+                  @keydown="handleTagKeydown"
+                  @blur="addTag"
+                >
+              </div>
             </div>
-          </div>
 
-          <!-- Title (auto-resizing textarea) -->
-          <textarea
-            ref="titleRef"
-            :value="title"
-            placeholder="Título de la nota"
-            rows="1"
-            class="
-              w-full bg-transparent border-none p-0 mb-8
-              focus:ring-0 focus:outline-none
-              font-display text-4xl md:text-5xl font-bold text-on-surface
-              leading-tight tracking-tight
-              placeholder:text-outline-variant
-              resize-none overflow-hidden
-            "
-            @input="handleTitleInput"
-          />
+            <!-- Title (auto-resizing textarea) -->
+            <textarea
+              ref="titleRef"
+              :value="title"
+              placeholder="Título de la nota"
+              rows="1"
+              class="
+                w-full bg-transparent border-none p-0 mb-8
+                focus:ring-0 focus:outline-none
+                font-display text-4xl md:text-5xl font-bold text-on-surface
+                leading-tight tracking-tight
+                placeholder:text-outline-variant
+                resize-none overflow-hidden
+              "
+              @input="handleTitleInput"
+            />
 
-          <!-- Tiptap Editor -->
-          <EditorContentComponent
-            ref="editorRef"
-            :content="content"
-            @update:content="handleContentUpdate"
-          />
+            <!-- Tiptap Editor -->
+            <EditorContentComponent
+              ref="editorRef"
+              :content="content"
+              :highlightedBlockIndex="aiAssistant.activeBlockIndex.value"
+              @update:content="handleContentUpdate"
+              @ai-block-click="handleAiBlockClick"
+            />
           </div>
         </div>
       </div>

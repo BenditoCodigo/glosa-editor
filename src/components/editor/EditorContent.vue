@@ -15,8 +15,11 @@ import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
 import CodeBlockNode from './CodeBlockNode.vue'
 import { openExternalUrl } from '@/utils/openUrl'
+import { useSettingsStore } from '@/stores/settings'
+import UiIcon from '@/components/ui/UiIcon.vue'
 
 const lowlight = createLowlight(common)
+const settingsStore = useSettingsStore()
 
 interface MarkdownStorage {
   markdown: {
@@ -26,12 +29,16 @@ interface MarkdownStorage {
 
 interface Props {
   content: string
+  highlightedBlockIndex?: number | null
 }
 
-const { content } = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  highlightedBlockIndex: null,
+})
 
 const emit = defineEmits<{
   'update:content': [value: string]
+  'ai-block-click': [payload: { index: number; content: string; top: number; rect: DOMRect | null }]
 }>()
 
 const editorContainerRef = ref<HTMLElement | null>(null)
@@ -103,7 +110,7 @@ function handleEditorClick(event: MouseEvent) {
 }
 
 const editor = useEditor({
-  content,
+  content: props.content,
   extensions: [
     StarterKit.configure({
       codeBlock: false, // Replaced by CodeBlockLowlight
@@ -529,8 +536,41 @@ function resetDragState() {
   handleVisible.value = false
 }
 
+function handleAiButtonClick() {
+  if (activeBlockIndex.value === null || !editor.value?.view) return
+  const index = activeBlockIndex.value
+  const doc = editor.value.view.state.doc
+  if (index < 0 || index >= doc.childCount) return
+
+  const node = doc.child(index)
+  const blockContent = node.textContent || ''
+  const children = getTiptapBlockElements()
+  const targetEl = children[index]
+  const rect = targetEl ? targetEl.getBoundingClientRect() : null
+  const top = handleTop.value ?? (targetEl ? targetEl.offsetTop : 0)
+
+  emit('ai-block-click', {
+    index,
+    content: blockContent,
+    top,
+    rect,
+  })
+}
+
+// Watch for active AI block highlighting
+watch(() => props.highlightedBlockIndex, (newIdx) => {
+  const children = getTiptapBlockElements()
+  children.forEach((el, idx) => {
+    if (newIdx !== null && newIdx !== undefined && idx === newIdx) {
+      el.classList.add('ai-active-block')
+    } else {
+      el.classList.remove('ai-active-block')
+    }
+  })
+}, { flush: 'post' })
+
 // Update editor content when prop changes externally (e.g. loading a different note)
-watch(() => content, (newContent) => {
+watch(() => props.content, (newContent) => {
   if (!editor.value) return
   const currentContent = (editor.value.storage as unknown as MarkdownStorage).markdown.getMarkdown()
   if (currentContent !== newContent) {
@@ -562,22 +602,39 @@ defineExpose({ editor })
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
   >
-    <!-- Notion-style Block Drag Handle -->
+    <!-- Notion-style Block Gutter Handles (Drag & AI Sparkles) -->
     <div
       v-show="handleVisible && handleTop !== null"
-      class="block-drag-handle absolute left-2 z-20 flex items-center justify-center w-7 h-7 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-150 select-none touch-none"
+      class="block-gutter-handles absolute left-1 z-20 flex items-center gap-0.5 select-none"
       :style="{ top: `${handleTop}px` }"
-      title="Arrastrar para mover bloque (Esc para cancelar)"
-      @pointerdown="handlePointerDown"
     >
-      <svg class="w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
-        <circle cx="8.5" cy="6.5" r="1.5" />
-        <circle cx="15.5" cy="6.5" r="1.5" />
-        <circle cx="8.5" cy="12" r="1.5" />
-        <circle cx="15.5" cy="12" r="1.5" />
-        <circle cx="8.5" cy="17.5" r="1.5" />
-        <circle cx="15.5" cy="17.5" r="1.5" />
-      </svg>
+      <!-- AI Sparkles Button (shown when AI is configured) -->
+      <button
+        v-if="settingsStore.isAiConfigured"
+        type="button"
+        class="ai-block-sparkles-btn flex items-center justify-center w-6 h-6 rounded-md text-primary hover:text-primary hover:bg-primary/10 transition-all duration-150 cursor-pointer"
+        title="Consultar a la IA sobre este bloque"
+        aria-label="Consultar a la IA sobre este bloque"
+        @click.stop="handleAiButtonClick"
+      >
+        <UiIcon name="auto_awesome" size="sm" class="text-[16px]" />
+      </button>
+
+      <!-- Drag Handle -->
+      <div
+        class="block-drag-handle flex items-center justify-center w-6 h-6 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-150 select-none touch-none"
+        title="Arrastrar para mover bloque (Esc para cancelar)"
+        @pointerdown="handlePointerDown"
+      >
+        <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="8.5" cy="6.5" r="1.5" />
+          <circle cx="15.5" cy="6.5" r="1.5" />
+          <circle cx="8.5" cy="12" r="1.5" />
+          <circle cx="15.5" cy="12" r="1.5" />
+          <circle cx="8.5" cy="17.5" r="1.5" />
+          <circle cx="15.5" cy="17.5" r="1.5" />
+        </svg>
+      </div>
     </div>
 
     <!-- Tiptap Editor Content -->
@@ -597,6 +654,14 @@ defineExpose({ editor })
   cursor: grabbing !important;
   pointer-events: none;
   z-index: 40 !important;
+}
+
+/* Highlighted active block when discussing with AI */
+.tiptap > *.ai-active-block {
+  border-radius: 0.75rem;
+  background-color: rgba(79, 96, 86, 0.08);
+  box-shadow: 0 0 0 2px rgba(79, 96, 86, 0.35);
+  transition: all 0.2s ease-in-out;
 }
 
 /* Clear, distinct Notion/Medium vertical block spacing */

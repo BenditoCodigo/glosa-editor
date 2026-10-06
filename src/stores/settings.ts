@@ -53,6 +53,10 @@ export const useSettingsStore = defineStore('settings', () => {
   const editor = computed(() => settings.value.editor)
   const filesystemPath = computed(() => settings.value.filesystemPath)
   const ai = computed(() => settings.value.ai)
+  const isAiConfigured = computed(() => {
+    const { ai: aiConfig } = settings.value
+    return aiConfig.enabled && aiConfig.baseUrl.trim() !== '' && aiConfig.model.trim() !== ''
+  })
 
   // Tauri detection — true only when running inside Tauri desktop app
   const isFileSystemSupported = computed(() => isTauri())
@@ -318,6 +322,7 @@ export const useSettingsStore = defineStore('settings', () => {
     editor,
     filesystemPath,
     ai,
+    isAiConfigured,
     isFileSystemSupported,
     userInitial,
     updateProfile,
