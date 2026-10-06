@@ -298,3 +298,212 @@ export async function openExternalUrl(url: string): Promise<void> {
 
   window.open(url, '_blank', 'noopener,noreferrer')
 }
+
+export interface PlatformFetchResponse {
+  ok: boolean
+  status: number
+  statusText: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  json: () => Promise<any>
+  text: () => Promise<string>
+  headers: Headers
+}
+
+/**
+ * Universal fetch that routes requests through Node.js desktop process when running
+ * in Electron to prevent Chromium SSL protocol errors on local endpoints (e.g. Ollama http://localhost:11434).
+ */
+export async function platformFetch(
+  url: string,
+  options?: {
+    method?: string
+    headers?: Record<string, string>
+    body?: string
+    signal?: AbortSignal
+  },
+): Promise<PlatformFetchResponse> {
+  if (isDesktop()) {
+    try {
+      const res = await GlosaDesktop.aiFetch({
+        url,
+        method: options?.method,
+        headers: options?.headers,
+        body: options?.body,
+      })
+
+      return {
+        ok: res.ok,
+        status: res.status,
+        statusText: res.statusText,
+        json: async () => JSON.parse(res.data),
+        text: async () => res.data,
+        headers: new Headers(res.headers),
+      }
+    } catch (e) {
+      // If desktop bridge throws, pass error or fall back to window.fetch
+      if (e instanceof DOMException && e.name === 'TimeoutError') {
+        throw e
+      }
+      if (e instanceof Error && e.name === 'TimeoutError') {
+        throw new DOMException('TimeoutError', 'TimeoutError')
+      }
+    }
+  }
+
+  const res = await fetch(url, options)
+  return res
+}
+
+/**
+ * Universal streaming chat completion reader that uses desktop stream when in Electron.
+ */
+export async function* platformStream(
+  url: string,
+  options?: {
+    method?: string
+    headers?: Record<string, string>
+    body?: string
+    signal?: AbortSignal
+  },
+): AsyncGenerator<string> {
+  if (isDesktop()) {
+    const streamId = 'stream_' + Math.random().toString(36).slice(2)
+    const chunkQueue: string[] = []
+    let isDone = false
+    let streamError: Error | null = null
+    let resolveWait: (() => void) | null = null
+
+    const handle = await GlosaDesktop.addListener('aiStreamChunk', (event) => {
+      if (event.streamId !== streamId) return
+      if (event.error) {
+        streamError = new Error(event.error)
+        isDone = true
+      }
+      if (event.chunk) {
+        chunkQueue.push(event.chunk)
+      }
+      if (event.done) {
+        isDone = true
+      }
+      if (resolveWait) {
+        resolveWait()
+        resolveWait = null
+      }
+    })
+
+    const cancel = async () => {
+      await handle.remove()
+      await GlosaDesktop.aiStreamCancel({ streamId })
+    }
+
+    if (options?.signal) {
+      options.signal.addEventListener('abort', () => {
+        void cancel()
+      })
+    }
+
+    try {
+      const initRes = await GlosaDesktop.aiStream({
+        streamId,
+        url,
+        method: options?.method || 'POST',
+        headers: options?.headers,
+        body: options?.body,
+      })
+
+      if (!initRes.ok) {
+        if (!isDone) {
+          await new Promise<void>((r) => {
+            resolveWait = r
+            setTimeout(r, 500)
+          })
+        }
+        if (streamError) throw streamError
+        throw new Error(`Stream request failed with status ${initRes.status}`)
+      }
+
+      let buffer = ''
+      while (!isDone || chunkQueue.length > 0) {
+        if (chunkQueue.length === 0 && !isDone) {
+          await new Promise<void>((r) => {
+            resolveWait = r
+          })
+        }
+
+        while (chunkQueue.length > 0) {
+          const rawChunk = chunkQueue.shift()!
+          buffer += rawChunk
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed || !trimmed.startsWith('data: ')) continue
+            const data = trimmed.slice(6)
+            if (data === '[DONE]') {
+              await cancel()
+              return
+            }
+
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.choices?.[0]?.delta?.content
+              if (content) yield content
+            } catch {
+              // Malformed line, ignore
+            }
+          }
+        }
+
+        if (streamError) throw streamError
+      }
+
+      await cancel()
+      return
+    } catch (err) {
+      await cancel()
+      throw err
+    }
+  }
+
+  // Fallback: standard web fetch stream
+  const response = await fetch(url, {
+    method: options?.method || 'POST',
+    headers: options?.headers,
+    body: options?.body,
+    signal: options?.signal,
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(`Error ${response.status}: ${errorBody}`)
+  }
+
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || !trimmed.startsWith('data: ')) continue
+      const data = trimmed.slice(6)
+      if (data === '[DONE]') return
+
+      try {
+        const parsed = JSON.parse(data)
+        const content = parsed.choices?.[0]?.delta?.content
+        if (content) yield content
+      } catch {
+        // Malformed line, ignore
+      }
+    }
+  }
+}

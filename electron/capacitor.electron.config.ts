@@ -8,6 +8,16 @@ export default defineConfig({
     minHeight: 600,
     backgroundColor: '#0f172a',
   },
+  hooks: {
+    beforeReady(app) {
+      app.commandLine.appendSwitch('allow-insecure-localhost', 'true');
+      app.commandLine.appendSwitch('ignore-certificate-errors', 'true');
+      app.commandLine.appendSwitch(
+        'disable-features',
+        'AutoupgradeMixedContent,BlockInsecurePrivateNetworkRequests',
+      );
+    },
+  },
   csp: {
     policy: [
       "default-src 'self' capacitor-electron: data: blob: https: 'unsafe-inline' 'unsafe-eval'",

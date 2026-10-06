@@ -1,6 +1,7 @@
 import type { AISettings, AIModelParameters } from '@/types/settings'
 import { DEFAULT_SYSTEM_PROMPT } from '@/types/settings'
 import { useSettingsStore } from '@/stores/settings'
+import { platformFetch, platformStream } from '@/services/platform'
 
 // --- Exported Types ---
 
@@ -53,7 +54,7 @@ export async function testConnection(): Promise<AIConnectionResult> {
   // Attempt 1: GET /models
   try {
     const modelsUrl = `${normalizeBaseUrl(ai.baseUrl)}/models`
-    const response = await fetch(modelsUrl, {
+    const response = await platformFetch(modelsUrl, {
       method: 'GET',
       headers,
       signal: AbortSignal.timeout(10000),
@@ -75,7 +76,7 @@ export async function testConnection(): Promise<AIConnectionResult> {
   // Attempt 2: POST chat/completions with minimal message
   try {
     const chatUrl = `${normalizeBaseUrl(ai.baseUrl)}/chat/completions`
-    const response = await fetch(chatUrl, {
+    const response = await platformFetch(chatUrl, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -122,7 +123,7 @@ export async function chat(
   const effectivePrompt = options?.systemPrompt?.trim() ? options.systemPrompt : ai.systemPrompt
   const fullMessages = prependSystemPrompt(effectivePrompt, messages)
 
-  const response = await fetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
+  const response = await platformFetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -168,7 +169,7 @@ export async function* chatStream(
   const effectivePrompt = options?.systemPrompt?.trim() ? options.systemPrompt : ai.systemPrompt
   const fullMessages = prependSystemPrompt(effectivePrompt, messages)
 
-  const response = await fetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
+  yield* platformStream(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -183,39 +184,6 @@ export async function* chatStream(
     }),
     signal: options?.signal,
   })
-
-  if (!response.ok) {
-    const errorBody = await response.text()
-    throw new Error(parseErrorMessage(response.status, errorBody))
-  }
-
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() ?? ''
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed || !trimmed.startsWith('data: ')) continue
-      const data = trimmed.slice(6)
-      if (data === '[DONE]') return
-
-      try {
-        const parsed = JSON.parse(data)
-        const content = parsed.choices?.[0]?.delta?.content
-        if (content) yield content
-      } catch {
-        // Malformed line, ignore
-      }
-    }
-  }
 }
 
 // --- Internal Helper Functions ---
