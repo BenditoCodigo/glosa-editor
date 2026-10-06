@@ -67,6 +67,30 @@ Al desplegar esta sección puedes ajustar la **Temperatura** y **Top P** exclusi
 
 ---
 
+## Glosas y Notas de Autor (Herramienta para Escritores)
+
+Glosa permite dejar anotaciones marginales y justificaciones personales vinculadas a palabras, frases o bloques específicos de tu texto:
+
+### ¿Para qué usar las glosas?
+- **Justificación**: Anotar por qué elegiste una palabra poco común, un giro o un juego de palabras para no olvidarlo en futuras revisiones.
+- **Referencia / Dato**: Registrar la fuente histórica o cita detrás de una afirmación.
+- **Duda / Revisar**: Marcar una frase que suena forzada o requiere verificar ritmo y métrica.
+- **Idea / Variación**: Guardar alternativas de diálogo o caminos secundarios.
+- **Estilo / Tono**: Recordar la intención dramática o sensorial de una escena.
+
+### Cómo agregar una glosa
+1. Selecciona el fragmento de texto que deseas comentar en el editor.
+2. Haz clic en el ícono de **Glosas** (📝 con estrella/revisión) en la barra flotante de herramientas.
+3. Escribe tu comentario o justificación, selecciona una categoría y haz clic en **Guardar Glosa** (o presiona `Cmd+Enter` / `Ctrl+Enter`).
+4. El texto quedará sutilmente resaltado con el color correspondiente.
+
+### Consultar y gestionar glosas
+- **Hacer clic en el texto resaltado**: Abre una tarjeta emergente con el comentario, fecha, opción para editarlo, marcarlo como **Resuelta** o eliminarlo.
+- **Panel lateral de Glosas**: Haz clic en el botón **Glosas** en la barra superior para desplegar la lista completa de todas las notas del documento. Al hacer clic en cualquier glosa, la vista del editor se desplazará y resaltará automáticamente el fragmento correspondiente.
+- **Resiliencia ante cambios en el texto**: Si editas o agregas párrafos antes de la glosa, el motor de anclaje contextual reubica automáticamente la nota. Si eliminas el párrafo por completo, la nota se conserva en la pestaña **Huérfanas** para que puedas re-anclarla a una nueva selección o archivarla sin perder tu idea.
+
+---
+
 ## Guardado automático
 
 No necesitas guardar manualmente. Glosa guarda tu nota automáticamente unos segundos después de que dejes de escribir. Si cierras la aplicación inmediatamente después de escribir, los últimos cambios se guardan al salir.

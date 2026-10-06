@@ -73,6 +73,18 @@ sources:
 aiInstructions: Eres un editor de investigación riguroso. Contrasta fuentes y fechas.
 temperature: 0.4
 topP: 0.85
+annotations:
+  - id: ant-a1b2c3d4
+    comment: "Juego de palabras deliberado para marcar la ironía del personaje."
+    color: amber
+    resolved: false
+    createdAt: 2026-06-20T10:15:00Z
+    anchor:
+      exact: "paradoja temporal"
+      prefix: "sumergido en una "
+      suffix: " que desafiaba"
+      approxStartOffset: 140
+      blockIndex: 2
 ---
 
 Contenido en markdown...
@@ -82,6 +94,21 @@ Contenido en markdown...
 - **`coverImage`** — URL externa o imagen local codificada en Data URL (Base64) que se muestra como encabezado y fondo difuminado.
 - **`sources`** y **`aiInstructions`** — Lista de fuentes de consulta e instrucciones específicas para el asistente de IA con prioridad absoluta sobre las globales.
 - **`temperature`** y **`topP`** — Parámetros de inferencia de IA específicos para el documento. Tienen prioridad sobre la configuración general de Glosa.
+- **`annotations`** — Glosas y notas marginales del autor asociadas a fragmentos de texto o bloques del documento.
+
+### Motor de Anclaje de Glosas (Anchor Engine)
+
+Para garantizar la **portabilidad absoluta entre dispositivos** y la resistencia a modificaciones en el texto, las anotaciones no se guardan como simples offsets numéricos rígidos, sino utilizando un modelo de anclaje contextual compuesto (*Robust Anchor*):
+
+1. **`exact`**: El texto exacto seleccionado originalmente.
+2. **`prefix`** y **`suffix`**: Ventana de contexto circundante previa y posterior (~32 caracteres).
+3. **`approxStartOffset`**: Posición aproximada en caracteres.
+4. **Algoritmo de 4 niveles de re-anclaje**:
+   - *Nivel 1 (Exacto)*: Verificación rápida en `approxStartOffset`.
+   - *Nivel 2 (Contextual)*: Búsqueda del bloque `prefix + exact + suffix` si el texto previo fue desplazado.
+   - *Nivel 3 (Desambiguación)*: Búsqueda de `exact` con puntuación de similitud contextual en caso de palabras repetidas.
+   - *Nivel 4 (Búsqueda Difusa / Levenshtein)*: Detecta ediciones menores en la frase o correcciones de typos.
+   - *Nivel 5 (Detección de Huérfanas)*: Si el texto fue eliminado, la nota pasa al estado **Desanclada / Huérfana** visible en el panel lateral, garantizando que el escritor nunca pierda sus anotaciones.
 
 ### Nombres de archivo
 

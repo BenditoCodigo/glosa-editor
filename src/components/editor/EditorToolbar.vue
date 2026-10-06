@@ -13,6 +13,10 @@ interface Props {
 
 const { editor } = defineProps<Props>()
 
+const emit = defineEmits<{
+  'add-annotation': []
+}>()
+
 const showLinkModal = ref(false)
 const showImageModal = ref(false)
 const showHeadings = ref(false)
@@ -349,6 +353,17 @@ function confirmImage(url: string) {
       size="sm"
       :class="editor?.isActive('link') && 'bg-primary/10 text-primary'"
       @click="openLinkModal"
+    />
+
+    <div class="w-px h-6 bg-outline-variant mx-1" />
+
+    <UiIconButton
+      icon="rate_review"
+      ariaLabel="Añadir Glosa"
+      tooltip="Añadir Glosa / Nota de Autor"
+      size="sm"
+      :class="editor?.isActive('writerAnnotation') && 'bg-primary/10 text-primary'"
+      @click="emit('add-annotation')"
     />
   </div>
 

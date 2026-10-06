@@ -14,6 +14,8 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
 import CodeBlockNode from './CodeBlockNode.vue'
+import { WriterAnnotationMark } from './extensions/writerAnnotation'
+import type { WriterAnnotationColor } from '@/types/note'
 import { openExternalUrl } from '@/utils/openUrl'
 import { useSettingsStore } from '@/stores/settings'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -39,6 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:content': [value: string]
   'ai-block-click': [payload: { index: number; content: string; top: number; rect: DOMRect | null }]
+  'annotation-click': [payload: { annotationId: string; rect: DOMRect }]
 }>()
 
 const editorContainerRef = ref<HTMLElement | null>(null)
@@ -164,6 +167,7 @@ const editor = useEditor({
       },
     }),
     BlockSelectAll,
+    WriterAnnotationMark,
   ],
   editorProps: {
     scrollThreshold: { top: 80, bottom: 200, left: 0, right: 0 },
@@ -174,6 +178,15 @@ const editor = useEditor({
     },
     handleClick(_view, _pos, event) {
       const target = event.target as HTMLElement | null
+      const annotationEl = target?.closest('.writer-annotation, [data-annotation-id]') as HTMLElement | null
+      if (annotationEl) {
+        const annotationId = annotationEl.getAttribute('data-annotation-id')
+        if (annotationId) {
+          const rect = annotationEl.getBoundingClientRect()
+          emit('annotation-click', { annotationId, rect })
+          return true
+        }
+      }
       const anchor = target?.closest('a')
       if (anchor) {
         const href = anchor.getAttribute('href')
@@ -667,7 +680,122 @@ function getBlockContent(index: number): string {
   return node.textContent || ''
 }
 
-defineExpose({ editor, getBlockContent })
+function getSelectedRange(): {
+  from: number
+  to: number
+  text: string
+  docText: string
+  blockIndex?: number
+} | null {
+  if (!editor.value?.view) return null
+  const { state } = editor.value.view
+  const { selection, doc } = state
+  const { from, to, empty, $from } = selection
+
+  if (empty || from === to) return null
+  const text = doc.textBetween(from, to, ' ')
+  if (!text.trim()) return null
+
+  const docText = (editor.value.storage as unknown as MarkdownStorage)?.markdown?.getMarkdown() || doc.textBetween(0, doc.content.size, '\n\n')
+  let blockIndex: number | undefined = undefined
+  if ($from.depth >= 1) {
+    blockIndex = $from.index(0)
+  }
+
+  return { from, to, text, docText, blockIndex }
+}
+
+function applyAnnotationMark(
+  annotationId: string,
+  color: WriterAnnotationColor = 'amber',
+  resolved = false,
+) {
+  if (!editor.value) return
+  editor.value
+    .chain()
+    .focus()
+    .setMark('writerAnnotation', { annotationId, color, resolved })
+    .run()
+}
+
+function removeAnnotationMark(annotationId: string) {
+  if (!editor.value?.view) return
+  const { state, dispatch } = editor.value.view
+  const tr = state.tr
+  const type = state.schema.marks.writerAnnotation
+  if (!type) return
+
+  state.doc.descendants((node, pos) => {
+    if (node.isText && node.marks) {
+      const mark = node.marks.find(
+        (m) => m.type === type && m.attrs.annotationId === annotationId,
+      )
+      if (mark) {
+        tr.removeMark(pos, pos + node.nodeSize, type)
+      }
+    }
+    return true
+  })
+
+  if (tr.docChanged) {
+    dispatch(tr)
+  }
+}
+
+function updateAnnotationMark(
+  annotationId: string,
+  attrs: { color?: WriterAnnotationColor; resolved?: boolean },
+) {
+  if (!editor.value?.view) return
+  const { state, dispatch } = editor.value.view
+  const tr = state.tr
+  const type = state.schema.marks.writerAnnotation
+  if (!type) return
+
+  state.doc.descendants((node, pos) => {
+    if (node.isText && node.marks) {
+      const mark = node.marks.find(
+        (m) => m.type === type && m.attrs.annotationId === annotationId,
+      )
+      if (mark) {
+        const newAttrs = { ...mark.attrs, ...attrs }
+        tr.removeMark(pos, pos + node.nodeSize, type)
+        tr.addMark(pos, pos + node.nodeSize, type.create(newAttrs))
+      }
+    }
+    return true
+  })
+
+  if (tr.docChanged) {
+    dispatch(tr)
+  }
+}
+
+function scrollToAnnotation(annotationId: string): boolean {
+  if (!editorContainerRef.value) return false
+  const el = editorContainerRef.value.querySelector(
+    `[data-annotation-id="${annotationId}"]`,
+  ) as HTMLElement | null
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    el.classList.add('ring-4', 'ring-primary/60', 'scale-105')
+    setTimeout(() => {
+      el.classList.remove('ring-4', 'ring-primary/60', 'scale-105')
+    }, 1500)
+    return true
+  }
+  return false
+}
+
+defineExpose({
+  editor,
+  getBlockContent,
+  getSelectedRange,
+  applyAnnotationMark,
+  removeAnnotationMark,
+  updateAnnotationMark,
+  scrollToAnnotation,
+})
 </script>
 
 <template>

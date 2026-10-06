@@ -561,5 +561,62 @@ describe('Frontmatter Parser', () => {
       expect(restored.temperature).toBe(0.4)
       expect(restored.topP).toBe(0.85)
     })
+
+    it('round-trip with writer annotations', () => {
+      const original = makeNote({
+        annotations: [
+          {
+            id: 'ant-1',
+            comment: 'Juego de palabras deliberado para crear tensión dramática',
+            createdAt: '2024-10-14T10:00:00Z',
+            color: 'amber',
+            resolved: false,
+            anchor: {
+              exact: 'paradoja temporal',
+              prefix: 'en medio de una ',
+              suffix: ' que amenazaba',
+              approxStartOffset: 120,
+              blockIndex: 2,
+            },
+          },
+          {
+            id: 'ant-2',
+            comment: 'Verificar fecha exacta con fuentes históricas',
+            createdAt: '2024-10-14T11:00:00Z',
+            color: 'rose',
+            resolved: true,
+            anchor: {
+              exact: '14 de octubre de 1962',
+              prefix: 'Ocurrió el ',
+              suffix: ', según relatan',
+              approxStartOffset: 340,
+            },
+          },
+        ],
+      })
+      const serialized = serializeNote(original)
+      const parsed = parseMarkdownFile('test.md', serialized)
+      const restored = frontmatterToNote(parsed.frontmatter, parsed.body, null)
+
+      expect(restored.annotations).toHaveLength(2)
+      expect(restored.annotations?.[0]).toEqual({
+        id: 'ant-1',
+        comment: 'Juego de palabras deliberado para crear tensión dramática',
+        createdAt: '2024-10-14T10:00:00Z',
+        updatedAt: undefined,
+        color: 'amber',
+        resolved: false,
+        anchor: {
+          exact: 'paradoja temporal',
+          prefix: 'en medio de una ',
+          suffix: ' que amenazaba',
+          approxStartOffset: 120,
+          blockIndex: 2,
+        },
+      })
+      expect(restored.annotations?.[1]?.resolved).toBe(true)
+      expect(restored.annotations?.[1]?.color).toBe('rose')
+    })
   })
 })
+

@@ -1,3 +1,23 @@
+export type WriterAnnotationColor = 'amber' | 'emerald' | 'rose' | 'indigo' | 'purple'
+
+export interface WriterAnnotationAnchor {
+  exact: string
+  prefix: string
+  suffix: string
+  approxStartOffset: number
+  blockIndex?: number
+}
+
+export interface WriterAnnotation {
+  id: string
+  comment: string
+  createdAt: string
+  updatedAt?: string
+  color?: WriterAnnotationColor
+  resolved?: boolean
+  anchor: WriterAnnotationAnchor
+}
+
 export interface Note {
   id: string
   title: string
@@ -14,6 +34,7 @@ export interface Note {
   aiInstructions?: string
   temperature?: number
   topP?: number
+  annotations?: WriterAnnotation[]
 }
 
 export interface NoteMetadata {
@@ -23,3 +44,4 @@ export interface NoteMetadata {
   isFavorite: boolean
   updatedAt: string
 }
+

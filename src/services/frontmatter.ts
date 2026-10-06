@@ -1,4 +1,4 @@
-import type { Note } from '@/types/note'
+import type { Note, WriterAnnotation, WriterAnnotationColor } from '@/types/note'
 
 /**
  * Minimal in-house YAML frontmatter parser/serializer for Note objects.
@@ -31,6 +31,7 @@ const _FIELD_ORDER: readonly string[] = [
   'aiInstructions',
   'temperature',
   'topP',
+  'annotations',
 ]
 
 /** Characters that require quoting in YAML values */
@@ -149,6 +150,35 @@ export function frontmatterToNote(
   const topP =
     typeof frontmatter.topP === 'number' && !isNaN(frontmatter.topP) ? frontmatter.topP : undefined
 
+  const annotations: WriterAnnotation[] | undefined =
+    Array.isArray(frontmatter.annotations)
+      ? (frontmatter.annotations as unknown[])
+          .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+          .map((item): WriterAnnotation | null => {
+            if (typeof item.id !== 'string' || typeof item.comment !== 'string' || typeof item.anchor !== 'object' || item.anchor === null) {
+              return null
+            }
+            const rawAnchor = item.anchor as Record<string, unknown>
+            if (typeof rawAnchor.exact !== 'string') return null
+            return {
+              id: item.id,
+              comment: item.comment,
+              createdAt: typeof item.createdAt === 'string' ? item.createdAt : now,
+              updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : undefined,
+              color: typeof item.color === 'string' ? (item.color as WriterAnnotationColor) : undefined,
+              resolved: typeof item.resolved === 'boolean' ? item.resolved : false,
+              anchor: {
+                exact: rawAnchor.exact,
+                prefix: typeof rawAnchor.prefix === 'string' ? rawAnchor.prefix : '',
+                suffix: typeof rawAnchor.suffix === 'string' ? rawAnchor.suffix : '',
+                approxStartOffset: typeof rawAnchor.approxStartOffset === 'number' ? rawAnchor.approxStartOffset : 0,
+                blockIndex: typeof rawAnchor.blockIndex === 'number' ? rawAnchor.blockIndex : undefined,
+              },
+            }
+          })
+          .filter((a): a is WriterAnnotation => a !== null)
+      : undefined
+
   const note: Note = {
     id,
     title,
@@ -167,6 +197,7 @@ export function frontmatterToNote(
   if (aiInstructions !== undefined) note.aiInstructions = aiInstructions
   if (temperature !== undefined) note.temperature = temperature
   if (topP !== undefined) note.topP = topP
+  if (annotations !== undefined && annotations.length > 0) note.annotations = annotations
 
   return note
 }
@@ -207,6 +238,9 @@ export function serializeNote(note: Note, extraFields?: Record<string, unknown>)
   }
   if (note.topP != null && !isNaN(note.topP)) {
     lines.push(`topP: ${note.topP}`)
+  }
+  if (note.annotations != null && note.annotations.length > 0) {
+    lines.push(`annotations: ${JSON.stringify(note.annotations)}`)
   }
 
   // Extra/unrecognized fields in alphabetical order
@@ -256,9 +290,13 @@ function parseYamlValue(raw: string): unknown {
   if (raw === 'true') return true
   if (raw === 'false') return false
 
-  // Flow sequence [a, b, c]
+  // Flow sequence or JSON [a, b, c]
   if (raw.startsWith('[') && raw.endsWith(']')) {
-    return parseFlowSequence(raw)
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return parseFlowSequence(raw)
+    }
   }
 
   // Quoted string (single or double)
@@ -367,7 +405,13 @@ function serializeYamlValue(value: unknown): string {
   if (typeof value === 'number') return String(value)
   if (typeof value === 'string') return quoteYamlValue(value)
   if (Array.isArray(value)) {
+    if (value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+      return JSON.stringify(value)
+    }
     return serializeFlowSequence(value.map((v) => String(v)))
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value)
   }
   return quoteYamlValue(String(value))
 }

@@ -14,6 +14,11 @@ import EmojiPicker from '@/components/editor/EmojiPicker.vue'
 import ExportMenu from '@/components/editor/ExportMenu.vue'
 import AIBlockDialog from '@/components/ai/AIBlockDialog.vue'
 import NoteReferencesModal from '@/components/editor/NoteReferencesModal.vue'
+import WriterAnnotationModal from '@/components/editor/WriterAnnotationModal.vue'
+import WriterAnnotationPopover from '@/components/editor/WriterAnnotationPopover.vue'
+import WriterAnnotationsDrawer from '@/components/editor/WriterAnnotationsDrawer.vue'
+import { createAnnotationAnchor, findAnchorPosition } from '@/services/annotations/anchorEngine'
+import type { WriterAnnotation, WriterAnnotationColor } from '@/types/note'
 import { useExport } from '@/composables/useExport'
 import { useAIBlockAssistant } from '@/composables/useAIBlockAssistant'
 
@@ -61,6 +66,38 @@ const titleRef = ref<HTMLTextAreaElement | null>(null)
 const coverScale = ref(1)
 const coverTranslateY = ref(0)
 const isHeaderScrolledOut = ref(false)
+
+// Writer Annotations State
+const annotations = ref<WriterAnnotation[]>([])
+const showAnnotationsDrawer = ref(false)
+const showAnnotationModal = ref(false)
+const modalIsEditing = ref(false)
+const activeModalAnnotation = ref<WriterAnnotation | null>(null)
+const selectedQuoteText = ref('')
+const selectedRange = ref<{
+  from: number
+  to: number
+  text: string
+  docText: string
+  blockIndex?: number
+} | null>(null)
+const popoverAnnotation = ref<WriterAnnotation | null>(null)
+const popoverPosition = ref<{ top: number; left: number } | null>(null)
+const orphanIds = ref<string[]>([])
+
+function checkOrphanAnnotations() {
+  const text = content.value || ''
+  const orphans: string[] = []
+  for (const item of annotations.value) {
+    if (item.anchor) {
+      const match = findAnchorPosition(text, item.anchor)
+      if (match.isOrphan) {
+        orphans.push(item.id)
+      }
+    }
+  }
+  orphanIds.value = orphans
+}
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 let attachedScrollParent: HTMLElement | null = null
@@ -130,6 +167,8 @@ watch(
       aiInstructions.value = note.aiInstructions ?? ''
       temperature.value = note.temperature
       topP.value = note.topP
+      annotations.value = note.annotations ? JSON.parse(JSON.stringify(note.annotations)) : []
+      checkOrphanAnnotations()
       trackActivity(note.id, 'note', 'open')
     } else {
       router.replace('/')
@@ -176,6 +215,7 @@ async function save() {
     aiInstructions: aiInstructions.value.trim() || undefined,
     temperature: temperature.value != null ? temperature.value : undefined,
     topP: topP.value != null ? topP.value : undefined,
+    annotations: annotations.value.length > 0 ? JSON.parse(JSON.stringify(annotations.value)) : undefined,
   })
 
   trackActivity(activeNote.value.id, 'note', 'save')
@@ -190,6 +230,115 @@ function handleTitleInput(event: Event) {
 
 function handleContentUpdate(newContent: string) {
   content.value = newContent
+  checkOrphanAnnotations()
+  scheduleAutosave()
+}
+
+// Annotation Handlers
+function handleOpenAddAnnotation() {
+  const sel = editorRef.value?.getSelectedRange()
+  if (!sel || !sel.text.trim()) {
+    showAnnotationsDrawer.value = true
+    return
+  }
+  selectedRange.value = sel
+  selectedQuoteText.value = sel.text
+  modalIsEditing.value = false
+  activeModalAnnotation.value = null
+  showAnnotationModal.value = true
+}
+
+function handleSaveAnnotation(payload: { comment: string; color: WriterAnnotationColor }) {
+  if (modalIsEditing.value && activeModalAnnotation.value) {
+    const target = annotations.value.find((a) => a.id === activeModalAnnotation.value?.id)
+    if (target) {
+      target.comment = payload.comment
+      target.color = payload.color
+      target.updatedAt = new Date().toISOString()
+      editorRef.value?.updateAnnotationMark(target.id, { color: payload.color })
+    }
+    if (popoverAnnotation.value?.id === activeModalAnnotation.value.id) {
+      popoverAnnotation.value.comment = payload.comment
+      popoverAnnotation.value.color = payload.color
+    }
+  } else if (selectedRange.value) {
+    const newId = `ant-${crypto.randomUUID().slice(0, 8)}`
+    const now = new Date().toISOString()
+    const anchor = createAnnotationAnchor(
+      selectedRange.value.docText,
+      selectedRange.value.from,
+      selectedRange.value.to,
+      selectedRange.value.blockIndex,
+    )
+    const newAnnotation: WriterAnnotation = {
+      id: newId,
+      comment: payload.comment,
+      color: payload.color,
+      createdAt: now,
+      resolved: false,
+      anchor,
+    }
+    annotations.value.push(newAnnotation)
+    editorRef.value?.applyAnnotationMark(newId, payload.color, false)
+    checkOrphanAnnotations()
+  }
+
+  showAnnotationModal.value = false
+  activeModalAnnotation.value = null
+  selectedRange.value = null
+  scheduleAutosave()
+}
+
+function handleAnnotationClick(payload: { annotationId: string; rect: DOMRect }) {
+  const item = annotations.value.find((a) => a.id === payload.annotationId)
+  if (!item) return
+  popoverAnnotation.value = item
+  popoverPosition.value = {
+    top: Math.min(window.innerHeight - 260, Math.max(70, payload.rect.bottom + 8)),
+    left: Math.min(window.innerWidth - 340, Math.max(16, payload.rect.left)),
+  }
+}
+
+function handleToggleResolved(annotation: WriterAnnotation) {
+  annotation.resolved = !annotation.resolved
+  annotation.updatedAt = new Date().toISOString()
+  editorRef.value?.updateAnnotationMark(annotation.id, { resolved: annotation.resolved })
+  scheduleAutosave()
+}
+
+function handleEditAnnotation(annotation: WriterAnnotation) {
+  activeModalAnnotation.value = annotation
+  selectedQuoteText.value = annotation.anchor?.exact || ''
+  modalIsEditing.value = true
+  showAnnotationModal.value = true
+  popoverAnnotation.value = null
+}
+
+function handleDeleteAnnotation(annotation: WriterAnnotation) {
+  annotations.value = annotations.value.filter((a) => a.id !== annotation.id)
+  editorRef.value?.removeAnnotationMark(annotation.id)
+  if (popoverAnnotation.value?.id === annotation.id) {
+    popoverAnnotation.value = null
+  }
+  orphanIds.value = orphanIds.value.filter((id) => id !== annotation.id)
+  scheduleAutosave()
+}
+
+function handleSelectFromDrawer(annotation: WriterAnnotation) {
+  editorRef.value?.scrollToAnnotation(annotation.id)
+}
+
+function handleReanchorAnnotation(annotation: WriterAnnotation) {
+  const sel = editorRef.value?.getSelectedRange()
+  if (!sel || !sel.text.trim()) {
+    alert('Por favor selecciona el nuevo texto en el editor antes de re-anclar la glosa.')
+    return
+  }
+  const anchor = createAnnotationAnchor(sel.docText, sel.from, sel.to, sel.blockIndex)
+  annotation.anchor = anchor
+  annotation.updatedAt = new Date().toISOString()
+  editorRef.value?.applyAnnotationMark(annotation.id, annotation.color || 'amber', annotation.resolved)
+  orphanIds.value = orphanIds.value.filter((id) => id !== annotation.id)
   scheduleAutosave()
 }
 
@@ -378,6 +527,24 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="flex items-center gap-2">
+          <UiButton
+            variant="ghost"
+            size="sm"
+            class="gap-1.5"
+            :class="showAnnotationsDrawer && 'bg-primary/15 text-primary'"
+            @click="showAnnotationsDrawer = !showAnnotationsDrawer"
+          >
+            <template #icon-left>
+              <UiIcon name="rate_review" size="sm" />
+            </template>
+            <span class="hidden sm:inline">Glosas</span>
+            <span
+              v-if="annotations.length > 0"
+              class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary"
+            >
+              {{ annotations.length }}
+            </span>
+          </UiButton>
           <UiIconButton
             icon="menu_book"
             ariaLabel="Fuentes e instrucciones de IA"
@@ -497,6 +664,7 @@ onUnmounted(() => {
               :highlightedBlockIndex="aiAssistant.activeBlockIndex.value"
               @update:content="handleContentUpdate"
               @ai-block-click="handleAiBlockClick"
+              @annotation-click="handleAnnotationClick"
             />
           </div>
         </div>
@@ -507,7 +675,10 @@ onUnmounted(() => {
         class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 pointer-events-none max-w-[calc(100vw-2rem)]"
       >
         <div class="pointer-events-auto shrink-0">
-          <EditorToolbar :editor="editorRef?.editor" />
+          <EditorToolbar
+            :editor="editorRef?.editor"
+            @add-annotation="handleOpenAddAnnotation"
+          />
         </div>
 
         <!-- Scroll companion bubble: Save status, Save button, Fuentes button -->
@@ -612,5 +783,39 @@ onUnmounted(() => {
     :topP="topP"
     @save="handleSaveReferences"
     @cancel="showReferencesModal = false"
+  />
+
+  <!-- Writer Annotations Modal -->
+  <WriterAnnotationModal
+    :open="showAnnotationModal"
+    :isEditing="modalIsEditing"
+    :selectedText="selectedQuoteText"
+    :initialComment="activeModalAnnotation?.comment || ''"
+    :initialColor="activeModalAnnotation?.color || 'amber'"
+    @save="handleSaveAnnotation"
+    @cancel="showAnnotationModal = false"
+  />
+
+  <!-- Writer Annotation Popover on click -->
+  <WriterAnnotationPopover
+    :annotation="popoverAnnotation"
+    :position="popoverPosition"
+    @edit="handleEditAnnotation"
+    @toggleResolved="handleToggleResolved"
+    @delete="handleDeleteAnnotation"
+    @close="popoverAnnotation = null"
+  />
+
+  <!-- Writer Annotations Side Drawer -->
+  <WriterAnnotationsDrawer
+    :open="showAnnotationsDrawer"
+    :annotations="annotations"
+    :orphanIds="orphanIds"
+    @close="showAnnotationsDrawer = false"
+    @select="handleSelectFromDrawer"
+    @edit="handleEditAnnotation"
+    @delete="handleDeleteAnnotation"
+    @toggleResolved="handleToggleResolved"
+    @reanchor="handleReanchorAnnotation"
   />
 </template>
