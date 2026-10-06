@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useEditor, EditorContent, VueNodeViewRenderer } from '@tiptap/vue-3'
 import { Extension } from '@tiptap/core'
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
@@ -15,7 +16,7 @@ import { Markdown } from 'tiptap-markdown'
 import { common, createLowlight } from 'lowlight'
 import CodeBlockNode from './CodeBlockNode.vue'
 import { WriterAnnotationMark } from './extensions/writerAnnotation'
-import type { WriterAnnotationColor } from '@/types/note'
+import type { WriterAnnotation, WriterAnnotationAnchor, WriterAnnotationColor } from '@/types/note'
 import { openExternalUrl } from '@/utils/openUrl'
 import { useSettingsStore } from '@/stores/settings'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -32,10 +33,12 @@ interface MarkdownStorage {
 interface Props {
   content: string
   highlightedBlockIndex?: number | null
+  annotations?: WriterAnnotation[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   highlightedBlockIndex: null,
+  annotations: () => [],
 })
 
 const emit = defineEmits<{
@@ -703,13 +706,29 @@ watch(
     ).markdown.getMarkdown()
     if (currentContent !== newContent) {
       editor.value.commands.setContent(newContent, { emitUpdate: false })
+      nextTick(() => {
+        syncAnnotationsToMarks(props.annotations || [])
+      })
     }
   },
+)
+
+watch(
+  () => props.annotations,
+  (newAnnotations) => {
+    nextTick(() => {
+      syncAnnotationsToMarks(newAnnotations || [])
+    })
+  },
+  { deep: true },
 )
 
 onMounted(() => {
   window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
   window.addEventListener('keydown', handleGlobalKeydown, true)
+  nextTick(() => {
+    syncAnnotationsToMarks(props.annotations || [])
+  })
 })
 
 onBeforeUnmount(() => {
@@ -728,6 +747,19 @@ function getBlockContent(index: number): string {
   const node = doc.child(index)
   return node.textContent || ''
 }
+
+const activeBlockAnnotations = computed(() => {
+  if (activeBlockIndex.value === null || !props.annotations) return []
+  const blockIdx = activeBlockIndex.value
+  const blockText = getBlockContent(blockIdx)
+  return props.annotations.filter((a) => {
+    if (a.anchor?.blockIndex === blockIdx) return true
+    if (a.anchor?.exact && blockText.includes(a.anchor.exact)) return true
+    return false
+  })
+})
+
+const hasActiveBlockAnnotation = computed(() => activeBlockAnnotations.value.length > 0)
 
 function getSelectedRange(): {
   from: number
@@ -754,17 +786,140 @@ function getSelectedRange(): {
   return { from, to, text, docText, blockIndex }
 }
 
+function findRangeInDoc(
+  doc: ProseMirrorNode,
+  anchor: WriterAnnotationAnchor,
+): { from: number; to: number } | null {
+  if (!anchor.exact) return null
+  const exact = anchor.exact
+
+  // If blockIndex is specified and valid, search within that block first
+  if (
+    anchor.blockIndex !== undefined &&
+    anchor.blockIndex >= 0 &&
+    anchor.blockIndex < doc.childCount
+  ) {
+    let blockStart = 0
+    for (let i = 0; i < anchor.blockIndex; i++) {
+      blockStart += doc.child(i).nodeSize
+    }
+    const blockNode = doc.child(anchor.blockIndex)
+    const blockText = blockNode.textContent || ''
+    const matchIdx = blockText.indexOf(exact)
+    if (matchIdx !== -1) {
+      let offsetInBlock = 0
+      let foundPos: { from: number; to: number } | null = null
+      blockNode.descendants((node, pos) => {
+        if (foundPos) return false
+        if (node.isText && node.text) {
+          const textIdx = matchIdx - offsetInBlock
+          if (textIdx >= 0 && textIdx + exact.length <= node.text.length) {
+            const from = blockStart + 1 + pos + textIdx
+            foundPos = { from, to: from + exact.length }
+            return false
+          }
+          offsetInBlock += node.text.length
+        }
+        return true
+      })
+      if (foundPos) return foundPos
+      return {
+        from: blockStart + 1 + matchIdx,
+        to: blockStart + 1 + matchIdx + exact.length,
+      }
+    }
+  }
+
+  // Scan entire document for anchor.exact
+  const matches: { from: number; to: number; score: number }[] = []
+  doc.descendants((node, pos) => {
+    if (node.isText && node.text) {
+      let searchIdx = 0
+      while (searchIdx < node.text.length) {
+        const found = node.text.indexOf(exact, searchIdx)
+        if (found === -1) break
+        const from = pos + found
+        const to = from + exact.length
+        const dist = Math.abs(from - anchor.approxStartOffset)
+        matches.push({ from, to, score: dist })
+        searchIdx = found + 1
+      }
+    }
+    return true
+  })
+
+  if (matches.length > 0) {
+    matches.sort((a, b) => a.score - b.score)
+    return { from: matches[0]!.from, to: matches[0]!.to }
+  }
+
+  return null
+}
+
+function syncAnnotationsToMarks(annotationsList: WriterAnnotation[]) {
+  if (!editor.value?.view) return
+  const { state, dispatch } = editor.value.view
+  const type = state.schema.marks.writerAnnotation
+  if (!type) return
+
+  const tr = state.tr
+  // 1. Remove existing marks
+  state.doc.descendants((node, pos) => {
+    if (node.isText && node.marks) {
+      for (const m of node.marks) {
+        if (m.type === type) {
+          tr.removeMark(pos, pos + node.nodeSize, type)
+        }
+      }
+    }
+    return true
+  })
+
+  // 2. Add marks for all active annotations
+  for (const item of annotationsList) {
+    if (!item.anchor) continue
+    const range = findRangeInDoc(tr.doc, item.anchor)
+    if (range) {
+      tr.addMark(
+        range.from,
+        range.to,
+        type.create({
+          annotationId: item.id,
+          color: item.color || 'amber',
+          resolved: item.resolved || false,
+        }),
+      )
+    }
+  }
+
+  if (tr.docChanged) {
+    dispatch(tr)
+  }
+}
+
 function applyAnnotationMark(
   annotationId: string,
   color: WriterAnnotationColor = 'amber',
   resolved = false,
+  range?: { from: number; to: number },
 ) {
-  if (!editor.value) return
-  editor.value
-    .chain()
-    .focus()
-    .setMark('writerAnnotation', { annotationId, color, resolved })
-    .run()
+  if (!editor.value?.view) return
+  const { state, dispatch } = editor.value.view
+  const type = state.schema.marks.writerAnnotation
+  if (!type) return
+
+  let from = state.selection.from
+  let to = state.selection.to
+
+  if (range && range.from !== undefined && range.to !== undefined && range.from < range.to) {
+    from = Math.max(0, Math.min(range.from, state.doc.content.size))
+    to = Math.max(from, Math.min(range.to, state.doc.content.size))
+  }
+
+  if (from === to) return
+
+  const tr = state.tr.addMark(from, to, type.create({ annotationId, color, resolved }))
+  dispatch(tr)
 }
 
 function removeAnnotationMark(annotationId: string) {
@@ -843,6 +998,7 @@ defineExpose({
   applyAnnotationMark,
   removeAnnotationMark,
   updateAnnotationMark,
+  syncAnnotationsToMarks,
   scrollToAnnotation,
 })
 </script>
@@ -898,12 +1054,34 @@ defineExpose({
       <!-- Writer Annotation / Glosa Button for Block -->
       <button
         type="button"
-        class="w-9 h-9 p-1.5 rounded-full flex items-center justify-center bg-transparent text-secondary hover:text-on-surface hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all duration-150 cursor-pointer"
-        title="Añadir glosa a este bloque"
-        aria-label="Añadir glosa a este bloque"
+        class="relative w-9 h-9 p-1.5 rounded-full flex items-center justify-center bg-transparent transition-all duration-150 cursor-pointer"
+        :class="[
+          hasActiveBlockAnnotation
+            ? 'text-primary bg-primary/10 hover:bg-primary/20 shadow-sm border border-primary/25'
+            : 'text-secondary hover:text-on-surface hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10',
+        ]"
+        :title="
+          hasActiveBlockAnnotation
+            ? `Este bloque tiene ${activeBlockAnnotations.length} glosa(s)`
+            : 'Añadir glosa a este bloque'
+        "
+        :aria-label="
+          hasActiveBlockAnnotation
+            ? `Este bloque tiene ${activeBlockAnnotations.length} glosa(s)`
+            : 'Añadir glosa a este bloque'
+        "
         @click.stop="handleBlockAnnotationClick"
       >
-        <UiIcon name="rate_review" size="lg" class="text-[25px]" />
+        <UiIcon
+          name="rate_review"
+          size="lg"
+          :filled="hasActiveBlockAnnotation"
+          class="text-[25px]"
+        />
+        <span
+          v-if="hasActiveBlockAnnotation"
+          class="absolute 0 top-0.5 right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-surface shadow-xs"
+        />
       </button>
     </div>
 

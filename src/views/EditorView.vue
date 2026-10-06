@@ -280,7 +280,10 @@ function handleSaveAnnotation(payload: { comment: string; color: WriterAnnotatio
       anchor,
     }
     annotations.value.push(newAnnotation)
-    editorRef.value?.applyAnnotationMark(newId, payload.color, false)
+    editorRef.value?.applyAnnotationMark(newId, payload.color, false, {
+      from: selectedRange.value.from,
+      to: selectedRange.value.to,
+    })
     checkOrphanAnnotations()
   }
 
@@ -684,6 +687,7 @@ onUnmounted(() => {
             <EditorContentComponent
               ref="editorRef"
               :content="content"
+              :annotations="annotations"
               :highlightedBlockIndex="aiAssistant.activeBlockIndex.value"
               @update:content="handleContentUpdate"
               @ai-block-click="handleAiBlockClick"
