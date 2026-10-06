@@ -54,12 +54,13 @@ const isLoading = ref(true)
 const editorRef = ref<InstanceType<typeof EditorContentComponent> | null>(null)
 const titleRef = ref<HTMLTextAreaElement | null>(null)
 const coverScale = ref(1)
+const coverTranslateY = ref(0)
 const isHeaderScrolledOut = ref(false)
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 let attachedScrollParent: HTMLElement | null = null
 
-// Scroll handler for zoom and header visibility detection
+// Scroll handler for parallax translation, zoom and header visibility detection
 // The actual scroll container is in App.vue (flex-1 overflow-y-auto), not in this component.
 // We find the nearest scrollable ancestor and listen on it.
 const editorAreaRef = ref<HTMLElement | null>(null)
@@ -69,10 +70,11 @@ function handleScroll(event: Event) {
   const scrollTop = target.scrollTop
 
   if (coverImage.value) {
-    const viewportHeight = target.clientHeight
-    // Scale from 1 to 1.4 over one full viewport height of scroll
+    const viewportHeight = target.clientHeight || 800
+    // Parallax: image smoothly descends as page scrolls down (without a rigid cap)
+    coverTranslateY.value = scrollTop * 0.35
     const progress = Math.min(scrollTop / viewportHeight, 1)
-    coverScale.value = 1 + progress * 0.2
+    coverScale.value = 1 + progress * 0.15
   }
 
   // Header scrolls out when user scrolls past the top header height (~40px)
@@ -105,6 +107,8 @@ watch(
     if (!id || typeof id !== 'string') return
     isLoading.value = true
     isHeaderScrolledOut.value = false
+    coverTranslateY.value = 0
+    coverScale.value = 1
     const note = await notesStore.loadNote(id)
     if (note) {
       title.value = note.title
@@ -358,7 +362,7 @@ onUnmounted(() => {
               :src="coverImage"
               alt=""
               class="w-full h-full object-cover will-change-transform transform-gpu"
-              :style="{ transform: `scale(${coverScale})` }"
+              :style="{ transform: `translateY(${coverTranslateY}px) scale(${coverScale})` }"
             >
             <!-- Bottom fade so the glass panel blends smoothly -->
             <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/90 to-transparent dark:hidden"></div>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
+import { TextSelection } from '@tiptap/pm/state'
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPromptModal from '@/components/ui/UiPromptModal.vue'
 import LinkModal from './LinkModal.vue'
@@ -16,6 +18,76 @@ const showImageModal = ref(false)
 const showHeadings = ref(false)
 const linkInitialValue = ref('')
 const linkInitialText = ref('')
+
+function toggleHeading(level: 1 | 2 | 3 | 4) {
+  if (!editor) return
+
+  const { state, view } = editor
+  const { selection, schema } = state
+  const { $from, $to, empty } = selection
+
+  // If selection is empty (cursor only) or spans multiple blocks, use standard toggleHeading
+  if (empty || !$from.sameParent($to) || !$from.parent.isTextblock) {
+    editor.chain().focus().toggleHeading({ level }).run()
+    return
+  }
+
+  const parent = $from.parent
+  const startOfBlock = $from.start()
+  const endOfBlock = $from.end()
+  const isFullBlockSelected = $from.pos === startOfBlock && $to.pos === endOfBlock
+
+  if (isFullBlockSelected) {
+    editor.chain().focus().toggleHeading({ level }).run()
+    return
+  }
+
+  // Partial selection within a block: extract selection into a heading/paragraph block
+  const isCurrentHeadingSameLevel = parent.type.name === 'heading' && parent.attrs.level === level
+  const targetType = isCurrentHeadingSameLevel ? schema.nodes.paragraph : schema.nodes.heading
+  if (!targetType) {
+    editor.chain().focus().toggleHeading({ level }).run()
+    return
+  }
+  const targetAttrs = isCurrentHeadingSameLevel ? {} : { level }
+
+  const parentStart = $from.before()
+  const parentEnd = $from.after()
+  const fromOffset = $from.parentOffset
+  const toOffset = $to.parentOffset
+
+  const beforeFragment = parent.content.cut(0, fromOffset)
+  const selectedFragment = parent.content.cut(fromOffset, toOffset)
+  const afterFragment = parent.content.cut(toOffset, parent.content.size)
+
+  const newNodes: ProseMirrorNode[] = []
+
+  if (beforeFragment.size > 0) {
+    newNodes.push(parent.type.create(parent.attrs, beforeFragment))
+  }
+
+  const targetNode = targetType.create(targetAttrs, selectedFragment)
+  newNodes.push(targetNode)
+
+  if (afterFragment.size > 0) {
+    newNodes.push(parent.type.create(parent.attrs, afterFragment))
+  }
+
+  const tr = state.tr.replaceWith(parentStart, parentEnd, newNodes)
+
+  // Calculate new selection range on the target node content
+  const beforeNodeSize = beforeFragment.size > 0 ? beforeFragment.size + 2 : 0
+  const targetNodeStart = parentStart + beforeNodeSize
+  const selFrom = targetNodeStart + 1
+  const selTo = selFrom + selectedFragment.size
+
+  if (selFrom <= selTo && selTo <= tr.doc.content.size) {
+    tr.setSelection(TextSelection.create(tr.doc, selFrom, selTo))
+  }
+
+  view.dispatch(tr.scrollIntoView())
+  editor.commands.focus()
+}
 
 function toggleBold() {
   editor?.chain().focus().toggleBold().run()
@@ -121,7 +193,7 @@ function confirmImage(url: string) {
         tooltip="Encabezado"
         size="sm"
         :class="editor?.isActive('heading') && 'bg-primary/10 text-primary'"
-        @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
+        @click="toggleHeading(1)"
       />
       <!-- Heading options H1-H4 (expand upward, H1 overlaps the trigger button) -->
       <div
@@ -143,7 +215,7 @@ function confirmImage(url: string) {
           "
           :class="editor?.isActive('heading', { level: 1 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 1"
-          @click="editor?.chain().focus().toggleHeading({ level: 1 }).run()"
+          @click="toggleHeading(1)"
         >
           H1
         </button>
@@ -159,7 +231,7 @@ function confirmImage(url: string) {
           "
           :class="editor?.isActive('heading', { level: 2 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 2"
-          @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()"
+          @click="toggleHeading(2)"
         >
           H2
         </button>
@@ -175,7 +247,7 @@ function confirmImage(url: string) {
           "
           :class="editor?.isActive('heading', { level: 3 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 3"
-          @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
+          @click="toggleHeading(3)"
         >
           H3
         </button>
@@ -191,7 +263,7 @@ function confirmImage(url: string) {
           "
           :class="editor?.isActive('heading', { level: 4 }) && '!bg-primary !text-on-primary'"
           title="Encabezado 4"
-          @click="editor?.chain().focus().toggleHeading({ level: 4 }).run()"
+          @click="toggleHeading(4)"
         >
           H4
         </button>
