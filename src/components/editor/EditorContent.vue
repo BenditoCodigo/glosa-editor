@@ -592,7 +592,15 @@ onBeforeUnmount(() => {
   editor.value?.destroy()
 })
 
-defineExpose({ editor })
+function getBlockContent(index: number): string {
+  if (!editor.value?.view) return ''
+  const doc = editor.value.view.state.doc
+  if (index < 0 || index >= doc.childCount) return ''
+  const node = doc.child(index)
+  return node.textContent || ''
+}
+
+defineExpose({ editor, getBlockContent })
 </script>
 
 <template>

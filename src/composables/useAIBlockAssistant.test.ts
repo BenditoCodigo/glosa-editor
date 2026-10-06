@@ -124,5 +124,40 @@ describe('useAIBlockAssistant', () => {
       expect(assistant.error.value).toBeNull()
       expect(assistant.isLoading.value).toBe(false)
     })
+
+    it('uses dynamic getters to capture live edits to block content', async () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.settings.ai.enabled = true
+      settingsStore.settings.ai.baseUrl = 'http://localhost:11434/v1'
+      settingsStore.settings.ai.model = 'llama3.1:8b'
+
+      const { ref } = await import('vue')
+      const liveText = ref('como estás?')
+      const chatStreamSpy = vi.spyOn(aiService, 'chatStream').mockImplementation(async function* () {
+        yield 'Respuesta'
+      })
+
+      const assistant = useAIBlockAssistant()
+      assistant.openAssistant({
+        index: 0,
+        content: liveText.value,
+        context: { title: 'Test' },
+        getContent: () => liveText.value,
+      })
+
+      expect(assistant.currentBlockContent.value).toBe('como estás?')
+
+      // User changes text in editor while dialog is open
+      liveText.value = 'Los tardigrados son felinos'
+      expect(assistant.currentBlockContent.value).toBe('Los tardigrados son felinos')
+
+      await assistant.ask('Verificar datos')
+
+      // Check that the prompt sent to chatStream contained the updated text
+      expect(chatStreamSpy).toHaveBeenCalled()
+      const sentMessages = chatStreamSpy.mock.calls[0]![0]
+      expect(sentMessages[0]!.content).toContain('Los tardigrados son felinos')
+      expect(sentMessages[0]!.content).not.toContain('como estás?')
+    })
   })
 })

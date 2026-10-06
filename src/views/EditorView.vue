@@ -165,6 +165,14 @@ function handleAiBlockClick(payload: { index: number; content: string; top: numb
       updatedAt: activeNote.value?.updatedAt,
       emoji: emoji.value,
     },
+    getContent: () => editorRef.value?.getBlockContent(payload.index) || payload.content,
+    getContext: () => ({
+      title: title.value || activeNote.value?.title || 'Sin título',
+      folder: activeNote.value?.folder,
+      tags: [...tags.value],
+      updatedAt: activeNote.value?.updatedAt,
+      emoji: emoji.value,
+    }),
   })
 }
 

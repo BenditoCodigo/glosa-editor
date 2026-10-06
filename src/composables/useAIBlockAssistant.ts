@@ -8,6 +8,7 @@ export interface AINoteContext {
   tags?: string[]
   updatedAt?: string
   emoji?: string
+  fullContent?: string
 }
 
 export interface AIQuickAction {
@@ -57,24 +58,28 @@ export function buildAIBlockPrompt(params: {
   const { blockContent, userQuery, context } = params
   const tagList = context.tags && context.tags.length > 0 ? context.tags.join(', ') : 'Ninguna'
   const folderName = context.folder ? context.folder : 'Raíz'
+  const fullDocSection = context.fullContent?.trim()
+    ? `\n\n[DOCUMENTO COMPLETO (CONTEXTO GENERAL DE LA NOTA)]\n"""\n${context.fullContent.trim()}\n"""`
+    : ''
 
-  return `[CONTEXTO DE LA NOTA]
+  return `[INFORMACIÓN DE LA NOTA]
 - Título: ${context.title || 'Sin título'}
 - Ubicación / Carpeta: ${folderName}
-- Etiquetas: ${tagList}${context.updatedAt ? `\n- Última modificación: ${context.updatedAt}` : ''}
+- Etiquetas: ${tagList}${context.updatedAt ? `\n- Última modificación: ${context.updatedAt}` : ''}${fullDocSection}
 
-[BLOQUE DE TEXTO SELECCIONADO]
+[BLOQUE O FRAGMENTO SELECCIONADO (FOCO PRINCIPAL DE LA CONSULTA)]
 """
 ${blockContent.trim()}
 """
 
-[CONSULTA / OBJETIVO]
+[CONSULTA / OBJETIVO SOBRE EL BLOQUE]
 ${userQuery.trim()}
 
 [INSTRUCCIONES IMPORTANTES]
+- Tu foco de análisis y respuesta es exclusivamente el [BLOQUE O FRAGMENTO SELECCIONADO], interpretado en armonía y relación con el [DOCUMENTO COMPLETO].
 - Responde en español con tono reflexivo, analítico, conciso y constructivo.
-- Enfócate exclusivamente en sugerencias, dudas críticas, preguntas o verificación de información.
-- NO reescribas ni sustituyas directamente el texto de la nota. Tu objetivo es ser un asesor que acompaña al autor.`
+- Enfócate en sugerencias, dudas críticas, preguntas de profundización y verificación de información o coherencia global.
+- NO reescribas ni sustituyas directamente el texto completo de la nota. Tu objetivo es asesorar y retroalimentar al autor.`
 }
 
 export function useAIBlockAssistant() {
@@ -84,6 +89,40 @@ export function useAIBlockAssistant() {
   const activeBlockTop = ref<number | null>(null)
   const activeBlockRect = ref<DOMRect | null>(null)
   const noteContext = ref<AINoteContext>({ title: '' })
+
+  const contentGetter = ref<(() => string) | null>(null)
+  const contextGetter = ref<(() => AINoteContext) | null>(null)
+
+  function getCurrentBlockContent(): string {
+    if (contentGetter.value) {
+      try {
+        const dynamicContent = contentGetter.value()
+        if (dynamicContent !== undefined && dynamicContent !== null) {
+          return dynamicContent
+        }
+      } catch {
+        // Fall back to static ref
+      }
+    }
+    return activeBlockContent.value
+  }
+
+  function getCurrentContext(): AINoteContext {
+    if (contextGetter.value) {
+      try {
+        const dynamicContext = contextGetter.value()
+        if (dynamicContext) {
+          return dynamicContext
+        }
+      } catch {
+        // Fall back to static ref
+      }
+    }
+    return noteContext.value
+  }
+
+  const currentBlockContent = computed(() => getCurrentBlockContent())
+  const currentContext = computed(() => getCurrentContext())
 
   const customPrompt = ref('')
   const lastQuery = ref('')
@@ -99,10 +138,12 @@ export function useAIBlockAssistant() {
 
   function openAssistant(options: {
     index: number
-    content: string
+    content?: string
     top?: number | null
     rect?: DOMRect | null
     context: AINoteContext
+    getContent?: () => string
+    getContext?: () => AINoteContext
   }) {
     // If opening for a different block, reset response state
     if (activeBlockIndex.value !== options.index) {
@@ -114,10 +155,12 @@ export function useAIBlockAssistant() {
     }
 
     activeBlockIndex.value = options.index
-    activeBlockContent.value = options.content
+    activeBlockContent.value = options.content ?? ''
     activeBlockTop.value = options.top ?? null
     activeBlockRect.value = options.rect ?? null
     noteContext.value = { ...options.context }
+    contentGetter.value = options.getContent ?? null
+    contextGetter.value = options.getContext ?? null
     isOpen.value = true
   }
 
@@ -125,6 +168,8 @@ export function useAIBlockAssistant() {
     stopGeneration()
     isOpen.value = false
     activeBlockIndex.value = null
+    contentGetter.value = null
+    contextGetter.value = null
   }
 
   function stopGeneration() {
@@ -137,7 +182,15 @@ export function useAIBlockAssistant() {
   }
 
   async function ask(queryText: string, actionId?: string) {
-    if (!queryText.trim() || !activeBlockContent.value.trim()) return
+    const liveBlockContent = currentBlockContent.value
+    const liveContext = currentContext.value
+
+    if (!queryText.trim() || !liveBlockContent.trim()) {
+      if (!liveBlockContent.trim()) {
+        error.value = 'El bloque de texto está vacío.'
+      }
+      return
+    }
     if (!isConfigured()) {
       error.value = 'La IA no está configurada o está deshabilitada en Configuración.'
       return
@@ -153,9 +206,9 @@ export function useAIBlockAssistant() {
     selectedActionId.value = actionId ?? null
 
     const promptMessage = buildAIBlockPrompt({
-      blockContent: activeBlockContent.value,
+      blockContent: liveBlockContent,
       userQuery: queryText,
-      context: noteContext.value,
+      context: liveContext,
     })
 
     const messages: ChatMessage[] = [
@@ -213,9 +266,11 @@ export function useAIBlockAssistant() {
     isOpen,
     activeBlockIndex,
     activeBlockContent,
+    currentBlockContent,
     activeBlockTop,
     activeBlockRect,
     noteContext,
+    currentContext,
     customPrompt,
     lastQuery,
     response,

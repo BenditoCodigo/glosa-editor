@@ -20,7 +20,7 @@ const coords = ref<{ top: number; left: number; width: number }>({ top: 0, left:
 const arrowLeft = ref(32)
 
 const blockSnippet = computed(() => {
-  const raw = assistant.activeBlockContent.value.trim()
+  const raw = assistant.currentBlockContent.value.trim()
   if (!raw) return ''
   return raw.length > 90 ? `${raw.slice(0, 90)}…` : raw
 })
