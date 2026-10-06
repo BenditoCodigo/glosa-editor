@@ -72,6 +72,9 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm ci
 
+      - name: Install Electron Dependencies
+        run: cd electron && npm ci
+
       - name: Build App & Bundle DMG
         run: npm run build:dmg
 
