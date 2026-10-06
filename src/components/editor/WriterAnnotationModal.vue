@@ -122,21 +122,21 @@ function handleKeydown(event: KeyboardEvent) {
     <Transition name="fade">
       <div v-if="open" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="emit('cancel')" />
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="emit('cancel')" />
 
-        <!-- Modal Card -->
+        <!-- Modal Card (matching NoteReferencesModal) -->
         <div
-          class="glass-panel-md relative z-10 w-full max-w-lg rounded-2xl p-6 flex flex-col gap-5 animate-fade-up shadow-2xl"
+          class="relative z-10 w-full max-w-lg rounded-2xl p-6 md:p-7 flex flex-col gap-5 animate-fade-up shadow-2xl border border-outline/25 dark:border-white/10 bg-[#f4f6f5]/95 dark:bg-[#131715]/98 backdrop-blur-2xl text-on-surface"
         >
           <!-- Header -->
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2.5">
               <div
                 class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary"
               >
                 <UiIcon name="rate_review" size="sm" />
               </div>
-              <h2 class="font-display text-lg font-semibold text-on-surface">
+              <h2 class="font-display text-lg font-bold text-on-surface">
                 {{ isEditing ? 'Editar Glosa de Autor' : 'Añadir Glosa al Manuscrito' }}
               </h2>
             </div>
@@ -152,7 +152,7 @@ function handleKeydown(event: KeyboardEvent) {
           <!-- Quote Preview -->
           <div
             v-if="selectedText"
-            class="p-3 rounded-xl bg-surface/50 border border-white/10 text-xs text-secondary italic line-clamp-2 border-l-4 border-l-primary"
+            class="p-3 rounded-xl bg-surface/60 dark:bg-surface/40 border border-outline/15 dark:border-white/10 text-xs text-secondary italic line-clamp-2 border-l-4 border-l-primary"
           >
             "{{ selectedText }}"
           </div>
@@ -167,7 +167,7 @@ function handleKeydown(event: KeyboardEvent) {
               v-model="comment"
               rows="4"
               placeholder="Escribe por qué elegiste este fragmento, la referencia o tu justificación..."
-              class="glass-input w-full px-4 py-3 rounded-xl text-sm text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
+              class="w-full px-4 py-3 rounded-xl text-sm text-on-surface bg-surface/80 dark:bg-surface/30 border border-outline/20 dark:border-white/10 placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
               @keydown="handleKeydown"
             />
           </div>
@@ -184,7 +184,7 @@ function handleKeydown(event: KeyboardEvent) {
                 :class="[
                   color === cat.id
                     ? `${cat.bgClass} ${cat.borderClass} ${cat.textClass} ring-1 ring-primary/30 shadow-sm`
-                    : 'border-white/5 bg-surface/30 text-secondary hover:bg-surface/60',
+                    : 'border-outline/15 dark:border-white/5 bg-surface/50 dark:bg-surface/20 text-secondary hover:bg-surface/80 dark:hover:bg-surface/40',
                 ]"
                 @click="color = cat.id"
               >
@@ -195,7 +195,7 @@ function handleKeydown(event: KeyboardEvent) {
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center justify-between pt-2 border-t border-white/5">
+          <div class="flex items-center justify-between pt-2 border-t border-outline/15 dark:border-white/10">
             <span class="text-[11px] text-secondary/60 hidden sm:inline">
               Presiona <kbd class="px-1 py-0.5 rounded bg-surface/60 font-mono text-[10px]">Cmd+Enter</kbd> para guardar
             </span>

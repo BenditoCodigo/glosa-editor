@@ -94,17 +94,17 @@ function formatDate(iso?: string) {
 
 <template>
   <aside
-    class="fixed right-0 top-14 bottom-0 z-40 w-80 sm:w-96 glass-panel-md border-l border-white/10 shadow-2xl flex flex-col transition-transform duration-300 ease-out"
+    class="fixed right-0 top-14 bottom-0 z-40 w-80 sm:w-96 bg-[#f4f6f5]/95 dark:bg-[#131715]/98 backdrop-blur-2xl border-l border-outline/25 dark:border-white/10 shadow-2xl flex flex-col transition-transform duration-300 ease-out text-on-surface"
     :class="[open ? 'translate-x-0' : 'translate-x-full']"
   >
     <!-- Drawer Header -->
-    <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+    <div class="px-5 py-4 border-b border-outline/15 dark:border-white/10 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
           <UiIcon name="rate_review" size="sm" />
         </div>
         <div>
-          <h3 class="font-display text-base font-semibold text-on-surface">
+          <h3 class="font-display text-base font-bold text-on-surface">
             Glosas del Manuscrito
           </h3>
           <p class="text-xs text-secondary">
@@ -123,7 +123,7 @@ function formatDate(iso?: string) {
     </div>
 
     <!-- Filter Tabs -->
-    <div class="px-4 pt-3 flex items-center gap-1.5 border-b border-white/5 pb-2 text-xs font-medium">
+    <div class="px-4 pt-3 flex items-center gap-1.5 border-b border-outline/10 dark:border-white/5 pb-2 text-xs font-medium">
       <button
         type="button"
         class="px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
@@ -189,7 +189,7 @@ function formatDate(iso?: string) {
           v-model="searchQuery"
           type="text"
           placeholder="Buscar en glosas..."
-          class="glass-input w-full pl-8 pr-3 py-1.5 text-xs text-on-surface rounded-lg placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+          class="w-full pl-8 pr-3 py-1.5 text-xs text-on-surface bg-surface/80 dark:bg-surface/30 border border-outline/20 dark:border-white/10 rounded-lg placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
         <div class="absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">
           <UiIcon name="search" size="sm" />
@@ -228,8 +228,8 @@ function formatDate(iso?: string) {
           orphanIds.includes(item.id)
             ? 'bg-rose-500/5 border-rose-500/30 hover:border-rose-500/50'
             : item.resolved
-              ? 'bg-surface/20 border-white/5 opacity-70 hover:opacity-100 hover:border-white/20'
-              : 'bg-surface/40 border-white/10 hover:border-primary/40 hover:bg-surface/60 shadow-sm',
+              ? 'bg-surface/40 dark:bg-surface/20 border-outline/10 dark:border-white/5 opacity-70 hover:opacity-100 hover:border-outline/20'
+              : 'bg-surface/70 dark:bg-surface/30 border-outline/15 dark:border-white/10 hover:border-primary/40 hover:bg-surface/90 dark:hover:bg-surface/50 shadow-sm',
         ]"
         @click="emit('select', item)"
       >
@@ -284,7 +284,7 @@ function formatDate(iso?: string) {
 
         <!-- Card Footer Actions -->
         <div
-          class="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-secondary"
+          class="flex items-center justify-between pt-2 border-t border-outline/10 dark:border-white/5 text-xs text-secondary"
           @click.stop
         >
           <button
@@ -325,3 +325,4 @@ function formatDate(iso?: string) {
     </div>
   </aside>
 </template>
+

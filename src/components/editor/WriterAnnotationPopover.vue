@@ -72,7 +72,7 @@ const formattedDate = computed(() => {
       }"
     >
       <div
-        class="glass-panel-md w-80 max-w-[90vw] rounded-2xl p-4 shadow-xl flex flex-col gap-3 border border-white/20 dark:border-white/10"
+        class="relative z-10 w-80 max-w-[90vw] rounded-2xl p-4 shadow-xl flex flex-col gap-3 border border-outline/25 dark:border-white/10 bg-[#f4f6f5]/95 dark:bg-[#131715]/98 backdrop-blur-2xl text-on-surface"
       >
         <!-- Header: Category + Date + Close -->
         <div class="flex items-center justify-between gap-2">
@@ -110,7 +110,7 @@ const formattedDate = computed(() => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+        <div class="flex items-center justify-between pt-2 border-t border-outline/15 dark:border-white/10 text-xs">
           <button
             type="button"
             class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors font-medium"
