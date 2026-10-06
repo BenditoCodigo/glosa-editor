@@ -880,30 +880,30 @@ defineExpose({
     <!-- Block Action Buttons Gutter (Right: IA + Glosa) -->
     <div
       v-show="handleVisible && handleTop !== null && !isDragging"
-      class="block-right-actions absolute right-1 z-20 flex items-center gap-1 select-none"
+      class="block-right-actions absolute right-0.5 z-20 flex flex-col items-center gap-1.5 select-none"
       :style="{ top: `${handleTop}px` }"
     >
       <!-- AI Sparkles Button (shown when AI is configured) -->
       <button
         v-if="settingsStore.isAiConfigured"
         type="button"
-        class="w-7 h-7 rounded-full flex items-center justify-center bg-transparent text-secondary hover:text-primary hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all duration-150 cursor-pointer"
+        class="w-9 h-9 p-1.5 rounded-full flex items-center justify-center bg-transparent text-secondary hover:text-primary hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all duration-150 cursor-pointer"
         title="Consultar a la IA sobre este bloque"
         aria-label="Consultar a la IA sobre este bloque"
         @click.stop="handleAiButtonClick"
       >
-        <UiIcon name="auto_awesome" size="sm" class="text-[17px]" />
+        <UiIcon name="auto_awesome" size="lg" class="text-[25px]" />
       </button>
 
       <!-- Writer Annotation / Glosa Button for Block -->
       <button
         type="button"
-        class="w-7 h-7 rounded-full flex items-center justify-center bg-transparent text-secondary hover:text-on-surface hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all duration-150 cursor-pointer"
+        class="w-9 h-9 p-1.5 rounded-full flex items-center justify-center bg-transparent text-secondary hover:text-on-surface hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all duration-150 cursor-pointer"
         title="Añadir glosa a este bloque"
         aria-label="Añadir glosa a este bloque"
         @click.stop="handleBlockAnnotationClick"
       >
-        <UiIcon name="rate_review" size="sm" class="text-[17px]" />
+        <UiIcon name="rate_review" size="lg" class="text-[25px]" />
       </button>
     </div>
 
