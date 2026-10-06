@@ -107,11 +107,11 @@ function confirmImage(url: string) {
 <template>
   <!-- Main toolbar only -->
   <div class="
-    glass-panel-md
+    glass-toolbar
     rounded-full p-2
     flex items-center gap-1
-    transition-opacity duration-300
-    opacity-60 hover:opacity-100
+    shadow-2xl
+    transition-all duration-200
   ">
     <!-- Heading selector (expands on hover) -->
     <div class="relative" @mouseenter="showHeadings = true" @mouseleave="showHeadings = false">
@@ -134,9 +134,9 @@ function confirmImage(url: string) {
         <button
           class="
             w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/70 dark:bg-white/15 backdrop-blur-lg
+            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
             border border-white/80 dark:border-white/20
-            shadow-lg
+            shadow-xl
             text-sm font-bold text-on-surface
             transition-all duration-150
             hover:bg-primary hover:text-on-primary hover:scale-110
@@ -150,9 +150,9 @@ function confirmImage(url: string) {
         <button
           class="
             w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/70 dark:bg-white/15 backdrop-blur-lg
+            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
             border border-white/80 dark:border-white/20
-            shadow-lg
+            shadow-xl
             text-sm font-bold text-on-surface
             transition-all duration-150
             hover:bg-primary hover:text-on-primary hover:scale-110
@@ -166,9 +166,9 @@ function confirmImage(url: string) {
         <button
           class="
             w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/70 dark:bg-white/15 backdrop-blur-lg
+            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
             border border-white/80 dark:border-white/20
-            shadow-lg
+            shadow-xl
             text-[13px] font-bold text-on-surface
             transition-all duration-150
             hover:bg-primary hover:text-on-primary hover:scale-110
@@ -182,9 +182,9 @@ function confirmImage(url: string) {
         <button
           class="
             w-9 h-9 rounded-full flex items-center justify-center
-            bg-white/70 dark:bg-white/15 backdrop-blur-lg
+            bg-white/95 dark:bg-[#1a1f1d]/95 backdrop-blur-xl
             border border-white/80 dark:border-white/20
-            shadow-lg
+            shadow-xl
             text-xs font-bold text-on-surface
             transition-all duration-150
             hover:bg-primary hover:text-on-primary hover:scale-110

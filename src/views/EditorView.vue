@@ -347,7 +347,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Editor area -->
-      <div ref="editorAreaRef" class="flex-1 overflow-y-auto px-4 md:px-12 py-8">
+      <div ref="editorAreaRef" class="flex-1 overflow-y-auto px-4 md:px-12 pt-8 pb-48">
         <div class="max-w-[720px] mx-auto relative">
           <!-- Cover image header -->
           <div
@@ -366,7 +366,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Glass editor panel -->
-          <div class="relative z-[1] glass-panel-md rounded-2xl p-8 md:p-12">
+          <div class="relative z-[1] glass-panel-md rounded-2xl p-8 md:p-12 pb-24 md:pb-32">
             <!-- AI Block Dialog -->
             <AIBlockDialog :assistant="aiAssistant" />
 
@@ -452,12 +452,11 @@ onUnmounted(() => {
             v-if="isHeaderScrolledOut"
             class="
               pointer-events-auto
-              glass-panel-md
+              glass-toolbar
               rounded-full p-2
               flex items-center gap-1
-              transition-opacity duration-300
-              opacity-80 hover:opacity-100
-              shadow-lg shrink-0
+              shadow-2xl shrink-0
+              transition-all duration-200
             "
           >
             <!-- Save status & cloud feedback -->
