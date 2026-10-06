@@ -1,12 +1,18 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import NoteReferencesModal from './NoteReferencesModal.vue'
 
 describe('NoteReferencesModal', () => {
-  it('renders modal when open is true with provided sources and aiInstructions', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('renders modal when open is true with provided description, sources, and aiInstructions', () => {
     const wrapper = mount(NoteReferencesModal, {
       props: {
         open: true,
+        description: 'Una breve descripción de prueba.',
         sources: ['https://example.com/source1', 'https://example.com/source2'],
         aiInstructions: 'Instrucción de prueba para el modelo.',
       },
@@ -17,13 +23,66 @@ describe('NoteReferencesModal', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Fuentes e Instrucciones de IA')
+    expect(wrapper.text()).toContain('Metadatos e Instrucciones de IA')
+    expect(wrapper.text()).toContain('Descripción breve')
     expect(wrapper.text()).toContain('https://example.com/source1')
     expect(wrapper.text()).toContain('https://example.com/source2')
-    const textarea = wrapper.find('textarea')
-    expect((textarea.element as HTMLTextAreaElement).value).toBe(
+
+    const textareas = wrapper.findAll('textarea')
+    expect(textareas.length).toBe(2)
+    const descArea = textareas[0]
+    const instrArea = textareas[1]
+    expect(descArea).toBeDefined()
+    expect(instrArea).toBeDefined()
+    expect((descArea!.element as HTMLTextAreaElement).value).toBe(
+      'Una breve descripción de prueba.',
+    )
+    expect((instrArea!.element as HTMLTextAreaElement).value).toBe(
       'Instrucción de prueba para el modelo.',
     )
+  })
+
+  it('handles undo and redo for description', async () => {
+    const wrapper = mount(NoteReferencesModal, {
+      props: {
+        open: true,
+        description: 'Versión inicial',
+        sources: [],
+        aiInstructions: '',
+      },
+      global: {
+        stubs: {
+          Teleport: true,
+        },
+      },
+    })
+
+    const descTextarea = wrapper.findAll('textarea')[0]
+    expect(descTextarea).toBeDefined()
+
+    const undoBtn = wrapper.find('button[aria-label="Deshacer"]')
+    const redoBtn = wrapper.find('button[aria-label="Rehacer"]')
+
+    // Initially undo and redo should be disabled
+    expect((undoBtn.element as HTMLButtonElement).disabled).toBe(true)
+    expect((redoBtn.element as HTMLButtonElement).disabled).toBe(true)
+
+    // Edit description
+    await descTextarea!.setValue('Versión modificada')
+    expect((undoBtn.element as HTMLButtonElement).disabled).toBe(false)
+    expect((redoBtn.element as HTMLButtonElement).disabled).toBe(true)
+
+    // Undo
+    await undoBtn.trigger('click')
+    expect((descTextarea!.element as HTMLTextAreaElement).value).toBe('Versión inicial')
+    expect((undoBtn.element as HTMLButtonElement).disabled).toBe(true)
+    expect((redoBtn.element as HTMLButtonElement).disabled).toBe(false)
+
+    // Redo
+    await redoBtn.trigger('click')
+    expect((descTextarea!.element as HTMLTextAreaElement).value).toBe('Versión modificada')
+    expect((undoBtn.element as HTMLButtonElement).disabled).toBe(false)
+    expect((redoBtn.element as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('allows adding and removing sources', async () => {
@@ -58,10 +117,11 @@ describe('NoteReferencesModal', () => {
     expect(wrapper.text()).toContain('https://bbc.com/news/123')
   })
 
-  it('emits save with updated sources and aiInstructions', async () => {
+  it('emits save with updated description, sources, and aiInstructions', async () => {
     const wrapper = mount(NoteReferencesModal, {
       props: {
         open: true,
+        description: 'Mi descripción',
         sources: ['https://example.com/source1'],
         aiInstructions: 'Instrucción inicial',
       },
@@ -72,8 +132,9 @@ describe('NoteReferencesModal', () => {
       },
     })
 
-    const textarea = wrapper.find('textarea')
-    await textarea.setValue('Nueva instrucción periodística')
+    const textareas = wrapper.findAll('textarea')
+    await textareas[0]?.setValue('Mi descripción actualizada')
+    await textareas[1]?.setValue('Nueva instrucción periodística')
 
     const saveButton = wrapper.findAll('button').find((b) => b.text().includes('Guardar cambios'))
     expect(saveButton).toBeDefined()
@@ -81,6 +142,7 @@ describe('NoteReferencesModal', () => {
 
     expect(wrapper.emitted('save')).toBeTruthy()
     expect(wrapper.emitted('save')?.[0]?.[0]).toEqual({
+      description: 'Mi descripción actualizada',
       sources: ['https://example.com/source1'],
       aiInstructions: 'Nueva instrucción periodística',
     })

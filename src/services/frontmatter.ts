@@ -26,6 +26,7 @@ const _FIELD_ORDER: readonly string[] = [
   'isFavorite',
   'emoji',
   'coverImage',
+  'description',
   'sources',
   'aiInstructions',
 ]
@@ -122,6 +123,11 @@ export function frontmatterToNote(
       ? frontmatter.coverImage
       : undefined
 
+  const description =
+    typeof frontmatter.description === 'string' && frontmatter.description.trim().length > 0
+      ? frontmatter.description.trim()
+      : undefined
+
   const sources =
     Array.isArray(frontmatter.sources) &&
     frontmatter.sources.every((s: unknown) => typeof s === 'string')
@@ -146,6 +152,7 @@ export function frontmatterToNote(
 
   if (emoji !== undefined) note.emoji = emoji
   if (coverImage !== undefined) note.coverImage = coverImage
+  if (description !== undefined) note.description = description
   if (sources !== undefined && sources.length > 0) note.sources = sources
   if (aiInstructions !== undefined) note.aiInstructions = aiInstructions
 
@@ -173,6 +180,9 @@ export function serializeNote(note: Note, extraFields?: Record<string, unknown>)
   }
   if (note.coverImage != null) {
     lines.push(`coverImage: ${quoteYamlValue(note.coverImage)}`)
+  }
+  if (note.description != null && note.description.trim().length > 0) {
+    lines.push(`description: ${quoteYamlValue(note.description.trim())}`)
   }
   if (note.sources != null && note.sources.length > 0) {
     lines.push(`sources: ${serializeFlowSequence(note.sources)}`)

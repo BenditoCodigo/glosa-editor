@@ -44,6 +44,7 @@ async function handleCopyMd() {
 
 const title = ref('')
 const content = ref('')
+const description = ref<string | undefined>(undefined)
 const tags = ref<string[]>([])
 const tagInput = ref('')
 const emoji = ref<string | undefined>(undefined)
@@ -119,6 +120,7 @@ watch(
     if (note) {
       title.value = note.title
       content.value = note.content
+      description.value = note.description
       tags.value = [...note.tags]
       emoji.value = note.emoji
       coverImage.value = note.coverImage
@@ -158,6 +160,7 @@ async function save() {
     id: activeNote.value.id,
     title: title.value || 'Sin título',
     content: content.value,
+    description: description.value?.trim() || undefined,
     folder: activeNote.value.folder,
     isFavorite: activeNote.value.isFavorite,
     createdAt: activeNote.value.createdAt,
@@ -219,7 +222,12 @@ function handleAiBlockClick(payload: {
   })
 }
 
-function handleSaveReferences(payload: { sources: string[]; aiInstructions: string }) {
+function handleSaveReferences(payload: {
+  description: string
+  sources: string[]
+  aiInstructions: string
+}) {
+  description.value = payload.description.trim() || undefined
   sources.value = payload.sources
   aiInstructions.value = payload.aiInstructions
   showReferencesModal.value = false
@@ -538,10 +546,15 @@ onUnmounted(() => {
             <!-- Fuentes e instrucciones button -->
             <UiIconButton
               icon="menu_book"
-              ariaLabel="Fuentes e instrucciones de IA"
-              tooltip="Fuentes e instrucciones de IA"
+              ariaLabel="Metadatos e instrucciones de IA"
+              tooltip="Metadatos e instrucciones de IA"
               size="sm"
-              :class="(sources.length > 0 || aiInstructions.trim().length > 0) && 'text-primary'"
+              :class="
+                (sources.length > 0 ||
+                  aiInstructions.trim().length > 0 ||
+                  (description && description.trim().length > 0)) &&
+                'text-primary'
+              "
               @click="showReferencesModal = true"
             />
           </div>
@@ -564,6 +577,9 @@ onUnmounted(() => {
     :open="showReferencesModal"
     :sources="sources"
     :aiInstructions="aiInstructions"
+    :description="description"
+    :noteTitle="title"
+    :noteContent="content"
     @save="handleSaveReferences"
     @cancel="showReferencesModal = false"
   />

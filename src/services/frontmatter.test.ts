@@ -537,5 +537,16 @@ describe('Frontmatter Parser', () => {
         'Eres un editor de investigación riguroso. Contrasta fuentes y fechas.',
       )
     })
+
+    it('round-trip with description', () => {
+      const original = makeNote({
+        description: 'Breve resumen de la nota para la tarjeta.',
+      })
+      const serialized = serializeNote(original)
+      const parsed = parseMarkdownFile('test.md', serialized)
+      const restored = frontmatterToNote(parsed.frontmatter, parsed.body, null)
+
+      expect(restored.description).toBe('Breve resumen de la nota para la tarjeta.')
+    })
   })
 })

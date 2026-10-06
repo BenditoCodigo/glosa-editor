@@ -247,7 +247,7 @@ function closeNoteContextMenu() {
                 {{ featuredNote.title }}
               </h2>
               <p v-if="featuredNote" class="text-white/70 text-sm line-clamp-2">
-                {{ stripHtml(featuredNote.content).slice(0, 100) }}
+                {{ featuredNote.description || stripHtml(featuredNote.content).slice(0, 100) }}
               </p>
             </div>
           </div>
@@ -315,7 +315,10 @@ function closeNoteContextMenu() {
               {{ note.title }}
             </h4>
             <p class="text-sm text-secondary line-clamp-2">
-              {{ stripHtml(note.content).slice(0, 80) }}
+              {{
+                (note.description && note.description.trim()) ||
+                stripHtml(note.content).slice(0, 80)
+              }}
             </p>
             <span class="text-[11px] text-secondary/60 mt-auto">
               {{ relativeDate(note.updatedAt) }}

@@ -9,6 +9,7 @@ export interface Note {
   tags: string[]
   emoji?: string
   coverImage?: string
+  description?: string
   sources?: string[]
   aiInstructions?: string
 }

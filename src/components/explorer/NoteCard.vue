@@ -28,6 +28,9 @@ function handleMenuClick(event: MouseEvent) {
 }
 
 const contentPreview = computed(() => {
+  if (note.description && note.description.trim().length > 0) {
+    return note.description.trim()
+  }
   const div = document.createElement('div')
   div.innerHTML = note.content
   const text = div.textContent || div.innerText || ''
