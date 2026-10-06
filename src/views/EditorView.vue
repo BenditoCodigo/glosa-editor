@@ -342,6 +342,28 @@ function handleReanchorAnnotation(annotation: WriterAnnotation) {
   scheduleAutosave()
 }
 
+function handleBlockAnnotationClick(payload: {
+  index: number
+  content: string
+  from: number
+  to: number
+  docText: string
+  top: number
+  rect: DOMRect | null
+}) {
+  selectedRange.value = {
+    from: payload.from,
+    to: payload.to,
+    text: payload.content,
+    docText: payload.docText,
+    blockIndex: payload.index,
+  }
+  selectedQuoteText.value = payload.content
+  modalIsEditing.value = false
+  activeModalAnnotation.value = null
+  showAnnotationModal.value = true
+}
+
 function handleAiBlockClick(payload: {
   index: number
   content: string
@@ -581,12 +603,12 @@ onUnmounted(() => {
       </div>
 
       <!-- Editor area -->
-      <div ref="editorAreaRef" class="flex-1 overflow-y-auto px-4 md:px-12 pt-8 pb-48">
-        <div class="max-w-[720px] mx-auto relative">
+      <div ref="editorAreaRef" class="flex-1 overflow-y-auto px-4 md:px-8 pt-8 pb-48">
+        <div class="max-w-[780px] mx-auto relative">
           <!-- Cover image header -->
           <div
             v-if="coverImage"
-            class="relative -mx-6 h-[320px] -mb-28 rounded-2xl overflow-hidden z-0"
+            class="relative -mx-10 md:-mx-16 h-[320px] -mb-28 rounded-2xl overflow-hidden z-0"
           >
             <img
               :src="coverImage"
@@ -603,8 +625,8 @@ onUnmounted(() => {
             ></div>
           </div>
 
-          <!-- Glass editor panel -->
-          <div class="relative z-[1] glass-panel-md rounded-2xl p-8 md:p-12 pb-24 md:pb-32">
+          <!-- Glass editor panel with expanded horizontal padding -->
+          <div class="relative z-[1] glass-panel-md rounded-2xl px-10 md:px-16 py-8 md:py-12 pb-24 md:pb-32">
             <!-- AI Block Dialog -->
             <AIBlockDialog :assistant="aiAssistant" />
 
@@ -664,6 +686,7 @@ onUnmounted(() => {
               :highlightedBlockIndex="aiAssistant.activeBlockIndex.value"
               @update:content="handleContentUpdate"
               @ai-block-click="handleAiBlockClick"
+              @block-annotation-click="handleBlockAnnotationClick"
               @annotation-click="handleAnnotationClick"
             />
           </div>

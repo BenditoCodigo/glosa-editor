@@ -41,6 +41,17 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:content': [value: string]
   'ai-block-click': [payload: { index: number; content: string; top: number; rect: DOMRect | null }]
+  'block-annotation-click': [
+    payload: {
+      index: number
+      content: string
+      from: number
+      to: number
+      docText: string
+      top: number
+      rect: DOMRect | null
+    },
+  ]
   'annotation-click': [payload: { annotationId: string; rect: DOMRect }]
 }>()
 
@@ -413,10 +424,10 @@ function handleGlobalMouseMove(event: MouseEvent) {
   const containerRect = container.getBoundingClientRect()
 
   // Gutter hover zone: extends 80px to the left of the container (covering the left gutter area)
-  // and across the full editor width
+  // and 80px to the right (covering the right action button bar)
   if (
     event.clientX >= containerRect.left - 80 &&
-    event.clientX <= containerRect.right + 40 &&
+    event.clientX <= containerRect.right + 80 &&
     event.clientY >= containerRect.top - 20 &&
     event.clientY <= containerRect.bottom + 20
   ) {
@@ -628,6 +639,44 @@ function handleAiButtonClick() {
   })
 }
 
+function handleBlockAnnotationClick() {
+  if (activeBlockIndex.value === null || !editor.value?.view) return
+  const index = activeBlockIndex.value
+  const view = editor.value.view
+  const doc = view.state.doc
+  if (index < 0 || index >= doc.childCount) return
+
+  const node = doc.child(index)
+  const blockContent = node.textContent || ''
+  if (!blockContent.trim()) return
+
+  // Calculate start position of this block
+  let blockStart = 0
+  for (let i = 0; i < index; i++) {
+    blockStart += doc.child(i).nodeSize
+  }
+  const from = blockStart + 1
+  const to = blockStart + node.nodeSize - 1
+  const docText =
+    (editor.value.storage as unknown as MarkdownStorage)?.markdown?.getMarkdown() ||
+    doc.textBetween(0, doc.content.size, '\n\n')
+
+  const children = getTiptapBlockElements()
+  const targetEl = children[index]
+  const rect = targetEl ? targetEl.getBoundingClientRect() : null
+  const top = handleTop.value ?? (targetEl ? targetEl.offsetTop : 0)
+
+  emit('block-annotation-click', {
+    index,
+    content: blockContent,
+    from,
+    to,
+    docText,
+    top,
+    rect,
+  })
+}
+
 // Watch for active AI block highlighting
 watch(
   () => props.highlightedBlockIndex,
@@ -801,28 +850,16 @@ defineExpose({
 <template>
   <div
     ref="editorContainerRef"
-    class="editor-block-container relative -ml-12 pl-12 -mr-4 pr-4"
+    class="editor-block-container relative -ml-10 pl-10 -mr-10 pr-10"
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
   >
-    <!-- Notion-style Block Gutter Handles (Drag & AI Sparkles) -->
+    <!-- Notion-style Block Drag Handle (Left) -->
     <div
       v-show="handleVisible && handleTop !== null"
       class="block-gutter-handles absolute left-1 z-20 flex items-center gap-0.5 select-none"
       :style="{ top: `${handleTop}px` }"
     >
-      <!-- AI Sparkles Button (shown when AI is configured) -->
-      <button
-        v-if="settingsStore.isAiConfigured"
-        type="button"
-        class="ai-block-sparkles-btn flex items-center justify-center w-6 h-6 rounded-md text-primary hover:text-primary hover:bg-primary/10 transition-all duration-150 cursor-pointer"
-        title="Consultar a la IA sobre este bloque"
-        aria-label="Consultar a la IA sobre este bloque"
-        @click.stop="handleAiButtonClick"
-      >
-        <UiIcon name="auto_awesome" size="sm" class="text-[16px]" />
-      </button>
-
       <!-- Drag Handle -->
       <div
         class="block-drag-handle flex items-center justify-center w-6 h-6 rounded-md cursor-grab active:cursor-grabbing text-outline hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-150 select-none touch-none"
@@ -838,6 +875,36 @@ defineExpose({
           <circle cx="15.5" cy="17.5" r="1.5" />
         </svg>
       </div>
+    </div>
+
+    <!-- Block Action Buttons Gutter (Right: IA + Glosa) -->
+    <div
+      v-show="handleVisible && handleTop !== null && !isDragging"
+      class="block-right-actions absolute right-1 z-20 flex items-center gap-1 select-none"
+      :style="{ top: `${handleTop}px` }"
+    >
+      <!-- AI Sparkles Button (shown when AI is configured) -->
+      <button
+        v-if="settingsStore.isAiConfigured"
+        type="button"
+        class="w-7 h-7 rounded-full flex items-center justify-center bg-transparent text-secondary hover:text-primary hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all duration-150 cursor-pointer"
+        title="Consultar a la IA sobre este bloque"
+        aria-label="Consultar a la IA sobre este bloque"
+        @click.stop="handleAiButtonClick"
+      >
+        <UiIcon name="auto_awesome" size="sm" class="text-[17px]" />
+      </button>
+
+      <!-- Writer Annotation / Glosa Button for Block -->
+      <button
+        type="button"
+        class="w-7 h-7 rounded-full flex items-center justify-center bg-transparent text-secondary hover:text-on-surface hover:bg-white dark:hover:bg-neutral-800 shadow-none hover:shadow-sm border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all duration-150 cursor-pointer"
+        title="Añadir glosa a este bloque"
+        aria-label="Añadir glosa a este bloque"
+        @click.stop="handleBlockAnnotationClick"
+      >
+        <UiIcon name="rate_review" size="sm" class="text-[17px]" />
+      </button>
     </div>
 
     <!-- Tiptap Editor Content -->
