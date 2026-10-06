@@ -6,8 +6,7 @@ import { useNotesStore } from '@/stores/notes'
 import { trackActivity } from '@/services/activity'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiButton from '@/components/ui/UiButton.vue'
-import UiPromptModal from '@/components/ui/UiPromptModal.vue'
+import CoverImageModal from '@/components/editor/CoverImageModal.vue'
 import EditorContentComponent from '@/components/editor/EditorContent.vue'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EmojiPicker from '@/components/editor/EmojiPicker.vue'
@@ -238,9 +237,15 @@ function handleSetCoverImage() {
   showCoverModal.value = true
 }
 
-function confirmCoverImage(url: string) {
+function confirmCoverImage(urlOrDataUrl: string) {
   showCoverModal.value = false
-  coverImage.value = url || undefined
+  coverImage.value = urlOrDataUrl || undefined
+  scheduleAutosave()
+}
+
+function handleRemoveCoverImage() {
+  showCoverModal.value = false
+  coverImage.value = undefined
   scheduleAutosave()
 }
 
@@ -505,13 +510,11 @@ onUnmounted(() => {
   </div>
 
   <!-- Modal: Cover image -->
-  <UiPromptModal
+  <CoverImageModal
     :open="showCoverModal"
-    title="Imagen de portada"
-    placeholder="https://ejemplo.com/imagen.jpg"
     :initialValue="coverImage || ''"
-    confirmLabel="Aplicar"
     @confirm="confirmCoverImage"
+    @remove="handleRemoveCoverImage"
     @cancel="showCoverModal = false"
   />
 
