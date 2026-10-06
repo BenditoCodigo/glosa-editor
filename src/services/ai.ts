@@ -123,16 +123,7 @@ export async function chat(messages: ChatMessage[], options?: ChatOptions): Prom
   const response = await platformFetch(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: ai.model,
-      messages: fullMessages,
-      temperature: params.temperature,
-      top_p: params.topP,
-      max_tokens: params.maxTokens,
-      frequency_penalty: params.frequencyPenalty,
-      presence_penalty: params.presencePenalty,
-      stream: false,
-    }),
+    body: JSON.stringify(buildChatBody(ai.model, fullMessages, params, false)),
     signal: options?.signal,
   })
 
@@ -171,21 +162,37 @@ export async function* chatStream(
   yield* platformStream(`${normalizeBaseUrl(ai.baseUrl)}/chat/completions`, {
     method: 'POST',
     headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: ai.model,
-      messages: fullMessages,
-      temperature: params.temperature,
-      top_p: params.topP,
-      max_tokens: params.maxTokens,
-      frequency_penalty: params.frequencyPenalty,
-      presence_penalty: params.presencePenalty,
-      stream: true,
-    }),
+    body: JSON.stringify(buildChatBody(ai.model, fullMessages, params, true)),
     signal: options?.signal,
   })
 }
 
 // --- Internal Helper Functions ---
+
+function buildChatBody(
+  model: string,
+  messages: ChatMessage[],
+  params: AIModelParameters,
+  stream: boolean,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model,
+    messages,
+    stream,
+  }
+
+  if (params.temperature !== undefined) body.temperature = params.temperature
+  if (params.topP !== undefined) body.top_p = params.topP
+  if (params.maxTokens !== undefined) body.max_tokens = params.maxTokens
+  if (params.frequencyPenalty && params.frequencyPenalty !== 0) {
+    body.frequency_penalty = params.frequencyPenalty
+  }
+  if (params.presencePenalty && params.presencePenalty !== 0) {
+    body.presence_penalty = params.presencePenalty
+  }
+
+  return body
+}
 
 function normalizeBaseUrl(url: string): string {
   return url.replace(/\/+$/, '')
@@ -260,4 +267,5 @@ export const _internal = {
   assertConfigured,
   parseErrorMessage,
   parseNetworkError,
+  buildChatBody,
 }

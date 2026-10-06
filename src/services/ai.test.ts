@@ -12,6 +12,7 @@ const {
   assertConfigured,
   parseErrorMessage,
   parseNetworkError,
+  buildChatBody,
 } = _internal
 
 describe('AI Service - Internal Helpers', () => {
@@ -288,6 +289,52 @@ describe('AI Service - Internal Helpers', () => {
 
     it('handles non-Error values', () => {
       expect(parseNetworkError('string error')).toBe('Error de conexión: string error')
+    })
+  })
+
+  describe('buildChatBody', () => {
+    const messages = [{ role: 'user' as const, content: 'Hola' }]
+
+    it('builds standard payload omitting zero frequency and presence penalties', () => {
+      const params = {
+        temperature: 0.7,
+        topP: 0.9,
+        maxTokens: 2048,
+        frequencyPenalty: 0,
+        presencePenalty: 0,
+      }
+      const body = buildChatBody('gemini-1.5-pro', messages, params, false)
+      expect(body).toEqual({
+        model: 'gemini-1.5-pro',
+        messages,
+        stream: false,
+        temperature: 0.7,
+        top_p: 0.9,
+        max_tokens: 2048,
+      })
+      expect(body).not.toHaveProperty('frequency_penalty')
+      expect(body).not.toHaveProperty('presence_penalty')
+    })
+
+    it('includes frequency and presence penalty only when non-zero', () => {
+      const params = {
+        temperature: 0.5,
+        topP: 0.8,
+        maxTokens: 1000,
+        frequencyPenalty: 0.5,
+        presencePenalty: 0.3,
+      }
+      const body = buildChatBody('llama3.2', messages, params, true)
+      expect(body).toEqual({
+        model: 'llama3.2',
+        messages,
+        stream: true,
+        temperature: 0.5,
+        top_p: 0.8,
+        max_tokens: 1000,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.3,
+      })
     })
   })
 })
