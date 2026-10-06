@@ -93,12 +93,13 @@ function formatDate(iso?: string) {
 </script>
 
 <template>
-  <aside
-    class="fixed right-0 top-14 bottom-0 z-40 w-80 sm:w-96 bg-[#f4f6f5]/95 dark:bg-[#131715]/98 backdrop-blur-2xl border-l border-outline/25 dark:border-white/10 shadow-2xl flex flex-col transition-transform duration-300 ease-out text-on-surface"
-    :class="[open ? 'translate-x-0' : 'translate-x-full']"
-  >
-    <!-- Drawer Header -->
-    <div class="px-5 py-4 border-b border-outline/15 dark:border-white/10 flex items-center justify-between">
+  <Transition name="slide-right">
+    <aside
+      v-show="open"
+      class="fixed right-0 top-0 bottom-0 h-dvh z-40 w-80 sm:w-[320px] md:w-[360px] glass-panel bg-[#f4f6f5]/95 dark:bg-[#131715]/98 backdrop-blur-2xl border-l border-white/20 shadow-2xl flex flex-col text-on-surface"
+    >
+      <!-- Drawer Header -->
+      <div class="px-6 py-4.5 border-b border-outline/15 dark:border-white/10 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
           <UiIcon name="rate_review" size="sm" />
@@ -324,5 +325,6 @@ function formatDate(iso?: string) {
       </div>
     </div>
   </aside>
+</Transition>
 </template>
 
