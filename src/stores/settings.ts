@@ -182,13 +182,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
     const previousProvider = settings.value.storageProvider
     const previousPath = settings.value.filesystemPath
-    const { open } = await import('@tauri-apps/plugin-dialog')
+    const { pickDirectory } = await import('@/services/platform')
 
-    const selected = await open({
-      directory: true,
-      multiple: false,
-      title: 'Seleccionar carpeta para notas',
-    })
+    const selected = await pickDirectory()
 
     if (selected === null) {
       // User cancelled — revert to previous provider

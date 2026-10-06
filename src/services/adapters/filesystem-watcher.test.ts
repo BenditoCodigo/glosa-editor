@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { WatchEvent } from '@tauri-apps/plugin-fs'
 import type { Folder } from '@/types/folder'
 import type { WatcherChangeCallback } from './filesystem'
 
-// Mock @tauri-apps/plugin-fs
+interface WatchEvent {
+  type: unknown
+  paths: string[]
+  attrs?: Record<string, unknown>
+}
+
+// Mock @/services/platform
 const mockWatch = vi.fn()
 const mockReadTextFile = vi.fn()
 const mockReadDir = vi.fn()
@@ -11,15 +16,19 @@ const mockWriteTextFile = vi.fn()
 const mockRemove = vi.fn()
 const mockMkdir = vi.fn()
 const mockExists = vi.fn()
+const mockRename = vi.fn()
 
-vi.mock('@tauri-apps/plugin-fs', () => ({
-  watch: (...args: unknown[]) => mockWatch(...args),
+vi.mock('@/services/platform', () => ({
+  watchDirectory: (...args: unknown[]) => mockWatch(...args),
   readTextFile: (...args: unknown[]) => mockReadTextFile(...args),
   readDir: (...args: unknown[]) => mockReadDir(...args),
   writeTextFile: (...args: unknown[]) => mockWriteTextFile(...args),
   remove: (...args: unknown[]) => mockRemove(...args),
   mkdir: (...args: unknown[]) => mockMkdir(...args),
   exists: (...args: unknown[]) => mockExists(...args),
+  rename: (...args: unknown[]) => mockRename(...args),
+  isDesktop: () => true,
+  isTauri: () => true,
 }))
 
 describe('FilesystemAdapter - File Watching', () => {
@@ -64,7 +73,6 @@ describe('FilesystemAdapter - File Watching', () => {
       expect(mockWatch).toHaveBeenCalledWith(
         rootPath,
         expect.any(Function),
-        expect.objectContaining({ recursive: true, delayMs: 300 }),
       )
     })
 

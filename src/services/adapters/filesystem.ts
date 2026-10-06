@@ -1,5 +1,13 @@
-import { readDir, readTextFile, writeTextFile, remove, mkdir, exists, watch } from '@tauri-apps/plugin-fs'
-import type { WatchEvent, UnwatchFn } from '@tauri-apps/plugin-fs'
+import {
+  readDir,
+  readTextFile,
+  writeTextFile,
+  remove,
+  mkdir,
+  exists,
+  rename,
+  watchDirectory,
+} from '@/services/platform'
 import type { Note } from '@/types/note'
 import type { Folder } from '@/types/folder'
 import type { StorageAdapter, FileEntry, FilesystemMetadata, FolderMeta, ActivityEvent } from './types'
@@ -10,7 +18,6 @@ const MAX_DEPTH = 10
 const GLOSA_DIR = '.glosa'
 const META_FILE = 'meta.json'
 const MAX_ACTIVITY_EVENTS = 500
-const WATCH_DEBOUNCE_MS = 300
 
 function defaultMetadata(): FilesystemMetadata {
   return { version: 1, activity: [] }
@@ -37,7 +44,7 @@ export class FilesystemAdapter implements StorageAdapter {
   metadata: FilesystemMetadata = defaultMetadata()
   skippedFiles: string[] = []
 
-  private unwatchFn: UnwatchFn | null = null
+  private unwatchFn: (() => void | Promise<void>) | null = null
   private activeNoteId: string | null = null
   private watcherCallback: WatcherChangeCallback | null = null
 
@@ -218,7 +225,6 @@ export class FilesystemAdapter implements StorageAdapter {
       const newAbsolutePath = `${this.rootPath}/${newRelativePath}`
 
       try {
-        const { rename } = await import('@tauri-apps/plugin-fs')
         await rename(oldAbsolutePath, newAbsolutePath)
       } catch {
         // If rename fails, just create the new directory
@@ -380,10 +386,11 @@ export class FilesystemAdapter implements StorageAdapter {
 
     this.watcherCallback = callback
 
-    this.unwatchFn = await watch(
+    this.unwatchFn = await watchDirectory(
       this.rootPath,
-      (event: WatchEvent) => { this.handleWatchEvent(event) },
-      { recursive: true, delayMs: WATCH_DEBOUNCE_MS },
+      (event: { type: unknown; paths?: string[]; path?: string }) => {
+        this.handleWatchEvent(event)
+      },
     )
   }
 
@@ -392,14 +399,20 @@ export class FilesystemAdapter implements StorageAdapter {
    */
   stopWatching(): void {
     if (this.unwatchFn) {
-      this.unwatchFn()
+      void this.unwatchFn()
       this.unwatchFn = null
     }
     this.watcherCallback = null
   }
 
-  private handleWatchEvent(event: WatchEvent): void {
-    for (const filePath of event.paths) {
+  handleWatchEvent(event: { type: unknown; paths?: string[]; path?: string }): void {
+    const rawPaths: string[] = Array.isArray(event.paths)
+      ? event.paths
+      : event.path
+        ? [event.path]
+        : []
+
+    for (const filePath of rawPaths) {
       // Ignore paths inside .glosa directory
       const relativePath = this.relativize(filePath)
       if (relativePath.startsWith(GLOSA_DIR) || relativePath.includes(`/${GLOSA_DIR}/`)) {
@@ -408,16 +421,26 @@ export class FilesystemAdapter implements StorageAdapter {
 
       // Ignore dot-directories
       const segments = relativePath.split('/')
-      if (segments.some(s => s.startsWith('.') && s !== '.')) {
+      if (segments.some((s) => s.startsWith('.') && s !== '.')) {
         continue
       }
 
-      if (typeof event.type === 'object') {
-        if ('create' in event.type) {
+      const type = event.type
+      if (typeof type === 'object' && type !== null) {
+        if ('create' in type) {
           this.handleCreateEvent(filePath, relativePath)
-        } else if ('modify' in event.type) {
+        } else if ('modify' in type) {
           this.handleModifyEvent(filePath, relativePath)
-        } else if ('remove' in event.type) {
+        } else if ('remove' in type) {
+          this.handleRemoveEvent(filePath, relativePath)
+        }
+      } else if (typeof type === 'string') {
+        const lower = type.toLowerCase()
+        if (lower === 'create' || lower === 'add' || lower === 'adddir') {
+          this.handleCreateEvent(filePath, relativePath)
+        } else if (lower === 'modify' || lower === 'change') {
+          this.handleModifyEvent(filePath, relativePath)
+        } else if (lower === 'remove' || lower === 'unlink' || lower === 'unlinkdir') {
           this.handleRemoveEvent(filePath, relativePath)
         }
       }
