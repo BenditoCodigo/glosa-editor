@@ -27,6 +27,11 @@ const blockSnippet = computed(() => {
 
 const renderedResponse = computed(() => renderMarkdown(assistant.response.value))
 
+const currentAction = computed(() => {
+  if (!assistant.selectedActionId.value) return null
+  return assistant.quickActions.find((a) => a.id === assistant.selectedActionId.value) || null
+})
+
 function updatePosition() {
   if (!assistant.isOpen.value) return
 
@@ -312,7 +317,7 @@ onBeforeUnmount(() => {
 
           <!-- Response Area -->
           <div
-            v-if="assistant.isLoading.value || assistant.isStreaming.value || assistant.response.value || assistant.error.value"
+            v-if="assistant.isLoading.value || assistant.isStreaming.value || assistant.response.value || assistant.error.value || assistant.lastQuery.value"
             class="
               mt-1 pt-3 border-t border-outline-variant/20
               flex flex-col gap-2.5
@@ -320,6 +325,30 @@ onBeforeUnmount(() => {
               pr-1
             "
           >
+            <!-- User Question / Query banner -->
+            <div
+              v-if="assistant.lastQuery.value"
+              class="
+                flex items-start gap-2.5
+                px-3 py-2 rounded-xl
+                bg-primary/5 dark:bg-white/5
+                border border-primary/15 dark:border-white/10
+                text-xs
+              "
+            >
+              <div class="w-5 h-5 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                <UiIcon :name="currentAction?.icon || 'chat_bubble'" size="sm" class="text-[13px]" />
+              </div>
+              <div class="flex flex-col flex-1 min-w-0">
+                <span class="text-[10px] font-semibold text-primary uppercase tracking-wider">
+                  {{ currentAction?.label || 'Tu pregunta' }}
+                </span>
+                <p class="text-xs text-on-surface font-medium leading-relaxed select-text mt-0.5">
+                  {{ assistant.lastQuery.value }}
+                </p>
+              </div>
+            </div>
+
             <!-- Loading state without chunks yet -->
             <div v-if="assistant.isLoading.value && !assistant.response.value" class="flex items-center gap-2.5 py-2 text-secondary text-xs">
               <UiIcon name="auto_awesome" class="animate-spin text-primary text-[18px]" />

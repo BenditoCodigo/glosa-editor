@@ -111,7 +111,7 @@ onUnmounted(() => {
 
 <template>
   <header class="
-    sticky top-0 z-10
+    sticky top-0 z-40
     flex items-center justify-between
     pt-2 lg:pt-4 pb-4 lg:pb-6 px-4 lg:px-6
     pointer-events-none

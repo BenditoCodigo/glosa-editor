@@ -83,4 +83,25 @@ describe('AIBlockDialog.vue', () => {
     expect(document.body.textContent).toContain('Copiar')
     expect(document.body.textContent).toContain('Nueva consulta')
   })
+
+  it('renders the user question / query above the response', () => {
+    const assistant = useAIBlockAssistant()
+    assistant.openAssistant({
+      index: 0,
+      content: 'Texto de prueba',
+      top: 100,
+      context: { title: 'Test' },
+    })
+    assistant.lastQuery.value = '¿Cuáles son las dudas principales?'
+    assistant.selectedActionId.value = 'questions'
+    assistant.response.value = 'Aquí están las dudas.'
+
+    mount(AIBlockDialog, {
+      props: { assistant },
+    })
+
+    expect(document.body.textContent).toContain('Preguntas reflexivas')
+    expect(document.body.textContent).toContain('¿Cuáles son las dudas principales?')
+    expect(document.body.textContent).toContain('Aquí están las dudas.')
+  })
 })
