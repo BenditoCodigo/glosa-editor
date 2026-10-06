@@ -131,6 +131,11 @@ function handleRemove() {
   emit('remove')
 }
 
+function clearPreview() {
+  previewValue.value = null
+  urlValue.value = ''
+}
+
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     emit('cancel')
@@ -259,13 +264,7 @@ function handleKeydown(event: KeyboardEvent) {
           <div v-if="previewValue" class="flex flex-col gap-2">
             <div class="flex items-center justify-between text-xs text-secondary px-1">
               <span>Vista previa</span>
-              <button
-                class="text-error hover:underline transition-all"
-                @click="
-                  previewValue = null
-                  urlValue = ''
-                "
-              >
+              <button class="text-error hover:underline transition-all" @click="clearPreview">
                 Quitar previsualización
               </button>
             </div>
