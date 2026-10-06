@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -32,7 +33,13 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const router = useRouter()
 const settingsStore = useSettingsStore()
+
+function goToSettings() {
+  emit('cancel')
+  router.push('/settings')
+}
 
 const localSources = ref<string[]>([])
 const localInstructions = ref('')
@@ -496,32 +503,64 @@ function handleKeydown(event: KeyboardEvent) {
               <label
                 class="text-xs font-semibold uppercase tracking-wider text-on-surface/90 flex items-center gap-1.5"
               >
-                <UiIcon name="psychology" size="sm" class="text-primary text-[16px]" />
+                <UiIcon
+                  name="psychology"
+                  size="sm"
+                  :class="isAiAvailable ? 'text-primary' : 'text-secondary'"
+                  class="text-[16px]"
+                />
                 Instrucciones específicas de IA
               </label>
               <span
+                v-if="isAiAvailable"
                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary"
               >
                 Prioridad alta
               </span>
             </div>
 
-            <p class="text-[11px] text-secondary leading-relaxed">
-              Define el criterio editorial o de investigación para este documento. Estas
-              instrucciones tienen <strong class="text-on-surface">prioridad absoluta</strong> sobre
-              la configuración general.
-            </p>
+            <!-- Small alert if AI is disabled or not configured in settings -->
+            <div
+              v-if="!isAiAvailable"
+              class="flex items-start gap-3 p-3.5 rounded-xl border border-outline/20 bg-surface-container/50 text-secondary"
+            >
+              <UiIcon name="info" size="sm" class="text-secondary shrink-0 mt-0.5 text-[18px]" />
+              <div
+                class="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+              >
+                <p class="text-xs leading-relaxed text-secondary">
+                  Para poder configurar estas secciones debes habilitar y configurar la IA desde la
+                  configuración.
+                </p>
+                <button
+                  type="button"
+                  class="text-xs font-semibold text-on-surface hover:text-primary dark:hover:text-primary-fixed-dim underline whitespace-nowrap self-start sm:self-center transition-colors"
+                  @click="goToSettings"
+                >
+                  Ir a configuración
+                </button>
+              </div>
+            </div>
 
-            <textarea
-              v-model="localInstructions"
-              rows="3"
-              placeholder="Ej: Eres un editor de investigación periodística. Verifica rigurosamente las afirmaciones, contrasta datos con las fuentes listadas y señala cualquier discrepancia de fechas o nombres..."
-              class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none leading-relaxed"
-            />
+            <template v-else>
+              <p class="text-[11px] text-secondary leading-relaxed">
+                Define el criterio editorial o de investigación para este documento. Estas
+                instrucciones tienen
+                <strong class="text-on-surface">prioridad absoluta</strong> sobre la configuración
+                general.
+              </p>
+
+              <textarea
+                v-model="localInstructions"
+                rows="3"
+                placeholder="Ej: Eres un editor de investigación periodística. Verifica rigurosamente las afirmaciones, contrasta datos con las fuentes listadas y señala cualquier discrepancia de fechas o nombres..."
+                class="glass-input w-full px-3.5 py-2.5 rounded-xl text-xs text-on-surface placeholder:text-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none leading-relaxed"
+              />
+            </template>
           </div>
 
           <!-- Section 4: Expand de Configuración Avanzada de IA -->
-          <div class="flex flex-col gap-3 pt-1 border-t border-outline/10">
+          <div v-if="isAiAvailable" class="flex flex-col gap-3 pt-1 border-t border-outline/10">
             <button
               type="button"
               class="flex items-center justify-between gap-2 w-full text-left group py-1.5"

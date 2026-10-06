@@ -1,14 +1,60 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { useSettingsStore } from '@/stores/settings'
 import NoteReferencesModal from './NoteReferencesModal.vue'
+
+const mockPush = vi.fn()
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}))
 
 describe('NoteReferencesModal', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    mockPush.mockClear()
   })
 
-  it('renders modal when open is true with provided description, sources, and aiInstructions', () => {
+  it('shows alert message and allows navigating to settings when AI is disabled in settings', async () => {
+    const wrapper = mount(NoteReferencesModal, {
+      props: {
+        open: true,
+        description: 'Una breve descripción de prueba.',
+        sources: ['https://example.com/source1'],
+        aiInstructions: 'Instrucción de prueba para el modelo.',
+      },
+      global: {
+        stubs: {
+          Teleport: true,
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('Instrucciones específicas de IA')
+    expect(wrapper.text()).toContain(
+      'Para poder configurar estas secciones debes habilitar y configurar la IA desde la configuración.',
+    )
+    const settingsBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Ir a configuración'))
+    expect(settingsBtn).toBeDefined()
+    await settingsBtn?.trigger('click')
+    expect(mockPush).toHaveBeenCalledWith('/settings')
+    expect(wrapper.emitted('cancel')).toBeTruthy()
+
+    // Instructions textarea and Section 4 should not be shown
+    expect(wrapper.findAll('textarea').length).toBe(1)
+    expect(wrapper.text()).not.toContain('Configuración avanzada de IA')
+  })
+
+  it('renders modal when open is true with provided description, sources, and aiInstructions when AI is enabled', () => {
+    const store = useSettingsStore()
+    store.settings.ai.enabled = true
+    store.settings.ai.baseUrl = 'http://localhost:11434/v1'
+    store.settings.ai.model = 'llama3.2'
+
     const wrapper = mount(NoteReferencesModal, {
       props: {
         open: true,
@@ -27,6 +73,7 @@ describe('NoteReferencesModal', () => {
     expect(wrapper.text()).toContain('Descripción breve')
     expect(wrapper.text()).toContain('https://example.com/source1')
     expect(wrapper.text()).toContain('https://example.com/source2')
+    expect(wrapper.text()).toContain('Configuración avanzada de IA')
 
     const textareas = wrapper.findAll('textarea')
     expect(textareas.length).toBe(2)
@@ -118,6 +165,11 @@ describe('NoteReferencesModal', () => {
   })
 
   it('emits save with updated description, sources, and aiInstructions', async () => {
+    const store = useSettingsStore()
+    store.settings.ai.enabled = true
+    store.settings.ai.baseUrl = 'http://localhost:11434/v1'
+    store.settings.ai.model = 'llama3.2'
+
     const wrapper = mount(NoteReferencesModal, {
       props: {
         open: true,
@@ -149,6 +201,11 @@ describe('NoteReferencesModal', () => {
   })
 
   it('allows configuring advanced sampling parameters (temperature and topP)', async () => {
+    const store = useSettingsStore()
+    store.settings.ai.enabled = true
+    store.settings.ai.baseUrl = 'http://localhost:11434/v1'
+    store.settings.ai.model = 'llama3.2'
+
     const wrapper = mount(NoteReferencesModal, {
       props: {
         open: true,
