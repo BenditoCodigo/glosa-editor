@@ -13,12 +13,14 @@ import DeviceGuard from '@/components/ui/DeviceGuard.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppToolbar from '@/components/layout/AppToolbar.vue'
 import AppBreadcrumbs from '@/components/layout/AppBreadcrumbs.vue'
+import WriterAnnotationsDrawer from '@/components/editor/WriterAnnotationsDrawer.vue'
+import type { WriterAnnotation } from '@/types/note'
 
 const route = useRoute()
 const router = useRouter()
 
 // Initialize stores
-useUiStore()
+const uiStore = useUiStore()
 const settingsStore = useSettingsStore() // Applies theme on creation
 const notesStore = useNotesStore()
 const foldersStore = useFoldersStore()
@@ -140,6 +142,45 @@ const breadcrumbs = computed(() => {
 function handleBreadcrumbNavigate(path: string) {
   router.push(path)
 }
+
+// Close annotations drawer when leaving editor
+watch(
+  () => route.name,
+  (name) => {
+    if (name !== 'editor') {
+      uiStore.annotationsDrawerOpen = false
+    }
+  },
+)
+
+function handleSelectAnnotation(annotation: WriterAnnotation) {
+  uiStore.requestedScrollAnnotationId = annotation.id
+}
+
+function handleEditAnnotation(annotation: WriterAnnotation) {
+  uiStore.requestedEditAnnotation = annotation
+}
+
+async function handleDeleteAnnotation(annotation: WriterAnnotation) {
+  if (!activeNote.value) return
+  const list = (activeNote.value.annotations || []).filter((a) => a.id !== annotation.id)
+  activeNote.value.annotations = list.length > 0 ? list : undefined
+  await notesStore.updateNote(activeNote.value)
+}
+
+async function handleToggleResolvedAnnotation(annotation: WriterAnnotation) {
+  if (!activeNote.value) return
+  const target = (activeNote.value.annotations || []).find((a) => a.id === annotation.id)
+  if (target) {
+    target.resolved = !target.resolved
+    target.updatedAt = new Date().toISOString()
+    await notesStore.updateNote(activeNote.value)
+  }
+}
+
+function handleReanchorAnnotation(annotation: WriterAnnotation) {
+  uiStore.requestedReanchorAnnotation = annotation
+}
 </script>
 
 <template>
@@ -165,6 +206,20 @@ function handleBreadcrumbNavigate(path: string) {
           <AppBreadcrumbs :segments="breadcrumbs" @navigate="handleBreadcrumbNavigate" />
         </div>
       </main>
+
+      <!-- Right Glosas Drawer (mirrors AppSidebar as a flex item, smoothly resizing main area) -->
+      <WriterAnnotationsDrawer
+        v-if="route.name === 'editor'"
+        :open="uiStore.annotationsDrawerOpen"
+        :annotations="activeNote?.annotations || []"
+        :orphanIds="uiStore.orphanAnnotationIds"
+        @close="uiStore.annotationsDrawerOpen = false"
+        @select="handleSelectAnnotation"
+        @edit="handleEditAnnotation"
+        @delete="handleDeleteAnnotation"
+        @toggleResolved="handleToggleResolvedAnnotation"
+        @reanchor="handleReanchorAnnotation"
+      />
     </div>
   </DeviceGuard>
 </template>

@@ -3,6 +3,7 @@ import { ref, watch, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '@/stores/notes'
+import { useUiStore } from '@/stores/ui'
 import { trackActivity } from '@/services/activity'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
@@ -16,7 +17,6 @@ import AIBlockDialog from '@/components/ai/AIBlockDialog.vue'
 import NoteReferencesModal from '@/components/editor/NoteReferencesModal.vue'
 import WriterAnnotationModal from '@/components/editor/WriterAnnotationModal.vue'
 import WriterAnnotationPopover from '@/components/editor/WriterAnnotationPopover.vue'
-import WriterAnnotationsDrawer from '@/components/editor/WriterAnnotationsDrawer.vue'
 import { createAnnotationAnchor, findAnchorPosition } from '@/services/annotations/anchorEngine'
 import type { WriterAnnotation, WriterAnnotationColor } from '@/types/note'
 import { useExport } from '@/composables/useExport'
@@ -25,6 +25,7 @@ import { useAIBlockAssistant } from '@/composables/useAIBlockAssistant'
 const route = useRoute()
 const router = useRouter()
 const notesStore = useNotesStore()
+const uiStore = useUiStore()
 const { activeNote } = storeToRefs(notesStore)
 const { downloadAsMarkdown, copyAsMarkdown } = useExport()
 const aiAssistant = useAIBlockAssistant()
@@ -69,7 +70,6 @@ const isHeaderScrolledOut = ref(false)
 
 // Writer Annotations State
 const annotations = ref<WriterAnnotation[]>([])
-const showAnnotationsDrawer = ref(false)
 const showAnnotationModal = ref(false)
 const modalIsEditing = ref(false)
 const activeModalAnnotation = ref<WriterAnnotation | null>(null)
@@ -90,6 +90,7 @@ function checkOrphanAnnotations(immediate = false) {
   if (checkOrphansTimer) clearTimeout(checkOrphansTimer)
   if (annotations.value.length === 0) {
     orphanIds.value = []
+    uiStore.orphanAnnotationIds = []
     return
   }
   const run = () => {
@@ -104,6 +105,7 @@ function checkOrphanAnnotations(immediate = false) {
       }
     }
     orphanIds.value = orphans
+    uiStore.orphanAnnotationIds = orphans
   }
 
   if (immediate) {
@@ -112,6 +114,37 @@ function checkOrphanAnnotations(immediate = false) {
     checkOrphansTimer = setTimeout(run, 200)
   }
 }
+
+// Watchers for remote drawer actions dispatched from App.vue
+watch(
+  () => uiStore.requestedScrollAnnotationId,
+  (id) => {
+    if (id) {
+      editorRef.value?.scrollToAnnotation(id)
+      uiStore.requestedScrollAnnotationId = null
+    }
+  },
+)
+
+watch(
+  () => uiStore.requestedEditAnnotation,
+  (annotation) => {
+    if (annotation) {
+      handleEditAnnotation(annotation)
+      uiStore.requestedEditAnnotation = null
+    }
+  },
+)
+
+watch(
+  () => uiStore.requestedReanchorAnnotation,
+  (annotation) => {
+    if (annotation) {
+      handleReanchorAnnotation(annotation)
+      uiStore.requestedReanchorAnnotation = null
+    }
+  },
+)
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 let attachedScrollParent: HTMLElement | null = null
@@ -252,7 +285,7 @@ function handleContentUpdate(newContent: string) {
 function handleOpenAddAnnotation() {
   const sel = editorRef.value?.getSelectedRange()
   if (!sel || !sel.text.trim()) {
-    showAnnotationsDrawer.value = true
+    uiStore.annotationsDrawerOpen = true
     return
   }
   selectedRange.value = sel
@@ -571,8 +604,8 @@ onUnmounted(() => {
             variant="ghost"
             size="sm"
             class="gap-1.5"
-            :class="showAnnotationsDrawer && 'bg-primary/15 text-primary'"
-            @click="showAnnotationsDrawer = !showAnnotationsDrawer"
+            :class="uiStore.annotationsDrawerOpen && 'bg-primary/15 text-primary'"
+            @click="uiStore.toggleAnnotationsDrawer()"
           >
             <template #icon-left>
               <UiIcon name="rate_review" size="sm" />
@@ -790,10 +823,10 @@ onUnmounted(() => {
                 tooltip="Glosas del manuscrito"
                 size="sm"
                 :class="[
-                  showAnnotationsDrawer && 'bg-primary/20 text-primary',
-                  annotations.length > 0 && !showAnnotationsDrawer && 'text-primary',
+                  uiStore.annotationsDrawerOpen && 'bg-primary/20 text-primary',
+                  annotations.length > 0 && !uiStore.annotationsDrawerOpen && 'text-primary',
                 ]"
-                @click="showAnnotationsDrawer = !showAnnotationsDrawer"
+                @click="uiStore.toggleAnnotationsDrawer()"
               />
               <span
                 v-if="annotations.length > 0"
@@ -867,18 +900,5 @@ onUnmounted(() => {
     @toggleResolved="handleToggleResolved"
     @delete="handleDeleteAnnotation"
     @close="popoverAnnotation = null"
-  />
-
-  <!-- Writer Annotations Side Drawer -->
-  <WriterAnnotationsDrawer
-    :open="showAnnotationsDrawer"
-    :annotations="annotations"
-    :orphanIds="orphanIds"
-    @close="showAnnotationsDrawer = false"
-    @select="handleSelectFromDrawer"
-    @edit="handleEditAnnotation"
-    @delete="handleDeleteAnnotation"
-    @toggleResolved="handleToggleResolved"
-    @reanchor="handleReanchorAnnotation"
   />
 </template>

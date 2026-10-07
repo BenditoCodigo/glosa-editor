@@ -96,7 +96,7 @@ function formatDate(iso?: string) {
   <Transition name="slide-right">
     <aside
       v-show="open"
-      class="fixed right-0 top-0 bottom-0 h-dvh z-40 w-80 sm:w-[320px] md:w-[360px] glass-panel bg-[#f4f6f5]/95 dark:bg-[#131715]/98 backdrop-blur-2xl border-l border-white/20 shadow-2xl flex flex-col text-on-surface"
+      class="glass-panel flex flex-col h-full w-80 sm:w-[320px] md:w-[360px] shrink-0 border-l border-white/20 z-20 text-on-surface"
     >
       <!-- Drawer Header -->
       <div class="px-6 py-4.5 border-b border-outline/15 dark:border-white/10 flex items-center justify-between">
