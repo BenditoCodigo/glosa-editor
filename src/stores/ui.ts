@@ -7,6 +7,8 @@ export const useUiStore = defineStore('ui', () => {
   const annotationsDrawerOpen = ref(false)
   const orphanAnnotationIds = ref<string[]>([])
   const requestedEditAnnotation = ref<WriterAnnotation | null>(null)
+  const requestedDeleteAnnotation = ref<WriterAnnotation | null>(null)
+  const requestedToggleResolvedAnnotation = ref<WriterAnnotation | null>(null)
   const requestedScrollAnnotationId = ref<string | null>(null)
   const requestedReanchorAnnotation = ref<WriterAnnotation | null>(null)
 
@@ -23,6 +25,8 @@ export const useUiStore = defineStore('ui', () => {
     annotationsDrawerOpen,
     orphanAnnotationIds,
     requestedEditAnnotation,
+    requestedDeleteAnnotation,
+    requestedToggleResolvedAnnotation,
     requestedScrollAnnotationId,
     requestedReanchorAnnotation,
     toggleSidebar,

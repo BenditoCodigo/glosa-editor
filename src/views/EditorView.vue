@@ -137,6 +137,26 @@ watch(
 )
 
 watch(
+  () => uiStore.requestedDeleteAnnotation,
+  (annotation) => {
+    if (annotation) {
+      handleDeleteAnnotation(annotation)
+      uiStore.requestedDeleteAnnotation = null
+    }
+  },
+)
+
+watch(
+  () => uiStore.requestedToggleResolvedAnnotation,
+  (annotation) => {
+    if (annotation) {
+      handleToggleResolved(annotation)
+      uiStore.requestedToggleResolvedAnnotation = null
+    }
+  },
+)
+
+watch(
   () => uiStore.requestedReanchorAnnotation,
   (annotation) => {
     if (annotation) {
@@ -331,7 +351,12 @@ function handleSaveAnnotation(payload: { comment: string; color: WriterAnnotatio
       from: selectedRange.value.from,
       to: selectedRange.value.to,
     })
-    checkOrphanAnnotations()
+    checkOrphanAnnotations(true)
+  }
+
+  if (activeNote.value) {
+    activeNote.value.annotations =
+      annotations.value.length > 0 ? JSON.parse(JSON.stringify(annotations.value)) : undefined
   }
 
   showAnnotationModal.value = false
@@ -351,10 +376,20 @@ function handleAnnotationClick(payload: { annotationId: string; rect: DOMRect })
 }
 
 function handleToggleResolved(annotation: WriterAnnotation) {
-  annotation.resolved = !annotation.resolved
-  annotation.updatedAt = new Date().toISOString()
-  editorRef.value?.updateAnnotationMark(annotation.id, { resolved: annotation.resolved })
-  scheduleAutosave()
+  const target = annotations.value.find((a) => a.id === annotation.id)
+  if (target) {
+    target.resolved = !target.resolved
+    target.updatedAt = new Date().toISOString()
+    if (activeNote.value) {
+      activeNote.value.annotations =
+        annotations.value.length > 0 ? JSON.parse(JSON.stringify(annotations.value)) : undefined
+    }
+    editorRef.value?.updateAnnotationMark(target.id, { resolved: target.resolved })
+    if (popoverAnnotation.value?.id === target.id) {
+      popoverAnnotation.value.resolved = target.resolved
+    }
+    scheduleAutosave()
+  }
 }
 
 function handleEditAnnotation(annotation: WriterAnnotation) {
@@ -367,11 +402,16 @@ function handleEditAnnotation(annotation: WriterAnnotation) {
 
 function handleDeleteAnnotation(annotation: WriterAnnotation) {
   annotations.value = annotations.value.filter((a) => a.id !== annotation.id)
+  if (activeNote.value) {
+    activeNote.value.annotations =
+      annotations.value.length > 0 ? JSON.parse(JSON.stringify(annotations.value)) : undefined
+  }
   editorRef.value?.removeAnnotationMark(annotation.id)
   if (popoverAnnotation.value?.id === annotation.id) {
     popoverAnnotation.value = null
   }
   orphanIds.value = orphanIds.value.filter((id) => id !== annotation.id)
+  uiStore.orphanAnnotationIds = [...orphanIds.value]
   scheduleAutosave()
 }
 
@@ -385,11 +425,21 @@ function handleReanchorAnnotation(annotation: WriterAnnotation) {
     alert('Por favor selecciona el nuevo texto en el editor antes de re-anclar la glosa.')
     return
   }
+  const target = annotations.value.find((a) => a.id === annotation.id) || annotation
   const anchor = createAnnotationAnchor(sel.docText, sel.from, sel.to, sel.blockIndex, sel.text)
-  annotation.anchor = anchor
-  annotation.updatedAt = new Date().toISOString()
-  editorRef.value?.applyAnnotationMark(annotation.id, annotation.color || 'amber', annotation.resolved)
-  orphanIds.value = orphanIds.value.filter((id) => id !== annotation.id)
+  target.anchor = anchor
+  target.updatedAt = new Date().toISOString()
+  editorRef.value?.removeAnnotationMark(target.id)
+  editorRef.value?.applyAnnotationMark(target.id, target.color || 'amber', target.resolved, {
+    from: sel.from,
+    to: sel.to,
+  })
+  orphanIds.value = orphanIds.value.filter((id) => id !== target.id)
+  uiStore.orphanAnnotationIds = [...orphanIds.value]
+  if (activeNote.value) {
+    activeNote.value.annotations =
+      annotations.value.length > 0 ? JSON.parse(JSON.stringify(annotations.value)) : undefined
+  }
   scheduleAutosave()
 }
 

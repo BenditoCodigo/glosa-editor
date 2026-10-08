@@ -161,21 +161,12 @@ function handleEditAnnotation(annotation: WriterAnnotation) {
   uiStore.requestedEditAnnotation = annotation
 }
 
-async function handleDeleteAnnotation(annotation: WriterAnnotation) {
-  if (!activeNote.value) return
-  const list = (activeNote.value.annotations || []).filter((a) => a.id !== annotation.id)
-  activeNote.value.annotations = list.length > 0 ? list : undefined
-  await notesStore.updateNote(activeNote.value)
+function handleDeleteAnnotation(annotation: WriterAnnotation) {
+  uiStore.requestedDeleteAnnotation = annotation
 }
 
-async function handleToggleResolvedAnnotation(annotation: WriterAnnotation) {
-  if (!activeNote.value) return
-  const target = (activeNote.value.annotations || []).find((a) => a.id === annotation.id)
-  if (target) {
-    target.resolved = !target.resolved
-    target.updatedAt = new Date().toISOString()
-    await notesStore.updateNote(activeNote.value)
-  }
+function handleToggleResolvedAnnotation(annotation: WriterAnnotation) {
+  uiStore.requestedToggleResolvedAnnotation = annotation
 }
 
 function handleReanchorAnnotation(annotation: WriterAnnotation) {

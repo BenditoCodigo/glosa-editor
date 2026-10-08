@@ -892,7 +892,7 @@ function syncAnnotationsToMarks(annotationsList: WriterAnnotation[]) {
     }
   }
 
-  if (tr.docChanged) {
+  if (tr.docChanged || tr.steps.length > 0) {
     dispatch(tr)
   }
 }
@@ -941,7 +941,7 @@ function removeAnnotationMark(annotationId: string) {
     return true
   })
 
-  if (tr.docChanged) {
+  if (tr.docChanged || tr.steps.length > 0) {
     dispatch(tr)
   }
 }
@@ -970,7 +970,7 @@ function updateAnnotationMark(
     return true
   })
 
-  if (tr.docChanged) {
+  if (tr.docChanged || tr.steps.length > 0) {
     dispatch(tr)
   }
 }
